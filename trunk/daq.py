@@ -27,19 +27,26 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 import serial
 
-class HelloWindow(QtGui.QMainWindow):
+_NAME = 'muonic'
+tr = QtCore.QCoreApplication.translate
+
+class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, win_parent = None):
         QtGui.QMainWindow.__init__(self, win_parent)
+        self.resize(640, 480)
+        self.setWindowTitle(_NAME)
+        self.statusBar().showMessage(tr('MainWindow','Ready'))
+        
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.endcommand = endcommand
         self.create_widgets()
 
     def create_widgets(self):
-        self.label = QtGui.QLabel("Say hello")
+        self.label = QtGui.QLabel(tr('MainWindow','Say hello'))
         self.hello_edit = QtGui.QLineEdit()
-        self.hello_button = QtGui.QPushButton("Push Me!")
+        self.hello_button = QtGui.QPushButton(tr('MainWindow','Push Me!'))
 
         QtCore.QObject.connect(self.hello_button,
                               QtCore.SIGNAL("clicked()"),
@@ -64,6 +71,21 @@ class HelloWindow(QtGui.QMainWindow):
         central_widget = QtGui.QWidget()
         central_widget.setLayout(v_box)
         self.setCentralWidget(central_widget)
+        
+        exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
+        exit.setShortcut('Ctrl+Q')
+        exit.setStatusTip(tr('MainWindow','Exit application'))
+        self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        menubar = self.menuBar()
+        file = menubar.addMenu(tr('MainWindow','&File'))
+        file.addAction(exit)
+
+        toolbar = self.addToolBar(tr('MainWindow','Exit'))
+        toolbar.addAction(exit)
+
+
+
+
 
     def on_hello_clicked(self):
 #        QtGui.QMessageBox.information(self,
@@ -107,7 +129,7 @@ class ThreadedClient:
         self.inqueue = Queue.Queue()
 
         # Set up the GUI part
-        self.gui=HelloWindow(self.outqueue, self.inqueue, self.endApplication)
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication)
         self.gui.show()
 
         # A timer to periodically call periodicCall :-)
@@ -172,6 +194,7 @@ class ThreadedClient:
                 sleeptime = max(sleeptime/2, min_sleeptime)
             else:
                 sleeptime = min(1.5 * sleeptime, max_sleeptime)
+            print sleeptime
             time.sleep(sleeptime)
 
 
