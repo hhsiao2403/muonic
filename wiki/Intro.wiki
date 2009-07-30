@@ -7,7 +7,7 @@
 
 = Required Software =
 
-  * Qt 4.5 ([http://www.qtsoftware.com/downloads Download)
+  * Qt 4.5 ([http://www.qtsoftware.com/downloads Download])
   * PyQt 4.5 ([http://www.riverbankcomputing.co.uk/software/pyqt/download Download])
   * PySerial ([http://sourceforge.net/projects/pyserial/ Download])
 
