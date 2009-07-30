@@ -1,11 +1,9 @@
-#summary Introduction
+#summary Introduction to muonic
 #labels Featured,Phase-Deploy
 
-= Introduction =
+== Introduction ==
 
-
-
-= Required Software =
+=== Required Software ===
 
   * Qt 4.5 ([http://www.qtsoftware.com/downloads Download])
   * PyQt 4.5 ([http://www.riverbankcomputing.co.uk/software/pyqt/download Download])
