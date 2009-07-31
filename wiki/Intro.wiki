@@ -10,3 +10,9 @@
   * PySerial ([http://sourceforge.net/projects/pyserial/ Download])
 
 Other versions of these packages might also work but are not tested.
+
+Under Ubuntu 9.04 (Jaunty Jackalope, might also work for older releases) you only need to to do:
+
+> sudo aptitude install python-qt4 python-serial
+
+which should install all required packages.
