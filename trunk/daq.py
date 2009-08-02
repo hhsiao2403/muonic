@@ -57,8 +57,10 @@ class MainWindow(QtGui.QMainWindow):
                               self.on_hello_clicked
                               )
 
-        self.text_box = QtGui.QTextEdit()
+        self.text_box = QtGui.QPlainTextEdit()
         self.text_box.setReadOnly(True)
+        # only 500 lines history
+        self.text_box.document().setMaximumBlockCount(500)
         v_box = QtGui.QVBoxLayout()
         v_box.addWidget(self.text_box)
         second_widget = QtGui.QWidget()
@@ -105,7 +107,7 @@ class MainWindow(QtGui.QMainWindow):
                 msg = self.inqueue.get(0)
                 # Check contents of message and do what it says
                 # As a test, we simply print it
-                self.text_box.append(str(msg))
+                self.text_box.appendPlainText(str(msg))
             except Queue.Empty:
                 pass
     
@@ -194,13 +196,9 @@ class ThreadedClient:
                 sleeptime = max(sleeptime/2, min_sleeptime)
             else:
                 sleeptime = min(1.5 * sleeptime, max_sleeptime)
-            print sleeptime
             time.sleep(sleeptime)
 
 
 root = QtGui.QApplication(sys.argv)
-def periodicCall():
-    print "Hello"
-
 client = ThreadedClient()
 root.exec_()
