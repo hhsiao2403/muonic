@@ -8,6 +8,8 @@
   * Qt 4.5 ([http://www.qtsoftware.com/downloads Download])
   * PyQt 4.5 ([http://www.riverbankcomputing.co.uk/software/pyqt/download Download])
   * PySerial ([http://sourceforge.net/projects/pyserial/ Download])
+  * Qwt ([http://sourceforge.net/projects/qwt/ Download])
+  * PyQwt ([http://pyqwt.sourceforge.net/download.html Download])
 
 Other versions of these packages might also work but are not tested.
 
@@ -15,4 +17,4 @@ Under Ubuntu 9.04 (Jaunty Jackalope, might also work for older releases) you onl
 
 > sudo aptitude install python-qt4 python-serial
 
-which should install all required packages.
+which should install all required packages except Qwt and PyQwt. Their corresponding packages are broken in the Ubuntu pacakge repository but there is a PPA from where you can install them. You can find instructions [https://launchpad.net/~treparel/+archive/ppa here].
