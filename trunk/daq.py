@@ -30,6 +30,39 @@ import serial
 _NAME = 'muonic'
 tr = QtCore.QCoreApplication.translate
 
+class MyLineEdit(QtGui.QLineEdit):
+
+    def __init__(self, *args):
+        QtGui.QLineEdit.__init__(self, *args)
+        self.history=[]
+        self.hist_pointer = 0
+        
+    def event(self, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key()==QtCore.Qt.Key_Down:
+                self.emit(QtCore.SIGNAL("keyDownPressed"))
+                if self.hist_pointer < len(self.history)-1:
+                    self.hist_pointer += 1
+                    self.setText(self.history[self.hist_pointer])
+                elif self.hist_pointer == len(self.history)-1:
+                    self.setText('')
+                    self.hist_pointer += 1
+                return True
+            if event.key()==QtCore.Qt.Key_Up:
+                self.emit(QtCore.SIGNAL("keyUpPressed"))
+                if self.hist_pointer > 0:
+                    self.hist_pointer -= 1
+                    self.setText(self.history[self.hist_pointer])
+                return True
+            else:
+                return QtGui.QLineEdit.event(self, event)
+        return QtGui.QLineEdit.event(self, event)
+
+    def add_hist_item(self,item):
+        self.history.append(item)
+        self.hist_pointer = len(self.history)
+
+
 class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, win_parent = None):
@@ -44,8 +77,8 @@ class MainWindow(QtGui.QMainWindow):
         self.create_widgets()
 
     def create_widgets(self):
-        self.label = QtGui.QLabel(tr('MainWindow','Say hello'))
-        self.hello_edit = QtGui.QLineEdit()
+        self.label = QtGui.QLabel(tr('MainWindow','Command'))
+        self.hello_edit = MyLineEdit()
         self.hello_button = QtGui.QPushButton(tr('MainWindow','Push Me!'))
 
         QtCore.QObject.connect(self.hello_button,
@@ -85,17 +118,16 @@ class MainWindow(QtGui.QMainWindow):
         toolbar = self.addToolBar(tr('MainWindow','Exit'))
         toolbar.addAction(exit)
 
-
-
-
-
     def on_hello_clicked(self):
 #        QtGui.QMessageBox.information(self,
 #                                     "Hello",
 #                                     "Hello %s"%self.hello_edit.displayText(),
 #                                     QtGui.QMessageBox.Ok)
 #        self.text_box.append(self.hello_edit.displayText())
-        self.outqueue.put(str(self.hello_edit.displayText()))
+        text = str(self.hello_edit.displayText())
+        if len(text) > 0:
+            self.outqueue.put(str(self.hello_edit.displayText()))
+            self.hello_edit.add_hist_item(text)
         self.hello_edit.clear()
 
     def processIncoming(self):
