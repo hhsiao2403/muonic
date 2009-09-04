@@ -22,7 +22,7 @@
 # It is licenced under the Python licence, http://www.python.org/psf/license/
 
 
-import sys, time, threading, Queue
+import sys, time, threading, Queue, os
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import serial
@@ -71,6 +71,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))
         
+        self.write_file = False
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.endcommand = endcommand
@@ -79,8 +80,10 @@ class MainWindow(QtGui.QMainWindow):
     def create_widgets(self):
         self.label = QtGui.QLabel(tr('MainWindow','Command'))
         self.hello_edit = MyLineEdit()
-        self.hello_button = QtGui.QPushButton(tr('MainWindow','Push Me!'))
-
+        self.hello_button = QtGui.QPushButton(tr('MainWindow','Send'))
+        self.file_button = QtGui.QPushButton(tr('MainWindow', 'Save to File'))
+        self.periodic_button = QtGui.QPushButton(tr('MainWindow', 'Periodic Call'))
+       
         QtCore.QObject.connect(self.hello_button,
                               QtCore.SIGNAL("clicked()"),
                               self.on_hello_clicked
@@ -89,6 +92,15 @@ class MainWindow(QtGui.QMainWindow):
                               QtCore.SIGNAL("returnPressed()"),
                               self.on_hello_clicked
                               )
+        
+        QtCore.QObject.connect(self.file_button,
+                                QtCore.SIGNAL("clicked()"),
+                                self.on_file_clicked
+                                )
+        QtCore.QObject.connect(self.periodic_button,
+                                QtCore.SIGNAL("clicked()"),
+                                self.on_periodic_clicked
+                                )
 
         self.text_box = QtGui.QPlainTextEdit()
         self.text_box.setReadOnly(True)
@@ -101,6 +113,8 @@ class MainWindow(QtGui.QMainWindow):
         h_box.addWidget(self.label)
         h_box.addWidget(self.hello_edit)
         h_box.addWidget(self.hello_button)
+        h_box.addWidget(self.file_button)
+        h_box.addWidget(self.periodic_button)
         second_widget.setLayout(h_box)
         v_box.addWidget(second_widget)
         central_widget = QtGui.QWidget()
@@ -130,6 +144,25 @@ class MainWindow(QtGui.QMainWindow):
             self.hello_edit.add_hist_item(text)
         self.hello_edit.clear()
 
+    def on_file_clicked(self):
+        filename = QtGui.QFileDialog.getOpenFileName(self,
+      tr('MainWindow','Open output file'), os.getenv('HOME'), tr('MainWindow','Text Files (*.txt);;All Files (*)'));
+        if len(filename) > 0:
+            self.outputfile = open(filename,'w')
+            self.write_file = True
+
+    def on_periodic_clicked(self):
+        text = 'BA'
+        time = 2000
+        def periodic_put():
+            self.outqueue.put(text)
+        self.periodic_put = periodic_put
+        self.timer = QtCore.QTimer()
+        QtCore.QObject.connect(self.timer,
+                           QtCore.SIGNAL("timeout()"),
+                           self.periodic_put)
+        self.timer.start(time)
+
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
@@ -140,6 +173,8 @@ class MainWindow(QtGui.QMainWindow):
                 # Check contents of message and do what it says
                 # As a test, we simply print it
                 self.text_box.appendPlainText(str(msg))
+                if self.write_file:
+                    self.outputfile.write(str(msg)+'\n')
             except Queue.Empty:
                 pass
     
@@ -148,6 +183,8 @@ class MainWindow(QtGui.QMainWindow):
         We just call the endcommand when the window is closed
         instead of presenting a button for that purpose.
         """
+        if self.write_file:
+            self.outputfile.close()
         self.endcommand()
 
 
