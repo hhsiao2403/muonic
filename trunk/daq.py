@@ -30,6 +30,18 @@ import serial
 _NAME = 'muonic'
 tr = QtCore.QCoreApplication.translate
 
+class MyPeriodicDialog(QtGui.QDialog):
+
+    def __init__(self, *args):
+        QtGui.QDialog.__init__(self,*args)
+        self.setModal(True)
+        self.v_box = QtGui.QVBoxLayout()
+        self.textbox = QtGui.QLineEdit()
+        self.v_box.addWidget(self.textbox)
+        self.setLayout(self.v_box)
+        self.show()
+
+
 class MyLineEdit(QtGui.QLineEdit):
 
     def __init__(self, *args):
@@ -83,7 +95,9 @@ class MainWindow(QtGui.QMainWindow):
         self.hello_button = QtGui.QPushButton(tr('MainWindow','Send'))
         self.file_button = QtGui.QPushButton(tr('MainWindow', 'Save to File'))
         self.periodic_button = QtGui.QPushButton(tr('MainWindow', 'Periodic Call'))
-       
+
+        self.periodic_windo = MyPeriodicDialog()
+    
         QtCore.QObject.connect(self.hello_button,
                               QtCore.SIGNAL("clicked()"),
                               self.on_hello_clicked
@@ -153,7 +167,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_periodic_clicked(self):
         text = 'BA'
-        time = 2000
+        period = 2000
         def periodic_put():
             self.outqueue.put(text)
         self.periodic_put = periodic_put
@@ -161,7 +175,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QObject.connect(self.timer,
                            QtCore.SIGNAL("timeout()"),
                            self.periodic_put)
-        self.timer.start(time)
+        self.timer.start(period)
 
     def processIncoming(self):
         """
