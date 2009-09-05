@@ -208,9 +208,12 @@ class MainWindow(QtGui.QMainWindow):
                                self.periodic_put)
             self.periodic_put()
             self.timer.start(period)
+            self.periodic_status_label = QtGui.QLabel(tr('MainWindow','%s every %s sec'%(command,period/1000)))
+            self.statusBar().addPermanentWidget(self.periodic_status_label)
         else:
             try:
                 self.timer.stop()
+                self.statusBar().removeWidget(self.periodic_status_label)
             except AttributeError:
                 pass
 
