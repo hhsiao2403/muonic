@@ -22,7 +22,13 @@
 # It is licenced under the Python licence, http://www.python.org/psf/license/
 
 
-import sys, time, threading, Queue, os
+import sys
+import time
+import threading
+import Queue
+import os
+import gzip
+
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import serial
@@ -37,10 +43,24 @@ class MyPeriodicDialog(QtGui.QDialog):
         self.setModal(True)
         self.v_box = QtGui.QVBoxLayout()
         self.textbox = QtGui.QLineEdit()
+        self.time_box = QtGui.QSpinBox()
+        self.time_box.setMaximum(600)
+        self.time_box.setMinimum(1)
+        self.time_box.setSingleStep(1)
+        self.button_box = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
         self.v_box.addWidget(self.textbox)
+        self.v_box.addWidget(self.time_box)
+        self.v_box.addWidget(self.button_box)
         self.setLayout(self.v_box)
+        QtCore.QObject.connect(self.button_box,
+                              QtCore.SIGNAL('accepted()'),
+                               self.accept
+                              )
+        QtCore.QObject.connect(self.button_box,
+                              QtCore.SIGNAL('rejected()'),
+                              self.reject)
         self.show()
-
+    
 
 class MyLineEdit(QtGui.QLineEdit):
 
@@ -96,8 +116,6 @@ class MainWindow(QtGui.QMainWindow):
         self.file_button = QtGui.QPushButton(tr('MainWindow', 'Save to File'))
         self.periodic_button = QtGui.QPushButton(tr('MainWindow', 'Periodic Call'))
 
-        self.periodic_windo = MyPeriodicDialog()
-    
         QtCore.QObject.connect(self.hello_button,
                               QtCore.SIGNAL("clicked()"),
                               self.on_hello_clicked
@@ -160,22 +178,40 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_file_clicked(self):
         filename = QtGui.QFileDialog.getOpenFileName(self,
-      tr('MainWindow','Open output file'), os.getenv('HOME'), tr('MainWindow','Text Files (*.txt);;All Files (*)'));
+                                tr('MainWindow','Open output file'),
+                                os.getenv('HOME'), tr('MainWindow','Text Files (*.txt);;All Files (*)'));
+        filename = str(filename)
         if len(filename) > 0:
-            self.outputfile = open(filename,'w')
+            if filename.endswith('.gz'):
+                self.outputfile = gzip.open(filename,'w')
+            else:
+                self.outputfile = open(filename,'w')
             self.write_file = True
+            self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%filename))
+            self.statusBar().addPermanentWidget(self.file_label)
+
 
     def on_periodic_clicked(self):
-        text = 'BA'
-        period = 2000
-        def periodic_put():
-            self.outqueue.put(text)
-        self.periodic_put = periodic_put
-        self.timer = QtCore.QTimer()
-        QtCore.QObject.connect(self.timer,
-                           QtCore.SIGNAL("timeout()"),
-                           self.periodic_put)
-        self.timer.start(period)
+        periodic_window = MyPeriodicDialog()
+        rv = periodic_window.exec_()
+        if rv == 1:
+            period = periodic_window.time_box.value() * 1000 #We need the period in milliseconds
+            command = str(periodic_window.textbox.text())
+            commands = command.split('+')
+            def periodic_put():
+                for c in commands:
+                    self.outqueue.put(c)
+            self.periodic_put = periodic_put
+            self.timer = QtCore.QTimer()
+            QtCore.QObject.connect(self.timer,
+                               QtCore.SIGNAL("timeout()"),
+                               self.periodic_put)
+            self.timer.start(period)
+        else:
+            try:
+                self.timer.stop()
+            except AttributeError:
+                pass
 
     def processIncoming(self):
         """
