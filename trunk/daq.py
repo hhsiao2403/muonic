@@ -1,18 +1,18 @@
-# This file is part of FermiDAQ, a program to work with the QuarkDAQ cards
+# This file is part of muonic, a program to work with the QuarkDAQ cards
 # Copyright (C) 2009  Robert Franke (robert.franke@desy.de)
 #
-# FermiDAQ is free software: you can redistribute it and/or modify
+# muonic is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
-# FermiDAQ is distributed in the hope that it will be useful,
+# muonic is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with FermiDAQ.  If not, see <http://www.gnu.org/licenses/>.
+# along with muonic. If not, see <http://www.gnu.org/licenses/>.
 
 
 # The way of the communication between the serial port and the GUI is based on
@@ -206,6 +206,7 @@ class MainWindow(QtGui.QMainWindow):
             QtCore.QObject.connect(self.timer,
                                QtCore.SIGNAL("timeout()"),
                                self.periodic_put)
+            self.periodic_put()
             self.timer.start(period)
         else:
             try:
