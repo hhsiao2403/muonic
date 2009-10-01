@@ -34,10 +34,10 @@ def main():
     thresholds = (50,150,50,50)
     config = ConfigParser()
     config.readfp(open('daq.cfg'))
-    thresh_ch0 = config.get('daq','thresh_ch0')
-    thresh_ch1 = config.get('daq','thresh_ch1')
-    thresh_ch2 = config.get('daq','thresh_ch2')
-    thresh_ch3 = config.get('daq','thresh_ch3')
+    thresh_ch0 = config.getint('daq','thresh_ch0')
+    thresh_ch1 = config.getint('daq','thresh_ch1')
+    thresh_ch2 = config.getint('daq','thresh_ch2')
+    thresh_ch3 = config.getint('daq','thresh_ch3')
 
     try:
         port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200,
