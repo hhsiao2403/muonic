@@ -5,6 +5,7 @@ import os
 from optparse import OptionParser
 from datetime import datetime
 import gzip
+import bz2
 
 class FileWriter(object):
     
@@ -13,12 +14,13 @@ class FileWriter(object):
             raise ValueError('File %s already exists'%path)
         if path.endswith('.gz'):
             self.file = gzip.open(path,'w')
+        elif path.endswith('.bz2'):
+            self.file = bz2.BZ2File(path,'w')
         else:
             self.file = open(path,'w')
     
     def writeln(self, line):
         self.file.write(line)
-
 
 def main():
     thresholds = (50,150,50,50)
