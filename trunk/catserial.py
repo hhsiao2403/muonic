@@ -4,6 +4,7 @@ import time
 import os
 from optparse import OptionParser
 from datetime import datetime
+from ConfigParser import ConfigParser
 import gzip
 import bz2
 
@@ -23,15 +24,25 @@ class FileWriter(object):
         self.file.write(line)
 
 def main():
-    thresholds = (50,150,50,50)
     now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     default_filename = 'daq_' + now + '.txt.gz'
     parser = OptionParser()
     parser.add_option('-o','--outfile',dest='outfile',
                        default=default_filename,help='Path of output file')
     (options, args) = parser.parse_args(sys.argv[1:])
+    
+    thresholds = (50,150,50,50)
+    config = ConfigParser()
+    config.readfp(open('daq.cfg'))
+    thresh_ch0 = config.get('daq','thresh_ch0')
+    thresh_ch1 = config.get('daq','thresh_ch1')
+    thresh_ch2 = config.get('daq','thresh_ch2')
+    thresh_ch3 = config.get('daq','thresh_ch3')
+
     try:
-        port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=1,xonxoff=True)
+        port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200,
+                             bytesize=8,parity='N',stopbits=1,
+                             timeout=1,xonxoff=True)
     except serial.SerialException, e:
         print e.message
         sys.exit(1)
@@ -49,7 +60,7 @@ def main():
     port.write('WT 01 00\r') # TMC delay= 2 clockticks (48 ns)
     port.write('WT 02 02\r')
     # Set thresholds
-    for i,thresh in enumerate(thresholds):
+    for i,thresh in enumerate(thresh_ch0, thresh_ch1, thresh_ch2, thresh_ch3):
         port.write('TL ' + str(i) + ' ' + str(thresh) + '\r')
     port.write('TL\r')
     port.write('DC\r')
