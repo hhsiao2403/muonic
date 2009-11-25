@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import gzip
 
 #IMPORTANT
 # The order of the szintillators is 0->2->1
@@ -29,7 +30,7 @@ def time_to_seconds(time, correction):
     evt_time = secs_since_day_start + int(tfields[1])/1000.0+int(correction)/1000.0
     return round(evt_time)
 
-for file in files:
+for filename in files:
 
     muon = {0:False,1:False,2:False,"Time":0.}
     freq = 25e6 # 25 MHz
@@ -61,7 +62,10 @@ for file in files:
     last_onepps = 0
     onepps_count = 0
 
-    f = open(file)
+    if filename.endswith('.gz'):
+        f = gzip.open(filename)
+    else:
+        f = open(filename)
     for line in f:
         print line
         fields = line.rstrip("\n").split(" ")

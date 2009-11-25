@@ -1,5 +1,6 @@
 import sys
 import gzip
+import bz2
 from operator import itemgetter
 
 files = sys.argv[1:]
@@ -65,7 +66,7 @@ def coroutine(func):
     return start
 
 @coroutine
-def muon_finder(muon=(0,1,2,3),decay=3):
+def muon_finder(muon=(0,1,2),decay=2,veto=3):
     def reset(d):
         print "Reset"
         for key in d.iterkeys():
@@ -84,6 +85,9 @@ def muon_finder(muon=(0,1,2,3),decay=3):
         ch = pulse[0]
         time = pulse[1]
         print "Dt:",time - lastpulse_time
+        if not veto is None and ch == veto:
+            reset(channels)
+            lastpulse_time = time
         if 0 < time - lastpulse_time < 100.e-9 or lastpulse_time == 0.:
             channels[ch] = time
             lastpulse_time = time
@@ -106,6 +110,7 @@ def muon_finder(muon=(0,1,2,3),decay=3):
                 channels[ch] = time
                 lastpulse_time = time
 
+
 verbose = True
 pulse0 = Pulse(0)
 pulse1 = Pulse(1)
@@ -113,12 +118,13 @@ pulse2 = Pulse(2)
 pulse3 = Pulse(3)
 
 pulse_counter = 0
-muon_decay = muon_finder(muon=(0,3,2,1),decay=1)
-#muon_decay = muon_finder(muon=(0,2,1),decay=1)
+muon_decay = muon_finder(muon=(0,3,2),decay=2,veto=1)
 last_onepps_count = 0
 
 for filename in sys.argv[1:]:
-    if filename.endswith('.gz'):
+    if filename.endswith('.bz2'):
+        f = bz2.BZ2File(filename)
+    elif filename.endswith('.gz'):
         f = gzip.open(filename)
     else:
         f = open(file)
@@ -145,13 +151,13 @@ for filename in sys.argv[1:]:
         if fields[14] != "0":
             err = int(fields[14],16)
             if (err & BIT0) != 0:
-                print '1 PPS interrupt pending'
+                print 'Error: 1 PPS interrupt pending'
             if (err & BIT1) != 0:
-                print 'Trigger interrupt pending'
+                print 'Error: Trigger interrupt pending'
             if (err & BIT2) != 0:
-                print 'GPS data corrupt'
+                print 'Error: GPS data corrupt'
             if (err & BIT3) != 0:
-                print '1PP rate not within range'
+                print 'Error: 1PP rate not within range'
             print line
             continue
         trigger_count = int(fields[0],16)
