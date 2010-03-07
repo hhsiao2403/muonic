@@ -263,6 +263,7 @@ class ThreadedClient:
                            QtCore.SIGNAL("timeout()"),
                            self.periodicCall)
         try:
+            # TODO: should we set a timeout here?
             self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=1,xonxoff=True)
         except serial.SerialException, e:
             print e.message
@@ -313,6 +314,12 @@ class ThreadedClient:
         max_sleeptime = 0.2 # seconds
         sleeptime = min_sleeptime #seconds
         while self.running:
+#            data = self.port.read(1)
+#            n = self.port.inWaiting()
+#            if n > 0:
+#                data += self.port.read(n)
+#            for line in data.split('\n'):
+#                self.outqueue.put(line)
             if self.port.inWaiting():
                 while self.port.inWaiting():
                     self.outqueue.put(self.port.readline().strip())
