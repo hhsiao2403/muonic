@@ -57,7 +57,7 @@ class ThreadedClient:
         # Start the timer -- this replaces the initial call to periodicCall
         self.timer.start(100)
 
-        daq = DaqConnection(self.inqueue, self.outqueue)
+        self.daq = DaqConnection(self.inqueue, self.outqueue)
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
         self.readthread = threading.Thread(target=daq.read)
@@ -71,10 +71,11 @@ class ThreadedClient:
         """
         self.gui.processIncoming()
         if not self.running:
+            self.daq.running = False
             root.quit()
 
     def endApplication(self):
-        self.running = 0
+        self.running = False
 
 def main():
     root = QtGui.QApplication(sys.argv)
