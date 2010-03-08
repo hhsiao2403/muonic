@@ -60,8 +60,11 @@ class ThreadedClient:
         self.daq = DaqConnection(self.inqueue, self.outqueue)
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-        self.readthread = threading.Thread(target=daq.read)
-        self.writethread = threading.Thread(target=daq.write)
+        self.readthread = threading.Thread(target=self.daq.read)
+        self.writethread = threading.Thread(target=self.daq.write)
+        # Set daemon flag so that the threads finish when the main app finishes
+        self.readthread.daemon = True
+        self.writethread.daemon = True
         self.readthread.start()
         self.writethread.start()
 
