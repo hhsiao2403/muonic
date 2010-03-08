@@ -42,6 +42,7 @@ class ThreadedClient:
         # Create the queue
         self.outqueue = Queue.Queue()
         self.inqueue = Queue.Queue()
+        self.running = 1
 
         # Set up the GUI part
         self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication)

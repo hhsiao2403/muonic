@@ -13,7 +13,7 @@ class DaqConnection(object):
             print e.message
             sys.exit(1)
         self.inqueue = inqueue
-        self.outputqueue = outqueue
+        self.outqueue = outqueue
         self.running = 1
 
     def read(self):
