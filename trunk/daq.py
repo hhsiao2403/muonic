@@ -29,7 +29,7 @@ import Queue
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from DaqConnection import DaqConnection
+from daq.DaqConnection import DaqConnection
 from gui.MainWindow import MainWindow
 
 class ThreadedClient:
