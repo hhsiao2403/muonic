@@ -7,3 +7,5 @@ for line in open(sys.argv[1]).readlines():
             print float(field)
         except ValueError:
             pass
+
+# vim: ai ts=4 sts=4 et sw=4

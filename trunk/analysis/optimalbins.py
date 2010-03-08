@@ -19,3 +19,5 @@ def optbinsize(data,minbins,maxbins):
     maximum = max(logp)
     optbins = logp.index(maximum)
     return optbins
+
+# vim: ai ts=4 sts=4 et sw=4

@@ -246,3 +246,5 @@ for filename in sys.argv[1:]:
         pulses.sort(key=itemgetter(1))
         for pulse in pulses:
             muon_decay.send(pulse)
+
+# vim: ai ts=4 sts=4 et sw=4

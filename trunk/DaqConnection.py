@@ -49,3 +49,5 @@ class DaqConnection(object):
                 except Queue.Empty:
                     pass
             time.sleep(0.1)
+
+# vim: ai ts=4 sts=4 et sw=4
