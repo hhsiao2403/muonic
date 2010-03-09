@@ -69,9 +69,14 @@ class MainWindow(QtGui.QMainWindow):
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip(tr('MainWindow','Exit application'))
         self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        thresholds = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Thresholds', self)
+        exit.setStatusTip(tr('MainWindow','Set trigger thresholds'))
+        self.connext(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
         menubar = self.menuBar()
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
+        settings = menubar.addMenu(tr('MainWindow', '&Settings'))
+        settings.addAction(thresholds)
 
         toolbar = self.addToolBar(tr('MainWindow','Exit'))
         toolbar.addAction(exit)
@@ -129,6 +134,16 @@ class MainWindow(QtGui.QMainWindow):
             except AttributeError:
                 pass
 
+    def threshold_menu(self):
+        threshold_window = ThresholdDialog()
+        rv = threshold_window.exec_()
+        if rv == 1:
+            # Here we should set the thresholds
+            thresh_ch0 = int(threshold_window.ch0_input.text())
+            thresh_ch1 = int(threshold_window.ch1_input.text())
+            thresh_ch2 = int(threshold_window.ch2_input.text())
+            thresh_ch3 = int(threshold_window.ch3_input.text())
+    
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
