@@ -3,6 +3,7 @@ from PyQt4 import QtCore
 
 from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
+from gui.ThresholdDialog import ThresholdDialog
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
