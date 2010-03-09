@@ -17,4 +17,4 @@ Under Ubuntu 9.04 (Jaunty Jackalope, might also work for older releases) you onl
 
 > sudo aptitude install python-qt4 python-serial
 
-which should install all required packages except Qwt and PyQwt. Their corresponding packages are broken in the Ubuntu pacakge repository but there is a PPA from where you can install them. You can find instructions [https://launchpad.net/~treparel/+archive/ppa here].
+which should install all required packages except Qwt and PyQwt. Their corresponding packages are broken in the Ubuntu pacakge repository but there is a PPA from where you can install them. You can find the package [https://launchpad.net/~treparel/+archive/ppa?field.series_filter=jaunty here for Ubuntu 9.04] and [https://launchpad.net/~eudoxos/+archive/ppa?field.series_filter=karmic here for Ubuntu 9.10].
