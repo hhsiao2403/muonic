@@ -72,7 +72,7 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
         thresholds = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Thresholds', self)
         exit.setStatusTip(tr('MainWindow','Set trigger thresholds'))
-        self.connext(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
+        self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
         menubar = self.menuBar()
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
