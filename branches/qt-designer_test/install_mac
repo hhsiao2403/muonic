@@ -1,0 +1,19 @@
+Install QT 4.5
+
+SIP:
+
+/usr/bin/python configure.py --bindir=/Users/icecube/stuff/bin --destdir=/Users/icecube/stuff/lib/python2.3/site-packages --incdir=/Users/icecube/stuff/include/python2.3 --sipdir=/Users/icecube/stuff/share/sip
+make
+make install
+export PATH=/Users/icecube/stuff/bin:/Users/icecube/stuff/bin:/opt/local/bin:/Users/icecube/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PYTHONPATH=/Users/icecube/stuff/lib/python2.3/site-packages:/Users/icecube/stuff/lib/python2.3/site-packages:
+export LD_LIBRARY_PATH=/Users/icecube/stuff/lib:/Users/icecube/stuff/lib:/Users/icecube/IceCube/I3PORTS/build/lib:
+
+PyQt4.5:
+/usr/bin/python configure.py --bindir=/Users/icecube/stuff/bin --destdir=/Users/icecube/stuff/lib/python2.3/site-packages --sipdir=/Users/icecube/stuff/share/sip --no-designer-plugin
+make
+make install
+
+PySerial:
+
+/usr/bin/python setup.py install --prefix=$HOME/stuff/
