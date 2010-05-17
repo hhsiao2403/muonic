@@ -25,7 +25,7 @@ bin_centers = bin_edges[:-1] + 0.5*(bin_edges[1]-bin_edges[0])
 
 hist,edges = numpy.histogram(times,bin_edges)
 
-hist=hist[:-1]
+#hist=hist[:-1]
 p0 = numpy.array([200,2.0,5])
 
 output = optimize.leastsq(error,p0,args=(bin_centers,hist),full_output=1)

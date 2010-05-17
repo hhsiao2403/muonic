@@ -3,9 +3,10 @@
 import sys
 import gzip
 
-#IMPORTANT
-# The order of the szintillators is 0->2->1
-######
+#####################################################
+#This is coincident level 0!!
+#Order of scintillators is irrelevent!
+#########################################################
 
 files = sys.argv[1:]
 
@@ -42,6 +43,8 @@ for filename in files:
     time_ch1 = 0.
     wait_fe2 = False
     time_ch2 = 0.
+    wait_fe3 = False
+    time_ch3 = 0.
 
     #buffer_ch0 = []
     #buffer_ch1 = []
@@ -51,10 +54,15 @@ for filename in files:
 
     nmuons = 0
     last_pulse = 0.
-    decay_start_time_ch2 = 0.
-    decay_waiting_ch2 = False
+    decay_start_time_ch0 = 0.
+    decay_waiting_ch0 = False
     decay_start_time_ch1 = 0.
     decay_waiting_ch1 = False
+    decay_start_time_ch2 = 0.
+    decay_waiting_ch2 = False
+    decay_start_time_ch3 = 0.
+    decay_waiting_ch3 = False
+
     last_seconds = 0.
     last_time = 0.
     last_triggercount = 0
@@ -76,9 +84,11 @@ for filename in files:
         if len(fields[0]) != 8:
             continue
         # Check if GPS data is valid
-        if fields[12] != "A":
-            print "GPS data not valid"
-            continue
+        #..no GPS was applied
+
+        #if fields[12] != "A":
+        #    print "GPS data not valid"
+        #    continue
         #Another check, sometimes lines are mixed,
         #try if we can convert the last field to an int
         try:
@@ -99,6 +109,8 @@ for filename in files:
         fe_1 = (fields[4] != "00")
         re_2 = (fields[5] != "00")
         fe_2 = (fields[6] != "00")
+        re_3 = (fields[7] != "00")
+        fe_3 = (fields[8] != "00")
         if last_onepps != onepps_count:
             if onepps_count > last_onepps:
                 freq  = float(onepps_count - last_onepps)
@@ -127,14 +139,89 @@ for filename in files:
         if last_seconds > seconds:
             print "Wrong event order",seconds,line
             continue
-
+		
         last_seconds = seconds
-        print "seconds",seconds
+        print seconds
 
         pulse_ch0 = False
         pulse_ch1 = False
         pulse_ch2 = False
+        pulse_ch3 = False
+
+
+        if decay_waiting_ch0:
+            print "Hooray!"
+            if re_0:
+                wait_fe0 = True
+                time_ch0 = seconds
+            if time_ch0 - seconds > 50e-9:
+                wait_f0 = False
+                decay_waiting_ch0 = False
+            if fe_0 and wait_fe0:
+                print "Pulse ch0",seconds,line
+                pulse_ch0 = True
+                wait_fe0 = False
+                if decay_waiting_ch0 and seconds - decay_start_time_ch2 > 20e-6:
+                    print "No decay",seconds,decay_start_time_ch0, seconds - decay_start_time_ch0
+                    decay_waiting_ch0 = False
+                else:
+                    decay_waiting_ch0 = False            
+                    print "Decay ch0 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch0),)
+            else:
+                decay_waiting_ch0 = False
+
+        if  decay_waiting_ch1:
+            if re_1:
+                wait_fe1 = True
+                time_ch1 = seconds
+            if time_ch1 - seconds > 50e-9:
+                wait_f1 = False
+            if fe_1 and wait_fe1:
+                print "Pulse ch0",seconds,line
+                pulse_ch1 = True
+                wait_fe1 = False
+                if decay_waiting_ch1 and seconds - decay_start_time_ch1 > 20e-6:
+                    print "No decay",seconds,decay_start_time_ch1,seconds - decay_start_time_ch1
+                    decay_waiting_ch1 = False
+                else:
+                    decay_waiting_ch1 = False            
+                    print "Decay ch0 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch1),)
         
+        if  decay_waiting_ch2:
+            if re_2:
+                wait_fe2 = True
+                time_ch2 = seconds
+            if time_ch2 - seconds > 50e-9:
+                wait_f2 = False
+                decay_waiting_ch2 = False
+            if fe_2 and wait_fe2:
+                print "Pulse ch2",seconds,line
+                pulse_ch2 = True
+                wait_fe2 = False
+                if decay_waiting_ch2 and seconds - decay_start_time_ch2 > 20e-6:
+                    print "No decay",seconds,decay_start_time_ch2, seconds - decay_start_time_ch2
+                    decay_waiting_ch2 = False
+                else:
+                    decay_waiting_ch2 = False            
+                    print "Decay ch0 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch2),)
+        
+        if  decay_waiting_ch3:
+            if re_3:
+                wait_fe3 = True
+                time_ch3 = seconds
+            if time_ch3 - seconds > 50e-9:
+                wait_f3 = False
+            if fe_3 and wait_fe3:
+                print "Pulse ch3",seconds,line
+                pulse_ch3 = True
+                wait_fe3 = False
+                if decay_waiting_ch3 and seconds - decay_start_time_ch3 > 20e-6:
+                    print "No decay",seconds,decay_start_time_ch3,seconds - decay_start_time_ch3
+                    decay_waiting_ch3 = False
+                else:
+                    decay_waiting_ch3 = False            
+                    print "Decay ch3 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch3),)
+               
         if re_0:
             wait_fe0 = True
             time_ch0 = seconds
@@ -142,6 +229,8 @@ for filename in files:
             wait_f0 = False
         if fe_0 and wait_fe0:
             print "Pulse ch0",seconds,line
+            decay_start_time_ch0 = seconds
+            decay_waiting_ch0 = True
             pulse_ch0 = True
             wait_fe0 = False
         if re_1:
@@ -151,6 +240,8 @@ for filename in files:
             wait_f1 = False
         if fe_1 and wait_fe1:
             print "Pulse ch1",seconds,line
+            decay_start_time_ch1 = seconds
+            decay_waiting_ch1 = True
             pulse_ch1 = True
             wait_fe1 = False
         if re_2:
@@ -160,87 +251,20 @@ for filename in files:
             wait_f2 = False
         if fe_2 and wait_fe2:
             print "Pulse ch2",seconds,line
+            decay_start_time_ch2 = seconds
+            decay_waiting_ch2 = True
             pulse_ch2 = True
             wait_fe2 = False
-            
-        # ch1 is the downmost channel!!!!!!!!!
-        if decay_waiting_ch1 and seconds - decay_start_time_ch1 > 20e-6:
-            print "No decay",seconds,decay_start_time_ch1
-            decay_waiting_ch1 = False
-        if decay_waiting_ch1:
-            if pulse_ch0 or pulse_ch2:
-                decay_waiting_ch1 = False
-                muon[0] = False
-                muon[1] = False
-                muon[2] = False
-                print "Deleting decay"
-            elif pulse_ch1:
-                print "Decay ch1 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch1),)
-                muon[0] = False
-                muon[1] = False
-                muon[2] = False
-                decay_waiting_ch1 = False
-                continue
+        if re_3:
+            wait_fe3 = True
+            time_ch3 = seconds
+        if time_ch3 - seconds > 50e-9:
+            wait_f3 = False
+        if fe_3 and wait_fe3:
+            print "Pulse ch2",seconds,line
+            decay_start_time_ch3 = seconds
+            decay_waiting_ch3 = True
+            pulse_ch3 = True
+            wait_fe3 = False
 
-        if decay_waiting_ch2 and seconds - decay_start_time_ch2 > 20e-6:
-            print "No decay ch2",seconds,decay_start_time_ch2
-            decay_waiting_ch2 = False
-        if decay_waiting_ch2:
-            if pulse_ch0:
-                decay_waiting_ch2 = False
-                muon[0] = False
-                muon[1] = False
-                muon[2] = False
-                print "Deleting decay"
-            elif pulse_ch2 and not pulse_ch1:
-                print "Decay ch2 upper %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch2),)
-                muon[0] = False
-                muon[1] = False
-                muon[2] = False
-                decay_waiting_ch2 = False
-                continue
-            elif pulse_ch1:
-                if seconds - muon['Time'] > 100e-9:
-                    print "Decay ch2 lower %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch2),)
-                    muon[0] = False
-                    muon[1] = False
-                    muon[2] = False
-                    decay_waiting_ch2 = False
-                    continue
 
-        if pulse_ch0 or pulse_ch1 or pulse_ch2:
-            if seconds - muon['Time'] < 200e-9:
-                muon[0] = muon[0] or pulse_ch0
-                muon[1] = muon[1] or pulse_ch1
-                muon[2] = muon[2] or pulse_ch2
-            else:
-                muon['Time'] = seconds
-                muon[0] = pulse_ch0
-                muon[1] = pulse_ch1
-                muon[2] = pulse_ch2
-
-            if muon[0] and muon[1] and muon[2]:
-                print "MUON through",seconds
-                nmuons += 1
-                decay_waiting_ch1 = True
-                print "DeltaT:",seconds - decay_start_time_ch1
-                decay_start_time_ch1 = seconds
-                print "Decay waiting ch1",seconds
-                muon[0] = False
-                muon[1] = False
-                muon[2] = False
-                if decay_start_time_ch2:
-                    print "Deleting decay ch2 because of throughgoing muon"
-                    decay_start_time_ch2 = False
-            
-            if muon[0] and muon[2] and not muon[1]:
-                print "MUON stuck"
-                decay_waiting_ch2 = True
-                decay_start_time_ch2 = seconds
-                print "Decay waiting ch2",seconds
-
-    print "NMUONS:",file,nmuons
-        
-print nmuons
-
-# vim: ai ts=4 sts=4 et sw=4
