@@ -32,6 +32,8 @@ from PyQt4 import QtGui
 from daq.DaqConnection import DaqConnection
 from gui.MainWindow import MainWindow
 
+scalars = 'n.a.'
+
 class ThreadedClient:
     """
     Launch the main part of the GUI and the worker threads. periodicCall and

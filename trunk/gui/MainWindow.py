@@ -5,13 +5,12 @@ from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
 from gui.ThresholdDialog import ThresholdDialog
 from gui.HelpWindow import HelpWindow
-#from gui.live.RatesWindow import RatesWindow
 from gui.live.ScalarsWindow import ScalarsWindow
-
-
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
+
+
 
 class MainWindow(QtGui.QMainWindow):
     
@@ -90,8 +89,8 @@ class MainWindow(QtGui.QMainWindow):
         settings.addAction(thresholds)
         help = menubar.addMenu(tr('MainWindow','&Help'))
         help.addAction(helpdaqcommands)
-        help = menubar.addMenu(tr('MainWindow','&Live Analysis'))
-        help.addAction(scalars)
+        liveanalysis = menubar.addMenu(tr('MainWindow','&Live Analysis'))
+        liveanalysis.addAction(scalars)
 
         toolbar = self.addToolBar(tr('MainWindow','Exit'))
         toolbar.addAction(exit)
@@ -158,10 +157,10 @@ class MainWindow(QtGui.QMainWindow):
             thresh_ch1 = int(threshold_window.ch1_input.text())
             thresh_ch2 = int(threshold_window.ch2_input.text())
             thresh_ch3 = int(threshold_window.ch3_input.text())
-            self.outqueue.put('TL 0' + str(thresh_ch0))
-            self.outqueue.put('TL 1' + str(thresh_ch1))
-            self.outqueue.put('TL 2' + str(thresh_ch2))
-            self.outqueue.put('TL 3' + str(thresh_ch3))
+            self.outqueue.put('TL 0 ' + str(thresh_ch0))
+            self.outqueue.put('TL 1 ' + str(thresh_ch1))
+            self.outqueue.put('TL 2 ' + str(thresh_ch2))
+            self.outqueue.put('TL 3 ' + str(thresh_ch3))
    
     def help_menu(self):
         help_window = HelpWindow()
@@ -170,25 +169,35 @@ class MainWindow(QtGui.QMainWindow):
 	#tr.exec_()	
 
     def scalars_menu(self):
-        scalars_window = ScalarsWindow(self.inqueue,self.outqueue)
+        
+        def readout_daqscalars(inqueue,outqueue):
+            outqueue.put("CD")
+            outqueue.put("DS")
+            _scalars = str(inqueue.get(0))
+            outqueue.put("CE")
+            return _scalars
+        
+        #self.outqueue.put("CD")
+        self.outqueue.put("DS")
+        scalars_window = ScalarsWindow(scalars)
         scalars_window.exec_()
-
-    #def rates_menu(self):
-    #    rates_window = RatesWindow()
-	#rates_window.exec_()
-      
-
-
-
+    
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
         """
+        
+        global scalars
+
         while self.inqueue.qsize():
             try:
                 msg = self.inqueue.get(0)
                 # Check contents of message and do what it says
                 # As a test, we simply print it
+                # check for scalar information
+                if msg[0]=='D' and msg[1] == 'S':
+                    if len(msg) > 5:
+                        scalars = msg
                 self.text_box.appendPlainText(str(msg))
                 if self.write_file:
                     self.outputfile.write(str(msg)+'\n')
