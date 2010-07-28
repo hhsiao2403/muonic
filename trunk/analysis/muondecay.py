@@ -76,9 +76,9 @@ for filename in files:
         if len(fields[0]) != 8:
             continue
         # Check if GPS data is valid
-        if fields[12] != "A":
-            print "GPS data not valid"
-            continue
+        #if fields[12] != "A":
+        #    print "GPS data not valid"
+        #    continue
         #Another check, sometimes lines are mixed,
         #try if we can convert the last field to an int
         try:

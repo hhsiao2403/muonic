@@ -4,6 +4,11 @@ from PyQt4 import QtCore
 from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
 from gui.ThresholdDialog import ThresholdDialog
+from gui.HelpWindow import HelpWindow
+#from gui.live.RatesWindow import RatesWindow
+from gui.live.ScalarsWindow import ScalarsWindow
+
+
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
@@ -66,18 +71,27 @@ class MainWindow(QtGui.QMainWindow):
         central_widget.setLayout(v_box)
         self.setCentralWidget(central_widget)
         
-        exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
+        exit = QtGui.QAction(QtGui.QIcon('/usr/share/icons/gnome/24x24/actions/exit.png'), 'Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip(tr('MainWindow','Exit application'))
         self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
-        thresholds = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Thresholds', self)
-        exit.setStatusTip(tr('MainWindow','Set trigger thresholds'))
+        thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
+        thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
         self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
+        helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
+        self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
+        #liveanalysis = 
+        scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
+        self.connect(scalars, QtCore.SIGNAL('triggered()'), self.scalars_menu)
         menubar = self.menuBar()
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
         settings = menubar.addMenu(tr('MainWindow', '&Settings'))
         settings.addAction(thresholds)
+        help = menubar.addMenu(tr('MainWindow','&Help'))
+        help.addAction(helpdaqcommands)
+        help = menubar.addMenu(tr('MainWindow','&Live Analysis'))
+        help.addAction(scalars)
 
         toolbar = self.addToolBar(tr('MainWindow','Exit'))
         toolbar.addAction(exit)
@@ -144,7 +158,28 @@ class MainWindow(QtGui.QMainWindow):
             thresh_ch1 = int(threshold_window.ch1_input.text())
             thresh_ch2 = int(threshold_window.ch2_input.text())
             thresh_ch3 = int(threshold_window.ch3_input.text())
-    
+            self.outqueue.put('TL 0' + str(thresh_ch0))
+            self.outqueue.put('TL 1' + str(thresh_ch1))
+            self.outqueue.put('TL 2' + str(thresh_ch2))
+            self.outqueue.put('TL 3' + str(thresh_ch3))
+   
+    def help_menu(self):
+        help_window = HelpWindow()
+	#rv = threshold_window.exec_()
+	help_window.exec_()
+	#tr.exec_()	
+
+    def scalars_menu(self):
+        scalars_window = ScalarsWindow(self.inqueue,self.outqueue)
+        scalars_window.exec_()
+
+    #def rates_menu(self):
+    #    rates_window = RatesWindow()
+	#rates_window.exec_()
+      
+
+
+
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).

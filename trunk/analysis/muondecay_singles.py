@@ -150,7 +150,6 @@ for filename in files:
 
 
         if decay_waiting_ch0:
-            print "Hooray!"
             if re_0:
                 wait_fe0 = True
                 time_ch0 = seconds
@@ -205,23 +204,23 @@ for filename in files:
                     decay_waiting_ch2 = False            
                     print "Decay ch0 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch2),)
         
-        if  decay_waiting_ch3:
-            if re_3:
-                wait_fe3 = True
-                time_ch3 = seconds
-            if time_ch3 - seconds > 50e-9:
-                wait_f3 = False
-            if fe_3 and wait_fe3:
-                print "Pulse ch3",seconds,line
-                pulse_ch3 = True
-                wait_fe3 = False
-                if decay_waiting_ch3 and seconds - decay_start_time_ch3 > 20e-6:
-                    print "No decay",seconds,decay_start_time_ch3,seconds - decay_start_time_ch3
-                    decay_waiting_ch3 = False
-                else:
-                    decay_waiting_ch3 = False            
-                    print "Decay ch3 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch3),)
-               
+#        if  decay_waiting_ch3:
+#            if re_3:
+#                wait_fe3 = True
+#                time_ch3 = seconds
+#            if time_ch3 - seconds > 50e-9:
+#                wait_f3 = False
+#            if fe_3 and wait_fe3:
+#                print "Pulse ch3",seconds,line
+#                pulse_ch3 = True
+#                wait_fe3 = False
+#                if decay_waiting_ch3 and seconds - decay_start_time_ch3 > 20e-6:
+#                    print "No decay",seconds,decay_start_time_ch3,seconds - decay_start_time_ch3
+#                    decay_waiting_ch3 = False
+#                else:
+#                    decay_waiting_ch3 = False            
+#                    print "Decay ch3 %10.8f microseconds"%(1e6*(seconds - decay_start_time_ch3),)
+#               
         if re_0:
             wait_fe0 = True
             time_ch0 = seconds
