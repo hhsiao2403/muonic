@@ -1,11 +1,15 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
+import Queue
+
 from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
 from gui.ThresholdDialog import ThresholdDialog
 from gui.HelpWindow import HelpWindow
 from gui.live.ScalarsWindow import ScalarsWindow
+from gui.live.scalarsmonitor import ScalarsWindow as ScalarsWindow2
+
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
@@ -21,6 +25,11 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().showMessage(tr('MainWindow','Ready'))
         
         self.write_file = False
+         
+        # scalars  
+        self.enable_scalars_readout = False      
+        self.scalars = 0.       
+ 
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.endcommand = endcommand
@@ -164,30 +173,26 @@ class MainWindow(QtGui.QMainWindow):
    
     def help_menu(self):
         help_window = HelpWindow()
-	#rv = threshold_window.exec_()
-	help_window.exec_()
-	#tr.exec_()	
+        #rv = threshold_window.exec_()
+        help_window.exec_()
+        #tr.exec_()	
 
     def scalars_menu(self):
         
-        def readout_daqscalars(inqueue,outqueue):
-            outqueue.put("CD")
-            outqueue.put("DS")
-            _scalars = str(inqueue.get(0))
-            outqueue.put("CE")
-            return _scalars
-        
-        #self.outqueue.put("CD")
-        self.outqueue.put("DS")
-        scalars_window = ScalarsWindow(scalars)
-        scalars_window.exec_()
-    
+        scalars_window = ScalarsWindow(self.scalars)
+        rv = scalars_window.exec_()
+        #if rv == 1:
+            #while True:
+                #scalars_window.scalars = self.scalars
+                #pass
+
+
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
         """
         
-        global scalars
+      
 
         while self.inqueue.qsize():
             try:
@@ -197,7 +202,7 @@ class MainWindow(QtGui.QMainWindow):
                 # check for scalar information
                 if msg[0]=='D' and msg[1] == 'S':
                     if len(msg) > 5:
-                        scalars = msg
+                        self.scalars = msg
                 self.text_box.appendPlainText(str(msg))
                 if self.write_file:
                     self.outputfile.write(str(msg)+'\n')

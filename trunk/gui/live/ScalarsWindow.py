@@ -4,11 +4,6 @@ class ScalarsWindow(QtGui.QDialog):
 
     def __init__(self,text, *args):
 
-        #def readout_daqscalars():
-        #    outqueue.put("DS")
-        #    return str(inqueue.get(0))
-        #    return 'TEST'
-
         _NAME = 'Scalars'
         QtGui.QDialog.__init__(self,*args)
         self.setModal(True)

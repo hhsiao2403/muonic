@@ -56,12 +56,18 @@ Set bits for coincidence
 threefold coincidence with veto ch3, all channels enabled
 11101111 -> 1110 1111 two binary numbers -> e f two corresponding hex numbers
 => WC 00 EF should do the job
+..................................
 no veto, coincidence level twofold, all channels enabled
 00011111 -> 0001 1111 two binary numbers -> 1 f two corresponding hex numbers
 => WC 00 1F should do the job
+.................................
+no veto, single mode, all channels enabled
+00001111 -> 0000 1111 two binary numbers -. 0 f two corresponding hex numbers
+=> WC 00 0F should do the job
+
 ...for more descriptions see 
 http://neutrino.phys.washington.edu/~berns/WALTA/Qnet2/FNAL_files/QnetCpldII.doc
-===================================ADVANCED==============================================
+===================================ADVANCED=======================================
 BC BB.B GG.G - Barometer Calibrate, Store Baseline and Gain, HELP 'HB'.
 NM N - NMEA GPS Data Echo (N==1 On),(N!=1 Off), (GPS_Baud=9600).
 NA N - NMEA GPS Data Append (N==1 On),(N!=1 Off), add GPS to output.
