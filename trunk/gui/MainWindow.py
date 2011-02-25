@@ -28,14 +28,14 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().showMessage(tr('MainWindow','Ready'))
          
         # scalars  
-        self.previous_time = 0  
+        self.previous_time = 2 
         self.scalars_result = (0,0,0,0,0)
         self.scalars_ch0 = 0 
         self.scalars_ch1 = 0
         self.scalars_ch2 = 0
         self.scalars_ch3 = 0
         self.scalars_trigger = 0
-        self.scalars_time = 0
+        self.scalars_time = 1
  
         self.inqueue = inqueue
         self.outqueue = outqueue
@@ -150,7 +150,10 @@ class MainWindow(QtGui.QMainWindow):
                          else:
                              time_window = self.scalars_time
                          
+                         if not time_window:
+                             time_window=10
                          #send the counted scalars to the subwindow
+                         print "time_window = ", time_window
                          self.subwindow.scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
             except Queue.Empty:
                 pass

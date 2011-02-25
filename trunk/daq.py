@@ -29,7 +29,7 @@ import Queue
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-#from daq.DaqConnection import DaqConnection
+from daq.DaqConnection import DaqConnection
 from daq.SimDaqConnection import SimDaqConnection
 from gui.MainWindow import MainWindow
 
@@ -60,7 +60,8 @@ class ThreadedClient:
         # Start the timer -- this replaces the initial call to periodicCall
         self.timer.start(100)
 
-        self.daq = SimDaqConnection(self.inqueue, self.outqueue)
+        #self.daq = SimDaqConnection(self.inqueue, self.outqueue)
+        self.daq = DaqConnection(self.inqueue, self.outqueue)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
