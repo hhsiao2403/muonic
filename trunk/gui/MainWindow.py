@@ -13,6 +13,7 @@ from gui.live.scalarsmonitor import ScalarsMonitor
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
+import os
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
@@ -153,7 +154,6 @@ class MainWindow(QtGui.QMainWindow):
                          if not time_window:
                              time_window=10
                          #send the counted scalars to the subwindow
-                         print "time_window = ", time_window
                          self.subwindow.scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
             except Queue.Empty:
                 pass
@@ -262,7 +262,7 @@ class SubWindow(QtGui.QWidget):
     def on_hello_clicked(self):
         text = str(self.hello_edit.displayText())
         if len(text) > 0:
-            self.outqueue.put(str(self.hello_edit.displayText()))
+            self.mainwindow.outqueue.put(str(self.hello_edit.displayText()))
             self.hello_edit.add_hist_item(text)
         self.hello_edit.clear()
 
@@ -290,7 +290,7 @@ class SubWindow(QtGui.QWidget):
             commands = command.split('+')
             def periodic_put():
                 for c in commands:
-                    self.outqueue.put(c)
+                    self.mainwindow.outqueue.put(c)
             self.periodic_put = periodic_put
             self.timer = QtCore.QTimer()
             QtCore.QObject.connect(self.timer,
