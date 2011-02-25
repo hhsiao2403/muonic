@@ -49,7 +49,7 @@ class SimDaq():
     def write(self,command):
         if "DS" in command:
             print "SIMDAQ: got DS command" 
-            self.__info__ = "DS S0=11111000 S1=12121000 S2=12221000 S3=12321000 S4=1321000 S5=11111000"
+            self.__info__ = "DS S0=00000064 S1=000000c8 S2=0000012c S3=00000190 S4=000003e8 S5=00000020"
             self.__return_info__ = True
         
 

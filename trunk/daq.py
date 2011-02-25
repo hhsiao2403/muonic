@@ -32,7 +32,6 @@ from PyQt4 import QtGui
 #from daq.DaqConnection import DaqConnection
 from daq.SimDaqConnection import SimDaqConnection
 from gui.MainWindow import MainWindow
-from gui.live.scalarsmonitor import ScalarsWindow
 
 
 class ThreadedClient:
@@ -46,16 +45,10 @@ class ThreadedClient:
         self.outqueue = Queue.Queue()
         self.inqueue = Queue.Queue()
         self.running = 1
-
-        # another queue for the scalars
-        self.outqueue_s = Queue.Queue(maxsize=1)
-        self.inqueue_s = Queue.Queue()
  
         # Set up the GUI part
         self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication)
         self.gui.show()
-        self.scalarswindow = ScalarsWindow(self.outqueue_s, self.inqueue_s)
-        self.scalarswindow.show()
 
 
         # A timer to periodically call periodicCall :-)
@@ -68,25 +61,18 @@ class ThreadedClient:
         self.timer.start(100)
 
         self.daq = SimDaqConnection(self.inqueue, self.outqueue)
-        self.daq_s = SimDaqConnection(self.inqueue_s,self.outqueue_s)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
         self.readthread = threading.Thread(target=self.daq.read)
         self.writethread = threading.Thread(target=self.daq.write)
         
-        self.readthread_s = threading.Thread(target=self.daq_s.read)
-        self.writethread_s = threading.Thread(target=self.daq_s.write)
         # Set daemon flag so that the threads finish when the main app finishes
         self.readthread.daemon = True
         self.writethread.daemon = True
         self.readthread.start()
         self.writethread.start()
         
-        self.readthread_s.daemon = True
-        self.writethread_s.daemon = True
-        self.readthread_s.start()
-        self.writethread_s.start()
 
     def periodicCall(self):
         """
