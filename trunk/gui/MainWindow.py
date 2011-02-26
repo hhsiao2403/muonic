@@ -252,7 +252,7 @@ class SubWindow(QtGui.QWidget):
         # pack these widget into the vertical box
         p2_vertical.addWidget(self.scalars_monitor)
         p2_vertical.addWidget(ntb)
-              
+             
 
     def center(self):
         screen = QtGui.QDesktopWidget().screenGeometry()
