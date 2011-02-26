@@ -24,7 +24,8 @@ class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, win_parent = None):
         QtGui.QMainWindow.__init__(self, win_parent)
-        self.resize(640, 480)
+        #self.resize(640, 480)
+        self.resize(800, 600)
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))
          
@@ -236,8 +237,6 @@ class SubWindow(QtGui.QWidget):
         h_box.addWidget(self.periodic_button)
         second_widget.setLayout(h_box)
         p1_vertical.addWidget(second_widget)
-
-        
         
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(tab_widget)
@@ -253,6 +252,7 @@ class SubWindow(QtGui.QWidget):
         # pack these widget into the vertical box
         p2_vertical.addWidget(self.scalars_monitor)
         p2_vertical.addWidget(ntb)
+              
 
     def center(self):
         screen = QtGui.QDesktopWidget().screenGeometry()
@@ -327,6 +327,13 @@ class SubWindow(QtGui.QWidget):
         self.scalars_monitor.l_chan2.set_data( range(len(self.scalars_monitor.chan2)), self.scalars_monitor.chan2)
         self.scalars_monitor.l_chan3.set_data(range(len(self.scalars_monitor.chan3)), self.scalars_monitor.chan3)
         self.scalars_monitor.l_trigger.set_data(range(len(self.scalars_monitor.trigger)), self.scalars_monitor.trigger)
+        
+
+        #self.scalars_monitor.ax.set_xlim(0, 30)
+        ma = max( max(self.scalars_monitor.chan0), max(self.scalars_monitor.chan1), max(self.scalars_monitor.chan2), 
+                  max(self.scalars_monitor.chan3), max(self.scalars_monitor.trigger)  )
+        self.scalars_monitor.ax.set_ylim(-1, ma*1.01)
+        self.scalars_monitor.ax.set_xlim(-1, len(self.scalars_monitor.chan0))
         # force a redraw of the Figure
         self.scalars_monitor.fig.canvas.draw()
         # if we've done all the iterations

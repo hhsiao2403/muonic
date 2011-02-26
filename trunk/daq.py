@@ -21,7 +21,6 @@
 # Adapted by Boudewijn Rempt, Netherlands. 2002-04-15
 # It is licenced under the Python licence, http://www.python.org/psf/license/
 
-
 import sys
 import threading
 import Queue
