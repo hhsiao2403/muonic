@@ -10,10 +10,12 @@ from gui.HelpWindow import HelpWindow
 from gui.live.ScalarsWindow import ScalarsWindow
 #from gui.live.scalarsmonitor import ScalarsWindow as ScalarsWindow2
 from gui.live.scalarsmonitor import ScalarsMonitor
+from gui.live.lifetimemonitor import LifetimeMonitor
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
 import os
+import numpy as n
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
@@ -38,6 +40,9 @@ class MainWindow(QtGui.QMainWindow):
         self.scalars_ch3 = 0
         self.scalars_trigger = 0
         self.scalars_time = 1
+        
+        self.data_file = open('data.txt', 'w')
+        self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger \n')
  
         self.inqueue = inqueue
         self.outqueue = outqueue
@@ -54,7 +59,14 @@ class MainWindow(QtGui.QMainWindow):
         exit = QtGui.QAction(QtGui.QIcon('/usr/share/icons/gnome/24x24/actions/exit.png'), 'Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip(tr('MainWindow','Exit application'))
-        self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        #self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        self.connect(exit, QtCore.SIGNAL('triggered()'), self.exit_program)
+        self.connect(self, QtCore.SIGNAL('closeEmitApp()'), QtCore.SLOT('close()') )
+        ##self.connect(self.okButton, QtCore.SIGNAL("clicked()"),
+        ##             self, QtCore.SLOT("accept()"))
+        ##self.connect(self.cancelButton, QtCore.SIGNAL("clicked()"),
+        ##             self, QtCore.SLOT("reject()"))
+
         thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
         thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
         self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
@@ -74,6 +86,27 @@ class MainWindow(QtGui.QMainWindow):
 
         toolbar = self.addToolBar(tr('MainWindow','Exit'))
         toolbar.addAction(exit)
+
+
+    def verification(self, question_string):
+        reply = QtGui.QMessageBox.question(self, 'Message',
+                question_string, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.Yes:
+            return True
+        else:
+            return False
+
+
+    def exit_program(self):
+        # exit the main program after verification
+        #q = Verification()
+        #q.show()
+        if self.verification('Do you really want to exit?'):
+            print 'Exit!'
+            self.emit(QtCore.SIGNAL('closeEmitApp()'))
+            
+        #q.exec_()
+
 
     #the individual menus
     def threshold_menu(self):
@@ -156,6 +189,8 @@ class MainWindow(QtGui.QMainWindow):
                              time_window=10
                          #send the counted scalars to the subwindow
                          self.subwindow.scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
+                         # time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger 
+                         self.data_file.write('%d %d %d %d %d %d %d \n' % (self.scalars_time, self.scalars_ch0, self.scalars_ch1, self.scalars_ch2, self.scalars_ch3, time_window, self.scalars_trigger )  )
             except Queue.Empty:
                 pass
    
@@ -166,6 +201,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         if self.subwindow.write_file:
             self.subwindow.outputfile.close()
+        self.data_file.close()
         self.endcommand()
 
 
@@ -220,12 +256,15 @@ class SubWindow(QtGui.QWidget):
         tab_widget = QtGui.QTabWidget()
         tab1 = QtGui.QWidget()
         tab2 = QtGui.QWidget()
-        
+        tab3 = QtGui.QWidget()
+
         p1_vertical = QtGui.QVBoxLayout(tab1)
         p2_vertical = QtGui.QVBoxLayout(tab2)
-        
+        p3_vertical = QtGui.QVBoxLayout(tab3)
+
         tab_widget.addTab(tab1, "DAQ output")
         tab_widget.addTab(tab2, "Scalars")
+        tab_widget.addTab(tab3, "Lifetime")
         
         p1_vertical.addWidget(self.text_box)
         second_widget = QtGui.QWidget()
@@ -244,6 +283,7 @@ class SubWindow(QtGui.QWidget):
         self.setLayout(vbox)
         
         self.scalars_monitor = ScalarsMonitor(self)
+        self.lifetime_monitor = LifetimeMonitor(self)
         self.timerEvent(None)
         self.timer = self.startTimer(5000)
 
@@ -252,6 +292,12 @@ class SubWindow(QtGui.QWidget):
         # pack these widget into the vertical box
         p2_vertical.addWidget(self.scalars_monitor)
         p2_vertical.addWidget(ntb)
+
+        ntb = NavigationToolbar(self.lifetime_monitor, self)
+        # pack these widget into the vertical box
+        p3_vertical.addWidget(self.lifetime_monitor)
+        p3_vertical.addWidget(ntb)
+
              
 
     def center(self):
@@ -328,14 +374,26 @@ class SubWindow(QtGui.QWidget):
         self.scalars_monitor.l_chan3.set_data(range(len(self.scalars_monitor.chan3)), self.scalars_monitor.chan3)
         self.scalars_monitor.l_trigger.set_data(range(len(self.scalars_monitor.trigger)), self.scalars_monitor.trigger)
         
+        mu, sigma = 100, 15
+        x = mu + sigma*n.random.randn(10000)
+        i = len(self.scalars_monitor.chan0)
+        self.lifetime_monitor.lifetime.append(x[i])
+        print "x[i] = ", x[i]
+        print self.lifetime_monitor.lifetime
+        #self.lifetime_monitor.update()
+        self.lifetime_monitor.lifetime_plot = self.lifetime_monitor.ax.hist(self.lifetime_monitor.lifetime, 20, facecolor='blue')
+        self.lifetime_monitor.fig.canvas.draw()
+        
 
         #self.scalars_monitor.ax.set_xlim(0, 30)
         ma = max( max(self.scalars_monitor.chan0), max(self.scalars_monitor.chan1), max(self.scalars_monitor.chan2), 
                   max(self.scalars_monitor.chan3), max(self.scalars_monitor.trigger)  )
-        self.scalars_monitor.ax.set_ylim(-1, ma*1.01)
-        self.scalars_monitor.ax.set_xlim(-1, len(self.scalars_monitor.chan0))
+        self.scalars_monitor.ax.set_ylim(0, ma*1.01)
+        self.scalars_monitor.ax.set_xlim(0, len(self.scalars_monitor.chan0))
         # force a redraw of the Figure
         self.scalars_monitor.fig.canvas.draw()
+        
+        
         # if we've done all the iterations
         if self.scalars_monitor.cnt == self.scalars_monitor.MAXITERS:
             # stop the timer
