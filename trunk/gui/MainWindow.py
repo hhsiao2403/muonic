@@ -361,39 +361,44 @@ class SubWindow(QtGui.QWidget):
 
         #self.scalars_result will always be up to date by MainWindow.ProcessIncoming()
         result = self.scalars_result
-        # append new data to the datasets
-        self.scalars_monitor.chan0.append(result[0])
-        self.scalars_monitor.chan1.append(result[1])
-        self.scalars_monitor.chan2.append(result[2])
-        self.scalars_monitor.chan3.append(result[3])
-        self.scalars_monitor.trigger.append(result[4])
-        # update lines data using the lists with new data
-        self.scalars_monitor.l_chan0.set_data(range(len(self.scalars_monitor.chan0)), self.scalars_monitor.chan0)
-        self.scalars_monitor.l_chan1.set_data(range(len(self.scalars_monitor.chan1)), self.scalars_monitor.chan1)
-        self.scalars_monitor.l_chan2.set_data( range(len(self.scalars_monitor.chan2)), self.scalars_monitor.chan2)
-        self.scalars_monitor.l_chan3.set_data(range(len(self.scalars_monitor.chan3)), self.scalars_monitor.chan3)
-        self.scalars_monitor.l_trigger.set_data(range(len(self.scalars_monitor.trigger)), self.scalars_monitor.trigger)
-        
+        self.scalars_monitor.update_plot(result)
+
+        # # append new data to the datasets
+        # self.scalars_monitor.chan0.append(result[0])
+        # self.scalars_monitor.chan1.append(result[1])
+        # self.scalars_monitor.chan2.append(result[2])
+        # self.scalars_monitor.chan3.append(result[3])
+        # self.scalars_monitor.trigger.append(result[4])
+        # # update lines data using the lists with new data
+        # self.scalars_monitor.l_chan0.set_data(range(len(self.scalars_monitor.chan0)), self.scalars_monitor.chan0)
+        # self.scalars_monitor.l_chan1.set_data(range(len(self.scalars_monitor.chan1)), self.scalars_monitor.chan1)
+        # self.scalars_monitor.l_chan2.set_data( range(len(self.scalars_monitor.chan2)), self.scalars_monitor.chan2)
+        # self.scalars_monitor.l_chan3.set_data(range(len(self.scalars_monitor.chan3)), self.scalars_monitor.chan3)
+        # self.scalars_monitor.l_trigger.set_data(range(len(self.scalars_monitor.trigger)), self.scalars_monitor.trigger)
+        # 
         mu, sigma = 100, 15
         x = mu + sigma*n.random.randn(10000)
         i = len(self.scalars_monitor.chan0)
         self.lifetime_monitor.lifetime.append(x[i])
         print "x[i] = ", x[i]
         print self.lifetime_monitor.lifetime
-        #self.lifetime_monitor.update()
-        self.lifetime_monitor.lifetime_plot = self.lifetime_monitor.ax.hist(self.lifetime_monitor.lifetime, 20, facecolor='blue')
-        self.lifetime_monitor.fig.canvas.draw()
+        self.lifetime_monitor.update_plot(self.lifetime_monitor.lifetime)
+        #self.lifetime_monitor.ax.clear()
+        #self.lifetime_monitor.lifetime_plot = self.lifetime_monitor.ax.hist(self.lifetime_monitor.lifetime, 20, facecolor='blue')
+        #self.lifetime_monitor.fig.canvas.draw()
         
 
-        #self.scalars_monitor.ax.set_xlim(0, 30)
-        ma = max( max(self.scalars_monitor.chan0), max(self.scalars_monitor.chan1), max(self.scalars_monitor.chan2), 
-                  max(self.scalars_monitor.chan3), max(self.scalars_monitor.trigger)  )
-        self.scalars_monitor.ax.set_ylim(0, ma*1.01)
-        self.scalars_monitor.ax.set_xlim(0, len(self.scalars_monitor.chan0))
-        # force a redraw of the Figure
-        self.scalars_monitor.fig.canvas.draw()
+       # #self.scalars_monitor.ax.set_xlim(0, 30)
+       # ma = max( max(self.scalars_monitor.chan0), max(self.scalars_monitor.chan1), max(self.scalars_monitor.chan2), 
+       #           max(self.scalars_monitor.chan3), max(self.scalars_monitor.trigger)  )
+       # self.scalars_monitor.ax.set_ylim(0, ma*1.01)
+       # self.scalars_monitor.ax.set_xlim(0, len(self.scalars_monitor.chan0))
+       # # force a redraw of the Figure
+       # self.scalars_monitor.fig.canvas.draw()
+       # 
         
-        
+        #self.scalars_monitor.update_plot()
+
         # if we've done all the iterations
         if self.scalars_monitor.cnt == self.scalars_monitor.MAXITERS:
             # stop the timer

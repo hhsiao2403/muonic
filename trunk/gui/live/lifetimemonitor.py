@@ -58,9 +58,10 @@ class LifetimeMonitor(FigureCanvas):
         self.cnt = 0
         self.setParent(parent)
 
-    #def update(self):
-     #   self.lifetime_plot = self.ax.hist(self.lifetime, 20, facecolor='blue', alpha=0.25)       
-      #  self.fig.canvas.draw()
+    def update_plot(self, lifetime_list):
+        self.ax.clear()
+        self.lifetime_plot = self.ax.hist(lifetime_list, 20, facecolor='blue', alpha=0.25)       
+        self.fig.canvas.draw()
 
         
         
