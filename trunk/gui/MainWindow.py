@@ -32,13 +32,18 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().showMessage(tr('MainWindow','Ready'))
          
         # scalars  
-        self.previous_time = 2 
+        self.previous_time = 2.
         self.scalars_result = (0,0,0,0,0)
         self.scalars_ch0 = 0 
+        self.scalars_ch0_previous = 0
         self.scalars_ch1 = 0
+        self.scalars_ch1_previous = 0
         self.scalars_ch2 = 0
+        self.scalars_ch2_previous = 0
         self.scalars_ch3 = 0
+        self.scalars_ch3_previous = 0
         self.scalars_trigger = 0
+        self.scalars_trigger_previous = 0
         self.scalars_time = 1
         
         self.data_file = open('data.txt', 'w')
@@ -161,11 +166,11 @@ class MainWindow(QtGui.QMainWindow):
                     if len(msg) > 5:
                          self.scalars = msg
                          self.scalars = self.scalars.split()
-                         print self.scalars, 'self.scalars'
+                         #print self.scalars, 'self.scalars'
 
                          for item in self.scalars:
-    
-                             if ("SO" in item) & (len(item) == 11):
+                             print 'PROCESS INCOMING: checking queue item!'
+                             if ("S0" in item) & (len(item) == 11):
                                  self.scalars_ch0 = int(item[3:],16)
                              if ("S1" in item) & (len(item) == 11):
                                  self.scalars_ch1 = int(item[3:],16)
@@ -176,21 +181,35 @@ class MainWindow(QtGui.QMainWindow):
                              if ("S4" in item) & (len(item) == 11):
                                  self.scalars_trigger = int(item[3:],16)
                              if ("S5" in item) & (len(item) == 11):
-                                 self.scalars_time = int(item[3:],16)
-                                
+                                 self.scalars_time = float(int(item[3:],16))
+                             else:
+                                 print 'PROCESS INCOMING: unknown items detected!'
                          if self.scalars_time > self.previous_time:
                              time_window = self.scalars_time - self.previous_time
-                             self.previous_time = self.scalars_time
+                             self.scalars_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
+                             self.scalars_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
+                             self.scalars_ch2 = self.scalars_ch2 - self.scalars_ch2_previous 
+                             self.scalars_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
+                             self.scalars_trigger = self.scalars_trigger - self.scalars_trigger_previous 
 
+                             self.previous_time = self.scalars_time
+                             self.scalars_ch0_previous = self.scalars_ch0
+                             self.scalars_ch1_previous = self.scalars_ch1
+                             self.scalars_ch2_previous = self.scalars_ch2
+                             self.scalars_ch3_previous = self.scalars_ch3
+                             self.scalars_trigger_previous = self.scalars_trigger
                          else:
                              time_window = self.scalars_time
                          
                          if not time_window:
                              time_window=10
                          #send the counted scalars to the subwindow
-                         self.subwindow.scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
+                         scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
                          # time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger 
-                         self.data_file.write('%d %d %d %d %d %d %d \n' % (self.scalars_time, self.scalars_ch0, self.scalars_ch1, self.scalars_ch2, self.scalars_ch3, time_window, self.scalars_trigger )  )
+                         self.subwindow.scalars_monitor.update_plot(scalars_result)
+                         #print 'PROCESS INCOMING: scalars_result', scalars_result
+                         #print 'PROCESS INCOMING: chan0', self.scalars_ch0
+                         self.data_file.write('%f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_ch0, self.scalars_ch1, self.scalars_ch2, self.scalars_ch3, time_window, self.scalars_trigger )  )
             except Queue.Empty:
                 pass
    
@@ -360,8 +379,8 @@ class SubWindow(QtGui.QWidget):
         self.mainwindow.outqueue.task_done()
 
         #self.scalars_result will always be up to date by MainWindow.ProcessIncoming()
-        result = self.scalars_result
-        self.scalars_monitor.update_plot(result)
+        #result = self.scalars_result
+        #self.scalars_monitor.update_plot(result)
 
         # # append new data to the datasets
         # self.scalars_monitor.chan0.append(result[0])
@@ -380,8 +399,8 @@ class SubWindow(QtGui.QWidget):
         x = mu + sigma*n.random.randn(10000)
         i = len(self.scalars_monitor.chan0)
         self.lifetime_monitor.lifetime.append(x[i])
-        print "x[i] = ", x[i]
-        print self.lifetime_monitor.lifetime
+        #print "x[i] = ", x[i]
+        #print self.lifetime_monitor.lifetime
         self.lifetime_monitor.update_plot(self.lifetime_monitor.lifetime)
         #self.lifetime_monitor.ax.clear()
         #self.lifetime_monitor.lifetime_plot = self.lifetime_monitor.ax.hist(self.lifetime_monitor.lifetime, 20, facecolor='blue')

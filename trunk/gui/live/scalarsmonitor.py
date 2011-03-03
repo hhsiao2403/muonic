@@ -48,8 +48,12 @@ class ScalarsMonitor(FigureCanvas):
         self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trigger',lw=3)
         # add legend to plot
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
-        self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-                       ncol=5, mode="expand", borderaxespad=0.)
+        #catch error which occurs sometimes for some 
+        #pylab versions
+        try:
+            self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
+        except(TypeError):
+            self.ax.legend()
 
         # force a redraw of the Figure
         self.fig.canvas.draw()
@@ -60,6 +64,7 @@ class ScalarsMonitor(FigureCanvas):
        
 
     def update_plot(self, result):
+        print result
         # update lines data using the lists with new data
         self.chan0.append(result[0])
         self.chan1.append(result[1])
@@ -82,6 +87,7 @@ class ScalarsMonitor(FigureCanvas):
                   max(self.chan3), max(self.trigger)  )
         self.ax.set_ylim(0, ma*1.01)
         self.ax.set_xlim(0, len(self.chan0))
+        print 'SCALARSMONITOR self.chan0', self.chan0 
         self.fig.canvas.draw()
 
 
