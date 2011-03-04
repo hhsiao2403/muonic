@@ -1,6 +1,7 @@
 # for command-line arguments
 import sys
 import pylab as p
+import numpy as n
 # Python Qt4 bindings for GUI objects
 from PyQt4 import QtGui
 # Matplotlib Figure object
@@ -14,7 +15,7 @@ from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
 
-MAXITERS = 300
+
 
 class ScalarsMonitor(FigureCanvas):
     """Matplotlib Figure widget to display CPU utilization"""
@@ -22,7 +23,9 @@ class ScalarsMonitor(FigureCanvas):
        
         # Total number of iterations
 
-        self.MAXITERS = 300
+        #self.MAXITERS = 300
+        #max length of shown plot is 10 minutes!
+        self.MAXLENGTH = 300
 
         # first image setup
         self.fig = Figure()
@@ -73,7 +76,18 @@ class ScalarsMonitor(FigureCanvas):
         self.chan3.append(result[3])
         self.trigger.append(result[4])
         self.time_window += result[5]
-	self.l_time.append(self.time_window)
+        self.l_time.append(self.time_window)
+
+        if len(self.chan0) >  self.MAXLENGTH:
+            self.chan0.remove(self.chan0[0])
+            self.chan1.remove(self.chan1[0])
+            self.chan2.remove(self.chan2[0])
+            self.chan3.remove(self.chan3[0])
+            self.trigger.remove(self.trigger[0])
+            self.l_time.remove(self.l_time[0])
+
+      
+
         self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
         self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
         self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
@@ -88,9 +102,19 @@ class ScalarsMonitor(FigureCanvas):
 
         ma = max( max(self.chan0), max(self.chan1), max(self.chan2), 
                   max(self.chan3), max(self.trigger)  )
-        self.ax.set_ylim(0, ma*1.01)
-        self.ax.set_xlim(0, len(self.chan0))
-        print 'SCALARSMONITOR self.chan0', self.chan0 
-        self.fig.canvas.draw()
+        self.ax.set_ylim(0, ma*1.1)
+        self.ax.set_xlim(self.l_time[0], self.l_time[-1])
+        #print 'SCALARSMONITOR self.chan0', self.chan0 
+        string = 'ch0=%1.f Hz \nch1=%1.f Hz \nch2=%1.f Hz \nch3=%1.f Hz \ntrig=%1.f Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean())
+        self.ax.text(1.00, 0.9, string, transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
+        
 
+#         self.ax.text(1.05, 1.0, 'ch0  %1.f Hz \n' %n.array(self.chan0).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1)
+#         self.ax.text(1, 0.9, 'ch1  %1.f Hz' %n.array(self.chan1).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
+#         self.ax.text(1, 0.8, 'ch2  %1.f Hz' %n.array(self.chan2).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
+#         self.ax.text(1, 0.7, 'ch3  %1.f Hz' %n.array(self.chan3).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
+#         self.ax.text(1, 0.6, 'trig %1.f Hz' %n.array(self.trigger).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
+#         
+        self.fig.canvas.draw()
+        
 

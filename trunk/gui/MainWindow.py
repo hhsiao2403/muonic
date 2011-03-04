@@ -34,20 +34,14 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))
          
-        # scalars  
-        #self.previous_time = 2.
-        #self.scalars_result = (0,0,0,0,0)
-        #self.scalars_ch0 = 0 
+        # scalars 
+        self.readout_scalars = False
         self.scalars_ch0_previous = 0
-        #self.scalars_ch1 = 0
         self.scalars_ch1_previous = 0
-        #self.scalars_ch2 = 0
         self.scalars_ch2_previous = 0
-        #self.scalars_ch3 = 0
         self.scalars_ch3_previous = 0
-        #self.scalars_trigger = 0
         self.scalars_trigger_previous = 0
-        self.scalars_time = 1
+        #self.scalars_time = 1
         
         self.data_file = open('data.txt', 'w')
         self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger \n')
@@ -141,10 +135,6 @@ class MainWindow(QtGui.QMainWindow):
         
         scalars_window = ScalarsWindow(self.scalars)
         rv = scalars_window.exec_()
-        #if rv == 1:
-            #while True:
-                #scalars_window.scalars = self.scalars
-                #pass
 
     #this functions gets everything out of the inqueue
     #All calculations should happen here
@@ -167,17 +157,20 @@ class MainWindow(QtGui.QMainWindow):
                 # check for scalar information
                 if msg[0]=='D' and msg[1] == 'S':
                     if len(msg) > 5:
+
+                         if not self.readout_scalars:
+                             self.readout_scalars = True
+                             break
+                         
                          self.scalars = msg
                          self.scalars = self.scalars.split()
                          #make a time window and reset SCALARS_LAST_TIME
                          global SCALARS_LAST_TIME
                          time_window = time.time() - SCALARS_LAST_TIME 
-			 SCALARS_LAST_TIME = time.time()
-			 print time_window
-                         #print self.scalars, 'self.scalars'
+                         SCALARS_LAST_TIME = time.time()
+                         #print time_window, 'time window'
 
                          for item in self.scalars:
-                             print 'PROCESS INCOMING: checking queue item!'
                              if ("S0" in item) & (len(item) == 11):
                                  self.scalars_ch0 = int(item[3:],16)
                              elif ("S1" in item) & (len(item) == 11):
@@ -191,33 +184,46 @@ class MainWindow(QtGui.QMainWindow):
                              elif ("S5" in item) & (len(item) == 11):
                                  self.scalars_time = float(int(item[3:],16))
                              else:
-                                 print 'PROCESS INCOMING: unknown item detected!',item
-                         
-			 #if self.scalars_time > self.previous_time:
-			 if time_window > 0:
-			     #time_window = self.scalars_time - self.previous_time
-                             self.scalars_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
-                             self.scalars_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
-                             self.scalars_ch2 = self.scalars_ch2 - self.scalars_ch2_previous 
-                             self.scalars_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
-                             self.scalars_trigger = self.scalars_trigger - self.scalars_trigger_previous 
+                                 #print 'PROCESS INCOMING: unknown item detected!',item
+                                 pass
 
-                             #self.previous_time = self.scalars_time
-                             self.scalars_ch0_previous = self.scalars_ch0
-                             self.scalars_ch1_previous = self.scalars_ch1
-                             self.scalars_ch2_previous = self.scalars_ch2
-                             self.scalars_ch3_previous = self.scalars_ch3
-                             self.scalars_trigger_previous = self.scalars_trigger
-                         else:
-                             time_window = 0.1
+                         self.scalars_diff_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
+                         self.scalars_diff_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
+                         self.scalars_diff_ch2 = self.scalars_ch2 - self.scalars_ch2_previous 
+                         self.scalars_diff_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
+                         self.scalars_diff_trigger = self.scalars_trigger - self.scalars_trigger_previous 
+
+                         #cut off the plot, set maximum rate to 35 Hz
+                         if self.scalars_diff_ch0 > 35:
+                             self.scalars_diff_ch0 = 35
+                         if self.scalars_diff_ch1 > 35:
+                             self.scalars_diff_ch1 = 35
+                         if self.scalars_diff_ch2 > 35:
+                             self.scalars_diff_ch2 = 35
+                         if self.scalars_diff_ch3 > 35:
+                             self.scalars_diff_ch3 = 35
+                         #the triggerrate can be larger    
+                         if self.scalars_diff_trigger > 60:
+                             self.scalars_diff_trigger = 60
+
+                         self.scalars_ch0_previous = self.scalars_ch0
+                         self.scalars_ch1_previous = self.scalars_ch1
+                         self.scalars_ch2_previous = self.scalars_ch2
+                         self.scalars_ch3_previous = self.scalars_ch3
+                         self.scalars_trigger_previous = self.scalars_trigger
+                         #if the time window is too small
+                         #this can cause an unphysical 
+                         #high rate
+                         if time_window < 0.5:
+                             print 'PROCESS INCOMING: WARN: time window to small, setting time_window = 0.5'
+                             time_window = 0.5
                          
                          #send the counted scalars to the subwindow
-                         scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,time_window)
-                         # time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger 
+                         scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window)
                          self.subwindow.scalars_monitor.update_plot(scalars_result)
-                         #print 'PROCESS INCOMING: scalars_result', scalars_result
-                         #print 'PROCESS INCOMING: chan0', self.scalars_ch0
+                         #write the rates to data file
                          self.data_file.write('%f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_ch0, self.scalars_ch1, self.scalars_ch2, self.scalars_ch3, time_window, self.scalars_trigger )  )
+                         
             except Queue.Empty:
                 pass
    
@@ -290,7 +296,7 @@ class SubWindow(QtGui.QWidget):
         p3_vertical = QtGui.QVBoxLayout(tab3)
 
         tab_widget.addTab(tab1, "DAQ output")
-        tab_widget.addTab(tab2, "Scalars")
+        tab_widget.addTab(tab2, "Rates")
         tab_widget.addTab(tab3, "Lifetime")
         
         p1_vertical.addWidget(self.text_box)
@@ -312,7 +318,7 @@ class SubWindow(QtGui.QWidget):
         self.scalars_monitor = ScalarsMonitor(self)
         self.lifetime_monitor = LifetimeMonitor(self)
         self.timerEvent(None)
-        self.timer = self.startTimer(5000)
+        self.timer = self.startTimer(2000)
 
         # instantiate the navigation toolbar
         ntb = NavigationToolbar(self.scalars_monitor, self)
@@ -386,23 +392,7 @@ class SubWindow(QtGui.QWidget):
         self.mainwindow.outqueue.put('DS')
         self.mainwindow.outqueue.task_done()
 
-        #self.scalars_result will always be up to date by MainWindow.ProcessIncoming()
-        #result = self.scalars_result
-        #self.scalars_monitor.update_plot(result)
-
-        # # append new data to the datasets
-        # self.scalars_monitor.chan0.append(result[0])
-        # self.scalars_monitor.chan1.append(result[1])
-        # self.scalars_monitor.chan2.append(result[2])
-        # self.scalars_monitor.chan3.append(result[3])
-        # self.scalars_monitor.trigger.append(result[4])
-        # # update lines data using the lists with new data
-        # self.scalars_monitor.l_chan0.set_data(range(len(self.scalars_monitor.chan0)), self.scalars_monitor.chan0)
-        # self.scalars_monitor.l_chan1.set_data(range(len(self.scalars_monitor.chan1)), self.scalars_monitor.chan1)
-        # self.scalars_monitor.l_chan2.set_data( range(len(self.scalars_monitor.chan2)), self.scalars_monitor.chan2)
-        # self.scalars_monitor.l_chan3.set_data(range(len(self.scalars_monitor.chan3)), self.scalars_monitor.chan3)
-        # self.scalars_monitor.l_trigger.set_data(range(len(self.scalars_monitor.trigger)), self.scalars_monitor.trigger)
-        # 
+        #make lifetime histogram
         mu, sigma = 100, 15
         x = mu + sigma*n.random.randn(10000)
         i = len(self.scalars_monitor.chan0)
@@ -415,23 +405,15 @@ class SubWindow(QtGui.QWidget):
         #self.lifetime_monitor.fig.canvas.draw()
         
 
-       # #self.scalars_monitor.ax.set_xlim(0, 30)
-       # ma = max( max(self.scalars_monitor.chan0), max(self.scalars_monitor.chan1), max(self.scalars_monitor.chan2), 
-       #           max(self.scalars_monitor.chan3), max(self.scalars_monitor.trigger)  )
-       # self.scalars_monitor.ax.set_ylim(0, ma*1.01)
-       # self.scalars_monitor.ax.set_xlim(0, len(self.scalars_monitor.chan0))
-       # # force a redraw of the Figure
-       # self.scalars_monitor.fig.canvas.draw()
-       # 
         
         #self.scalars_monitor.update_plot()
 
         # if we've done all the iterations
-        if self.scalars_monitor.cnt == self.scalars_monitor.MAXITERS:
-            # stop the timer
-            self.killTimer(self.timer)
-        else:
-            # else, we increment the counter
-            self.scalars_monitor.cnt += 1
+        #if self.scalars_monitor.cnt == self.scalars_monitor.MAXITERS:
+        #    # stop the timer
+        #    self.killTimer(self.timer)
+        #else:
+        #    # else, we increment the counter
+        #    self.scalars_monitor.cnt += 1
 
 # vim: ai ts=4 sts=4 et sw=4
