@@ -212,7 +212,7 @@ class MainWindow(QtGui.QMainWindow):
                              time_window = 0.1
                          
                          #send the counted scalars to the subwindow
-                         scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
+                         scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,time_window)
                          # time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger 
                          self.subwindow.scalars_monitor.update_plot(scalars_result)
                          #print 'PROCESS INCOMING: scalars_result', scalars_result

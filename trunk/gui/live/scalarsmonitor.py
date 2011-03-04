@@ -40,13 +40,14 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.set_autoscale_on(False)
         #self.ax.set_autoscale_on(True)
         # generates first "empty" plots
-        self.chan0, self.chan1, self.chan2, self.chan3, self.trigger =[], [], [], [], []
-        self.l_chan0, = self.ax.plot([],self.chan0, c='y', label='chan0',lw=3)
-        self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='chan1',lw=3)
-        self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='chan2',lw=3)
-        self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='chan3',lw=3)
-        self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trigger',lw=3)
-        # add legend to plot
+        self.time_window = 0
+        self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[], [], [], [], [], []
+        self.l_chan0 = self.ax.plot([],self.chan0, c='y', label='chan0',lw=3)
+        self.l_chan1 = self.ax.plot([],self.chan1, c='m', label='chan1',lw=3)
+        self.l_chan2 = self.ax.plot([],self.chan2, c='c',  label='chan2',lw=3)
+        self.l_chan3 = self.ax.plot([],self.chan3, c='b', label='chan3',lw=3)
+        self.l_trigger = self.ax.plot([],self.chan3, c='g', label='trigger',lw=3)
+	# add legend to plot
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
         #catch error which occurs sometimes for some 
         #pylab versions
@@ -71,11 +72,13 @@ class ScalarsMonitor(FigureCanvas):
         self.chan2.append(result[2])
         self.chan3.append(result[3])
         self.trigger.append(result[4])
-        self.l_chan0, = self.ax.plot(range(len(self.chan0)),self.chan0, c='y', label='chan0',lw=2)
-        self.l_chan1, = self.ax.plot(range(len(self.chan1)),self.chan1, c='m', label='chan1',lw=2)
-        self.l_chan2, = self.ax.plot(range(len(self.chan2)),self.chan2, c='c', label='chan2',lw=2)
-        self.l_chan3, = self.ax.plot(range(len(self.chan3)),self.chan3, c='b', label='chan3',lw=2)
-        self.l_trigger, = self.ax.plot(range(len(self.trigger)),self.trigger, c='g', label='trigger',lw=2)
+        self.time_window += result[5]
+	self.l_time.append(self.time_window)
+        self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
+        self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
+        self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
+        self.l_chan3, = self.ax.plot(self.l_time,self.chan3, c='b', label='chan3',lw=2)
+        self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trigger',lw=2)
         # self.scalars_monitor.l_chan0.set_data(range(len(self.scalars_monitor.chan0)), self.scalars_monitor.chan0)
         # self.scalars_monitor.l_chan1.set_data(range(len(self.scalars_monitor.chan1)), self.scalars_monitor.chan1)
         # self.scalars_monitor.l_chan2.set_data( range(len(self.scalars_monitor.chan2)), self.scalars_monitor.chan2)
