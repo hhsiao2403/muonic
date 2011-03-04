@@ -16,10 +16,13 @@ import NavigationToolbar2QTAgg as NavigationToolbar
 
 import os
 import numpy as n
+import time
 
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
 
+#define some global variables to calculate the rates
+SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Epoch
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -32,17 +35,17 @@ class MainWindow(QtGui.QMainWindow):
         self.statusBar().showMessage(tr('MainWindow','Ready'))
          
         # scalars  
-        self.previous_time = 2.
-        self.scalars_result = (0,0,0,0,0)
-        self.scalars_ch0 = 0 
+        #self.previous_time = 2.
+        #self.scalars_result = (0,0,0,0,0)
+        #self.scalars_ch0 = 0 
         self.scalars_ch0_previous = 0
-        self.scalars_ch1 = 0
+        #self.scalars_ch1 = 0
         self.scalars_ch1_previous = 0
-        self.scalars_ch2 = 0
+        #self.scalars_ch2 = 0
         self.scalars_ch2_previous = 0
-        self.scalars_ch3 = 0
+        #self.scalars_ch3 = 0
         self.scalars_ch3_previous = 0
-        self.scalars_trigger = 0
+        #self.scalars_trigger = 0
         self.scalars_trigger_previous = 0
         self.scalars_time = 1
         
@@ -166,43 +169,48 @@ class MainWindow(QtGui.QMainWindow):
                     if len(msg) > 5:
                          self.scalars = msg
                          self.scalars = self.scalars.split()
+                         #make a time window and reset SCALARS_LAST_TIME
+                         global SCALARS_LAST_TIME
+                         time_window = time.time() - SCALARS_LAST_TIME 
+			 SCALARS_LAST_TIME = time.time()
+			 print time_window
                          #print self.scalars, 'self.scalars'
 
                          for item in self.scalars:
                              print 'PROCESS INCOMING: checking queue item!'
                              if ("S0" in item) & (len(item) == 11):
                                  self.scalars_ch0 = int(item[3:],16)
-                             if ("S1" in item) & (len(item) == 11):
+                             elif ("S1" in item) & (len(item) == 11):
                                  self.scalars_ch1 = int(item[3:],16)
-                             if ("S2" in item) & (len(item) == 11):
+                             elif ("S2" in item) & (len(item) == 11):
                                  self.scalars_ch2 = int(item[3:],16)
-                             if ("S3" in item) & (len(item) == 11):
+                             elif ("S3" in item) & (len(item) == 11):
                                  self.scalars_ch3 = int(item[3:],16)
-                             if ("S4" in item) & (len(item) == 11):
+                             elif ("S4" in item) & (len(item) == 11):
                                  self.scalars_trigger = int(item[3:],16)
-                             if ("S5" in item) & (len(item) == 11):
+                             elif ("S5" in item) & (len(item) == 11):
                                  self.scalars_time = float(int(item[3:],16))
                              else:
-                                 print 'PROCESS INCOMING: unknown items detected!'
-                         if self.scalars_time > self.previous_time:
-                             time_window = self.scalars_time - self.previous_time
+                                 print 'PROCESS INCOMING: unknown item detected!',item
+                         
+			 #if self.scalars_time > self.previous_time:
+			 if time_window > 0:
+			     #time_window = self.scalars_time - self.previous_time
                              self.scalars_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
                              self.scalars_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
                              self.scalars_ch2 = self.scalars_ch2 - self.scalars_ch2_previous 
                              self.scalars_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
                              self.scalars_trigger = self.scalars_trigger - self.scalars_trigger_previous 
 
-                             self.previous_time = self.scalars_time
+                             #self.previous_time = self.scalars_time
                              self.scalars_ch0_previous = self.scalars_ch0
                              self.scalars_ch1_previous = self.scalars_ch1
                              self.scalars_ch2_previous = self.scalars_ch2
                              self.scalars_ch3_previous = self.scalars_ch3
                              self.scalars_trigger_previous = self.scalars_trigger
                          else:
-                             time_window = self.scalars_time
+                             time_window = 0.1
                          
-                         if not time_window:
-                             time_window=10
                          #send the counted scalars to the subwindow
                          scalars_result = (self.scalars_ch0/time_window,self.scalars_ch1/time_window,self.scalars_ch2/time_window,self.scalars_ch3/time_window,self.scalars_trigger/time_window,self.scalars_time)
                          # time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger 
