@@ -1,6 +1,7 @@
 import sys
 import time
 import Queue
+import numpy as n
 
 class SimDaq():
 
@@ -12,6 +13,48 @@ class SimDaq():
         self.__inWaiting__ = True
         self.__return_info__ = False
         self.__info__ = ""
+	self.__scalars_ch0__ = 0
+	self.__scalars_ch1__ = 0
+	self.__scalars_ch2__ = 0
+	self.__scalars_ch3__ = 0
+	self.__scalars_trigger__ = 0
+	self.__scalars_to_return__ = ''
+
+    def __physics__(self):
+	"""
+	This routine will increase the scalars variables using predefined rates
+        """
+	
+	def format_to_8digits(hexstring):
+            if len(hexstring) < 8:
+		zeros_to_add = 8-len(hexstring)
+                for zero in xrange(zeros_to_add):
+                    hexstring = '0' + hexstring
+		return hexstring
+          
+	    if len(hexstring) > 8:
+		return hexstring[-8:]
+            else:
+		pass
+
+          
+        scalars_ch0 = int(n.random.normal(4,1.0,100)[0])
+        scalars_ch1 = int(n.random.normal(5,1.0,100)[0])
+        scalars_ch2 = int(n.random.normal(6,1.0,100)[0])
+        scalars_ch3 = int(n.random.normal(8,1.0,100)[0])
+        scalars_trigger = scalars_ch0 + scalars_ch1 + scalars_ch2 + scalars_ch3
+
+	self.__scalars_ch0__ += scalars_ch0
+	self.__scalars_ch1__ += scalars_ch1
+	self.__scalars_ch2__ += scalars_ch2
+	self.__scalars_ch3__ += scalars_ch3
+	self.__scalars_trigger__ += scalars_trigger
+
+
+	self.__scalars_to_return__ = 'DS S0=0000000' + format_to_8_digits(hex(self.__scalars_ch0__)[2:]) + ' S1=0000000' + format_to_8_digits(hex(self.__scalars_ch1__)[2:]) + ' S2=0000000' + format_to_8_digits(hex(self.__scalars_ch2__)[2:]) + ' S3=0000000' + format_to_8_digits(hex(self.__scalars_ch3__)[2:]) + ' S4=000000' + format_to_8_digits(hex(self.__scalars_trigger__)[2:])
+
+
+
 
     def __reload__(self):
         print "FILE RELOADED"
@@ -49,8 +92,9 @@ class SimDaq():
     def write(self,command):
         if "DS" in command:
             print "SIMDAQ: got DS command" 
-            self.__info__ = "DS S0=00000064 S1=000000c8 S2=0000012c S3=00000190 S4=000003e8 S5=00000020"
-            self.__return_info__ = True
+            #self.__info__ = "DS S0=00000064 S1=000000c8 S2=0000012c S3=00000190 S4=000003e8 S5=00000020"
+            self.__info__ = self.__scalars_to_return__
+	    self.__return_info__ = True
         
 
     def inWaiting(self):
