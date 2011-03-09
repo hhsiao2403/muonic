@@ -38,10 +38,10 @@ class SimDaq():
                 pass
 
               
-        scalars_ch0 = int(n.random.normal(4,1.0,100)[0])
-        scalars_ch1 = int(n.random.normal(5,1.0,100)[0])
-        scalars_ch2 = int(n.random.normal(6,1.0,100)[0])
-        scalars_ch3 = int(n.random.normal(8,1.0,100)[0])
+        scalars_ch0 = int(n.random.normal(10,4.0,100)[0])
+        scalars_ch1 = int(n.random.normal(15,2.0,100)[0])
+        scalars_ch2 = int(n.random.normal(9,3.0,100)[0])
+        scalars_ch3 = int(n.random.normal(22,5.0,100)[0])
         scalars_trigger = scalars_ch0 + scalars_ch1 + scalars_ch2 + scalars_ch3
 
         self.__scalars_ch0__ += scalars_ch0

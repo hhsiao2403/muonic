@@ -18,6 +18,9 @@ import os
 import numpy as n
 import time
 
+import gc
+gc.set_threshold(1000000)
+
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
 
@@ -391,6 +394,11 @@ class SubWindow(QtGui.QWidget):
         #get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
         self.mainwindow.outqueue.task_done()
+        print "GC:", len(gc.get_objects()), "objects traced by gc"
+        not_reachable = gc.collect()
+        print "GC: All objects collected!"
+        print "GC:", not_reachable, "objects were not reachable!"
+        print "GC:", len(gc.get_objects()), "objects traced by gc"
 
         #make lifetime histogram
         mu, sigma = 100, 15
