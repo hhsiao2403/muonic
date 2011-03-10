@@ -57,10 +57,10 @@ class ThreadedClient:
                            self.periodicCall)
 
         # Start the timer -- this replaces the initial call to periodicCall
-        self.timer.start(100)
+        self.timer.start(1000)
 
-        self.daq = SimDaqConnection(self.inqueue, self.outqueue)
-        #self.daq = DaqConnection(self.inqueue, self.outqueue)
+        #self.daq = SimDaqConnection(self.inqueue, self.outqueue)
+        self.daq = DaqConnection(self.inqueue, self.outqueue)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary

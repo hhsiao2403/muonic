@@ -25,7 +25,7 @@ class ScalarsMonitor(FigureCanvas):
 
         #self.MAXITERS = 300
         #max length of shown plot is 10 minutes!
-        self.MAXLENGTH = 300
+        self.MAXLENGTH = 40
 
         # first image setup
         self.fig = Figure()
@@ -54,10 +54,11 @@ class ScalarsMonitor(FigureCanvas):
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
         #catch error which occurs sometimes for some 
         #pylab versions
-        try:
-            self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
-        except(TypeError):
-            self.ax.legend()
+        #try:
+         #   self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
+        #except(TypeError):
+        #except:
+        self.ax.legend()
 
         # force a redraw of the Figure
         self.fig.canvas.draw()
@@ -145,6 +146,7 @@ class ScalarsMonitor(FigureCanvas):
 #         self.ax.text(1, 0.7, 'ch3  %1.f Hz' %n.array(self.chan3).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
 #         self.ax.text(1, 0.6, 'trig %1.f Hz' %n.array(self.trigger).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
 #         
+        self.ax.legend()
         self.fig.canvas.draw()
         
 

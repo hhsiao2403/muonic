@@ -47,7 +47,7 @@ class MainWindow(QtGui.QMainWindow):
         #self.scalars_time = 1
         
         self.data_file = open('data.txt', 'w')
-        self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | Delta_time | trigger \n')
+        self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | R0 | R1 | R2 | R3 | trigger | Delta_time \n')
  
         self.inqueue = inqueue
         self.outqueue = outqueue
@@ -197,18 +197,18 @@ class MainWindow(QtGui.QMainWindow):
                          self.scalars_diff_trigger = self.scalars_trigger - self.scalars_trigger_previous 
 
                          #cut off the plot, set maximum rate to 35 Hz
-                         if self.scalars_diff_ch0 > 35:
-                             self.scalars_diff_ch0 = 35
-                         if self.scalars_diff_ch1 > 35:
-                             self.scalars_diff_ch1 = 35
-                         if self.scalars_diff_ch2 > 35:
-                             self.scalars_diff_ch2 = 35
-                         if self.scalars_diff_ch3 > 35:
-                             self.scalars_diff_ch3 = 35
-                         #the triggerrate can be larger    
-                         if self.scalars_diff_trigger > 60:
-                             self.scalars_diff_trigger = 60
-
+# if self.scalars_diff_ch0 > 35:
+#     self.scalars_diff_ch0 = 35
+# if self.scalars_diff_ch1 > 35:
+#     self.scalars_diff_ch1 = 35
+# if self.scalars_diff_ch2 > 35:
+#     self.scalars_diff_ch2 = 35
+# if self.scalars_diff_ch3 > 35:
+#     self.scalars_diff_ch3 = 35
+# #the triggerrate can be larger    
+# if self.scalars_diff_trigger > 60:
+#     self.scalars_diff_trigger = 60
+# 
                          self.scalars_ch0_previous = self.scalars_ch0
                          self.scalars_ch1_previous = self.scalars_ch1
                          self.scalars_ch2_previous = self.scalars_ch2
@@ -222,10 +222,10 @@ class MainWindow(QtGui.QMainWindow):
                              time_window = 0.5
                          
                          #send the counted scalars to the subwindow
-                         scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window)
+                         scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window, self.scalars_diff_trigger/time_window, time_window)
                          self.subwindow.scalars_monitor.update_plot(scalars_result)
                          #write the rates to data file
-                         self.data_file.write('%f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_ch0, self.scalars_ch1, self.scalars_ch2, self.scalars_ch3, time_window, self.scalars_trigger )  )
+                         self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
                          
             except Queue.Empty:
                 pass
@@ -403,11 +403,11 @@ class SubWindow(QtGui.QWidget):
         #make lifetime histogram
         mu, sigma = 100, 15
         x = mu + sigma*n.random.randn(10000)
-        i = len(self.scalars_monitor.chan0)
-        self.lifetime_monitor.lifetime.append(x[i])
+        #i = len(self.scalars_monitor.chan0)
+        #self.lifetime_monitor.lifetime.append(x[i])
         #print "x[i] = ", x[i]
         #print self.lifetime_monitor.lifetime
-        self.lifetime_monitor.update_plot(self.lifetime_monitor.lifetime)
+        #self.lifetime_monitor.update_plot(self.lifetime_monitor.lifetime)
         #self.lifetime_monitor.ax.clear()
         #self.lifetime_monitor.lifetime_plot = self.lifetime_monitor.ax.hist(self.lifetime_monitor.lifetime, 20, facecolor='blue')
         #self.lifetime_monitor.fig.canvas.draw()
