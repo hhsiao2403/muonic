@@ -31,6 +31,7 @@ SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Ep
 class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, win_parent = None):
+        #self.printd('Welcome!')
         QtGui.QMainWindow.__init__(self, win_parent)
         #self.resize(640, 480)
         self.resize(800, 600)
@@ -44,7 +45,7 @@ class MainWindow(QtGui.QMainWindow):
         self.scalars_ch2_previous = 0
         self.scalars_ch3_previous = 0
         self.scalars_trigger_previous = 0
-        #self.scalars_time = 1
+        self.scalars_time = 0
         
         self.data_file = open('data.txt', 'w')
         self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | R0 | R1 | R2 | R3 | trigger | Delta_time \n')
@@ -54,6 +55,10 @@ class MainWindow(QtGui.QMainWindow):
         self.endcommand = endcommand
 
         self.create_widgets()
+
+    #def printb
+
+
 
     def create_widgets(self):
         

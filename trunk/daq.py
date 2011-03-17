@@ -33,18 +33,22 @@ from daq.SimDaqConnection import SimDaqConnection
 from gui.MainWindow import MainWindow
 
 
-class ThreadedClient:
+class ThreadedClient():
     """
     Launch the main part of the GUI and the worker threads. periodicCall and
     endApplication could reside in the GUI part, but putting them here
     means that you have all the thread controls in a single place.
     """
-    def __init__(self):
+    def __init__(self, arg):
         # Create the queue
         self.outqueue = Queue.Queue()
         self.inqueue = Queue.Queue()
         self.running = 1
- 
+        if '-debug' in arg:
+            self.debug = True
+        else:
+            self.debug = False
+
         # Set up the GUI part
         self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication)
         self.gui.show()
@@ -59,8 +63,10 @@ class ThreadedClient:
         # Start the timer -- this replaces the initial call to periodicCall
         self.timer.start(1000)
 
-        #self.daq = SimDaqConnection(self.inqueue, self.outqueue)
-        self.daq = DaqConnection(self.inqueue, self.outqueue)
+        if '-sim' in arg:
+            self.daq = SimDaqConnection(self.inqueue, self.outqueue)
+        else:
+            self.daq = DaqConnection(self.inqueue, self.outqueue)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
@@ -87,12 +93,22 @@ class ThreadedClient:
     def endApplication(self):
         self.running = False
 
-def main():
+    def printd(self, string):
+        if (self.debug):
+            print string
+        
+
+def main(arg):
     root = QtGui.QApplication(sys.argv)
-    client = ThreadedClient()
+    client = ThreadedClient(arg)
     root.exec_()
 
 if __name__ == '__main__':
-    main()
+    arg = sys.argv
+    if arg[1] in ['-h', '?', '--help', '-help']:
+        print "Use daq -sim for the simulation mode."
+        print "Use daq -debug for the debug mode."
+        print ""
+    main(arg)
 
 # vim: ai ts=4 sts=4 et sw=4
