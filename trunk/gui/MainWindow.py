@@ -30,14 +30,19 @@ SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Ep
 
 class MainWindow(QtGui.QMainWindow):
     
-    def __init__(self, inqueue, outqueue, endcommand, win_parent = None):
-        #self.printd('Welcome!')
+    def __init__(self, inqueue, outqueue, endcommand, filename, debug, win_parent = None):
+        self.debug = debug
+        self.filename = filename             
+        
+        if self.debug: print "Welcome to MainWindow!"
+        
+        
         QtGui.QMainWindow.__init__(self, win_parent)
         #self.resize(640, 480)
         self.resize(800, 600)
         self.setWindowTitle(_NAME)
-        self.statusBar().showMessage(tr('MainWindow','Ready'))
-         
+        self.statusBar().showMessage(tr('MainWindow','Ready'))      
+
         # scalars 
         self.readout_scalars = False
         self.scalars_ch0_previous = 0
@@ -56,14 +61,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self.create_widgets()
 
-    #def printb
 
-
-
-    def create_widgets(self):
-        
-        
-        self.subwindow = SubWindow(self)       
+    def create_widgets(self):       
+       
+        print "Uebergabe debug", self.debug
+        self.subwindow = SubWindow(self, self.debug)       
         self.setCentralWidget(self.subwindow)
 
         exit = QtGui.QAction(QtGui.QIcon('/usr/share/icons/gnome/24x24/actions/exit.png'), 'Exit', self)
@@ -247,9 +249,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
 class SubWindow(QtGui.QWidget):
-    def __init__(self,mainwindow):
+    def __init__(self, mainwindow, debug):
         QtGui.QWidget.__init__(self)
        
+        self.debug = debug
         self.mainwindow = mainwindow
         self.setGeometry(0,0, 500,650)
         self.setWindowTitle("Debreate")
@@ -323,7 +326,7 @@ class SubWindow(QtGui.QWidget):
         
         self.setLayout(vbox)
         
-        self.scalars_monitor = ScalarsMonitor(self)
+        self.scalars_monitor = ScalarsMonitor(self, debug)
         self.lifetime_monitor = LifetimeMonitor(self)
         self.timerEvent(None)
         self.timer = self.startTimer(2000)
@@ -399,11 +402,11 @@ class SubWindow(QtGui.QWidget):
         #get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
         self.mainwindow.outqueue.task_done()
-        print "GC:", len(gc.get_objects()), "objects traced by gc"
+        if self.debug: print "GC:", len(gc.get_objects()), "objects traced by gc"
         not_reachable = gc.collect()
-        print "GC: All objects collected!"
-        print "GC:", not_reachable, "objects were not reachable!"
-        print "GC:", len(gc.get_objects()), "objects traced by gc"
+        if self.debug: print "GC: All objects collected!"
+        if self.debug: print "GC:", not_reachable, "objects were not reachable!"
+        if self.debug: print "GC:", len(gc.get_objects()), "objects traced by gc"
 
         #make lifetime histogram
         mu, sigma = 100, 15

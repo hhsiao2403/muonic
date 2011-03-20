@@ -31,6 +31,7 @@ from PyQt4 import QtGui
 from daq.DaqConnection import DaqConnection
 from daq.SimDaqConnection import SimDaqConnection
 from gui.MainWindow import MainWindow
+from optparse import OptionParser
 
 
 class ThreadedClient():
@@ -39,20 +40,20 @@ class ThreadedClient():
     endApplication could reside in the GUI part, but putting them here
     means that you have all the thread controls in a single place.
     """
-    def __init__(self, arg):
+    def __init__(self, opts):
         # Create the queue
         self.outqueue = Queue.Queue()
         self.inqueue = Queue.Queue()
         self.running = 1
-        if '-debug' in arg:
-            self.debug = True
-        else:
-            self.debug = False
-
+        
+        # get option parser options
+        self.debug = opts.debug
+        self.sim = opts.sim
+        self.filename = opts.filename
+        
         # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication)
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.debug) 
         self.gui.show()
-
 
         # A timer to periodically call periodicCall :-)
         self.timer = QtCore.QTimer()
@@ -63,10 +64,10 @@ class ThreadedClient():
         # Start the timer -- this replaces the initial call to periodicCall
         self.timer.start(1000)
 
-        if '-sim' in arg:
-            self.daq = SimDaqConnection(self.inqueue, self.outqueue)
+        if self.sim:
+            self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.debug)
         else:
-            self.daq = DaqConnection(self.inqueue, self.outqueue)
+            self.daq = DaqConnection(self.inqueue, self.outqueue, self.debug)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
@@ -93,22 +94,24 @@ class ThreadedClient():
     def endApplication(self):
         self.running = False
 
-    def printd(self, string):
-        if (self.debug):
-            print string
-        
+          
 
-def main(arg):
+def main(opts):
     root = QtGui.QApplication(sys.argv)
-    client = ThreadedClient(arg)
+    client = ThreadedClient(opts)
     root.exec_()
 
 if __name__ == '__main__':
-    arg = sys.argv
-    if arg[1] in ['-h', '?', '--help', '-help']:
-        print "Use daq -sim for the simulation mode."
-        print "Use daq -debug for the debug mode."
-        print ""
-    main(arg)
+    #arg = sys.argv
+    usage = "%prog [options] -f <data output file> \nspecify the file type by a command line switch."
+    parser = OptionParser(usage=usage)
+    parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
+    parser.add_option("-d", "--debug", action="store_true", dest="debug", help="output for debugging", default=False)
+    parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
+    opts, args = parser.parse_args()
+    if opts.filename is None:
+        print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
+       
+    main(opts)
 
 # vim: ai ts=4 sts=4 et sw=4

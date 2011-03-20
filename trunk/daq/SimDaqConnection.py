@@ -5,7 +5,9 @@ import numpy as n
 
 class SimDaq():
 
-    def __init__(self):
+    def __init__(self, debug):
+        
+        self.debug = debug
         self.__pushed_lines__ = 0
         self.__lines_to_push__ = 10
         self.__simdaq_file__ = "simdaq.txt"
@@ -52,19 +54,19 @@ class SimDaq():
 
 
         self.__scalars_to_return__ = 'DS S0=' + format_to_8digits(hex(self.__scalars_ch0__)[2:]) + ' S1=' + format_to_8digits(hex(self.__scalars_ch1__)[2:]) + ' S2=' + format_to_8digits(hex(self.__scalars_ch2__)[2:]) + ' S3=' + format_to_8digits(hex(self.__scalars_ch3__)[2:]) + ' S4=' + format_to_8digits(hex(self.__scalars_trigger__)[2:])
-        #print self.__scalars_to_return__
+        #if self.debug: print self.__scalars_to_return__
 
 
 
     def __reload__(self):
-        print "FILE RELOADED"
+        if self.debug: print "FILE RELOADED"
         self.__daq__ = open(self.__simdaq_file__)
 
     def readline(self):
 
         if self.__return_info__:
             self.__return_info__ = False
-            print self.__info__
+            if self.debug: print self.__info__
             return self.__info__
 
         self.__pushed_lines__ += 1
@@ -86,13 +88,13 @@ class SimDaq():
         self.__inWaiting__ = False
         time.sleep(seconds)
         self.__physics__()
-        print "SIMULATION MODE!"
+        if self.debug: print "SIMULATION MODE!"
         self.__inWaiting__ = True
 
 
     def write(self,command):
         if "DS" in command:
-            print "SIMDAQ: got DS command" 
+            if self.debug: print "SIMDAQ: got DS command" 
             #self.__info__ = "DS S0=00000064 S1=000000c8 S2=0000012c S3=00000190 S4=000003e8 S5=00000020"
             self.__info__ = self.__scalars_to_return__
 	    self.__return_info__ = True
@@ -108,9 +110,10 @@ class SimDaq():
 
 class SimDaqConnection(object):
 
-    def __init__(self, inqueue, outqueue):
+    def __init__(self, inqueue, outqueue, debug):
 
-        self.port = SimDaq()
+        self.debug = debug
+        self.port = SimDaq(self.debug)
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.running = 1

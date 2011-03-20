@@ -19,10 +19,13 @@ import NavigationToolbar2QTAgg as NavigationToolbar
 
 class ScalarsMonitor(FigureCanvas):
     """Matplotlib Figure widget to display CPU utilization"""
-    def __init__(self,parent):
+    def __init__(self,parent,debug):
        
-        # Total number of iterations
+        self.debug = debug
+        #print "debug in sclasers monitor", self.debug
 
+        # Total number of iterations
+        
         #self.MAXITERS = 300
         #max length of shown plot is 10 minutes!
         self.MAXLENGTH = 40
@@ -65,7 +68,7 @@ class ScalarsMonitor(FigureCanvas):
         # initialize the iteration counter
         self.cnt = 0
 
-        print self.l_chan0, "chan0"
+        if self.debug: print self.l_chan0, "chan0"
         self.setParent(parent)
        
 
@@ -94,7 +97,7 @@ class ScalarsMonitor(FigureCanvas):
 
 
 
-        print result
+        if self.debug: print result
         # update lines data using the lists with new data
         self.chan0.append(result[0])
         self.chan1.append(result[1])
@@ -113,7 +116,7 @@ class ScalarsMonitor(FigureCanvas):
             self.l_time.remove(self.l_time[0])
 
       
-        print self.l_chan0, type(self.l_chan0)
+        if self.debug: print self.l_chan0, type(self.l_chan0)
         self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
         self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
         self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
@@ -130,12 +133,12 @@ class ScalarsMonitor(FigureCanvas):
         #       
 
         
-        print self.chan0, "Chan0 to plot"
+        if self.debug: print self.chan0, "Chan0 to plot"
         ma = max( max(self.chan0), max(self.chan1), max(self.chan2), 
                   max(self.chan3), max(self.trigger)  )
         self.ax.set_ylim(0, ma*1.1)
         self.ax.set_xlim(self.l_time[0], self.l_time[-1])
-        #print 'SCALARSMONITOR self.chan0', self.chan0 
+        #if self.debug: print 'SCALARSMONITOR self.chan0', self.chan0 
         string = 'ch0=%1.f Hz \nch1=%1.f Hz \nch2=%1.f Hz \nch3=%1.f Hz \ntrig=%1.f Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean())
         self.ax.text(1.00, 0.9, string, transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
         

@@ -5,7 +5,7 @@ import serial
 
 class DaqConnection(object):
 
-    def __init__(self, inqueue, outqueue):
+    def __init__(self, inqueue, outqueue, debug):
 
         try:
             self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=0.5,xonxoff=True)
@@ -15,6 +15,8 @@ class DaqConnection(object):
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.running = 1
+        self.debug = debug
+
 
     def read(self):
         """
