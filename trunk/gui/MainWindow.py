@@ -251,7 +251,7 @@ class MainWindow(QtGui.QMainWindow):
 class SubWindow(QtGui.QWidget):
     def __init__(self, mainwindow, debug):
         QtGui.QWidget.__init__(self)
-       
+        
         self.debug = debug
         self.mainwindow = mainwindow
         self.setGeometry(0,0, 500,650)
