@@ -25,6 +25,8 @@ import sys
 import threading
 import Queue
 
+import os as os
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
@@ -111,6 +113,11 @@ if __name__ == '__main__':
     opts, args = parser.parse_args()
     if opts.filename is None:
         print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
+    if os.path.exists(opts.filename):
+        decision = raw_input("A file with the filename %s already exists. Do you really want to overwrite it (yes/no)? " % str(opts.filename) )
+    if decision != 'yes':
+        print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
+        sys.exit()
        
     main(opts)
 
