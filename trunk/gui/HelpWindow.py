@@ -13,7 +13,7 @@ class HelpWindow(QtGui.QDialog):
     def __init__(self, *args):
         _NAME = 'Help'
         QtGui.QDialog.__init__(self,*args)
-        self.resize(800, 600)
+        self.resize(640, 480)
         self.setModal(True)
         self.setWindowTitle("DAQ Commands")
         self.v_box = QtGui.QVBoxLayout()

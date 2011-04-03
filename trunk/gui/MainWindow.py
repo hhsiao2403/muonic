@@ -38,8 +38,8 @@ class MainWindow(QtGui.QMainWindow):
         
         
         QtGui.QMainWindow.__init__(self, win_parent)
-        #self.resize(640, 480)
-        self.resize(800, 600)
+        self.resize(640, 480)
+        #self.resize(800, 600)
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))      
 

@@ -139,7 +139,7 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.set_ylim(0, ma*1.1)
         self.ax.set_xlim(self.l_time[0], self.l_time[-1])
         #if self.debug: print 'SCALARSMONITOR self.chan0', self.chan0 
-        string = 'ch0=%1.f Hz \nch1=%1.f Hz \nch2=%1.f Hz \nch3=%1.f Hz \ntrig=%1.f Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean())
+        string = 'ch0=%.1f Hz \nch1=%.1f Hz \nch2=%.1f Hz \nch3=%.1f Hz \ntrig=%.1f Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean())
         self.ax.text(1.00, 0.9, string, transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
         
 
