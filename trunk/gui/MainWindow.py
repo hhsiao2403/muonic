@@ -134,7 +134,7 @@ class MainWindow(QtGui.QMainWindow):
             self.outqueue.put('TL 1 ' + str(thresh_ch1))
             self.outqueue.put('TL 2 ' + str(thresh_ch2))
             self.outqueue.put('TL 3 ' + str(thresh_ch3))
-   
+            #self.outqueue.task_done() 
     def help_menu(self):
         help_window = HelpWindow()
         #rv = threshold_window.exec_()
@@ -153,7 +153,7 @@ class MainWindow(QtGui.QMainWindow):
         Handle all the messages currently in the queue (if any).
         """
         
-
+        if self.debug: print  "PROCESS INCOMING: length of inqueue: ", self.    inqueue.qsize()
         while self.inqueue.qsize():
 
             try:
@@ -353,6 +353,7 @@ class SubWindow(QtGui.QWidget):
         text = str(self.hello_edit.displayText())
         if len(text) > 0:
             self.mainwindow.outqueue.put(str(self.hello_edit.displayText()))
+            #self.outqueue.task_done()
             self.hello_edit.add_hist_item(text)
         self.hello_edit.clear()
 
@@ -381,6 +382,7 @@ class SubWindow(QtGui.QWidget):
             def periodic_put():
                 for c in commands:
                     self.mainwindow.outqueue.put(c)
+                    #self.mainwindow.outqueue.task_done()
             self.periodic_put = periodic_put
             self.timer = QtCore.QTimer()
             QtCore.QObject.connect(self.timer,
@@ -401,7 +403,7 @@ class SubWindow(QtGui.QWidget):
         """Custom timerEvent code, called at timer event receive"""
         #get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
-        self.mainwindow.outqueue.task_done()
+        #self.mainwindow.outqueue.task_done()
         if self.debug: print "GC:", len(gc.get_objects()), "objects traced by gc"
         not_reachable = gc.collect()
         if self.debug: print "GC: All objects collected!"

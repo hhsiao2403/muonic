@@ -22,8 +22,18 @@
 # It is licenced under the Python licence, http://www.python.org/psf/license/
 
 import sys
-import threading
 import Queue
+
+#test if more than one cpu is available
+import multiprocessing as mult
+multicore = mult.cpu_count() > 1
+print " %d cpus found!" %mult.cpu_count()
+
+#disable multicore support at the moment
+multicore = False
+
+if not multicore: 
+    import threading
 
 import os as os
 
@@ -44,8 +54,13 @@ class ThreadedClient():
     """
     def __init__(self, opts):
         # Create the queue
-        self.outqueue = Queue.Queue()
-        self.inqueue = Queue.Queue()
+        if multicore:
+            self.outqueue = mult.JoinableQueue()
+            self.inqueue  = mult.JoinableQueue()
+        else:    
+            self.outqueue = Queue.Queue()
+            self.inqueue = Queue.Queue()
+
         self.running = 1
         
         # get option parser options
@@ -73,8 +88,12 @@ class ThreadedClient():
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-        self.readthread = threading.Thread(target=self.daq.read)
-        self.writethread = threading.Thread(target=self.daq.write)
+        if multicore:
+            self.readthread = mult.Process(target=self.daq.read)
+            self.writethread = mult.Process(target=self.daq.write)
+        else:
+            self.readthread = threading.Thread(target=self.daq.read)
+            self.writethread = threading.Thread(target=self.daq.write)
         
         # Set daemon flag so that the threads finish when the main app finishes
         self.readthread.daemon = True
@@ -115,9 +134,10 @@ if __name__ == '__main__':
         print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
     if os.path.exists(opts.filename):
         decision = raw_input("A file with the filename %s already exists. Do you really want to overwrite it (yes/no)? " % str(opts.filename) )
-    if decision != 'yes':
-        print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
-        sys.exit()
+
+        if decision != 'yes':
+            print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
+            sys.exit()
        
     main(opts)
 

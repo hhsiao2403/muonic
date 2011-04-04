@@ -54,7 +54,7 @@ class SimDaq():
 
 
         self.__scalars_to_return__ = 'DS S0=' + format_to_8digits(hex(self.__scalars_ch0__)[2:]) + ' S1=' + format_to_8digits(hex(self.__scalars_ch1__)[2:]) + ' S2=' + format_to_8digits(hex(self.__scalars_ch2__)[2:]) + ' S3=' + format_to_8digits(hex(self.__scalars_ch3__)[2:]) + ' S4=' + format_to_8digits(hex(self.__scalars_trigger__)[2:])
-        #if self.debug: print self.__scalars_to_return__
+        if self.debug: print self.__scalars_to_return__
 
 
 
@@ -64,9 +64,10 @@ class SimDaq():
 
     def readline(self):
 
+        if self.debug: print  "SIMDAQ: return info", self.__return_info__
         if self.__return_info__:
             self.__return_info__ = False
-            if self.debug: print self.__info__
+            if self.debug: print "SIMDAQ: info field:", self.__info__ 
             return self.__info__
 
         self.__pushed_lines__ += 1
@@ -97,13 +98,13 @@ class SimDaq():
             if self.debug: print "SIMDAQ: got DS command" 
             #self.__info__ = "DS S0=00000064 S1=000000c8 S2=0000012c S3=00000190 S4=000003e8 S5=00000020"
             self.__info__ = self.__scalars_to_return__
-	    self.__return_info__ = True
+            self.__return_info__ = True
         
 
     def inWaiting(self):
         if not self.__inWaiting__:
             self.__wait__(2)
-
+        
         return self.__inWaiting__
         
        
@@ -132,6 +133,7 @@ class SimDaqConnection(object):
             if self.port.inWaiting():
                 while self.port.inWaiting():
                     self.outqueue.put(self.port.readline().strip())
+                    #self.outqueue.task_done()
                 sleeptime = max(sleeptime/2, min_sleeptime)
             else:
                 sleeptime = min(1.5 * sleeptime, max_sleeptime)
@@ -142,7 +144,9 @@ class SimDaqConnection(object):
             while self.inqueue.qsize():
                 try:
                     self.port.write(str(self.inqueue.get(0))+"\r")
+                    #self.inqueue.task_done()
                 except Queue.Empty:
+                    if self.debug: print "SimDaqConnection: Queue empty!"
                     pass
             time.sleep(0.1)
 
