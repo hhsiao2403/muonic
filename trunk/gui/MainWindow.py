@@ -38,7 +38,7 @@ class MainWindow(QtGui.QMainWindow):
         
         
         QtGui.QMainWindow.__init__(self, win_parent)
-        self.resize(640, 480)
+        self.resize(600, 480)
         #self.resize(800, 600)
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))      
@@ -254,11 +254,11 @@ class SubWindow(QtGui.QWidget):
         
         self.debug = debug
         self.mainwindow = mainwindow
-        self.setGeometry(0,0, 500,650)
+        self.setGeometry(0,0, 600,480)
         self.setWindowTitle("Debreate")
         self.setWindowIcon(QtGui.QIcon("icon.png"))
-        self.resize(500,650)
-        self.setMinimumSize(500,650)
+        self.resize(600,480)
+        self.setMinimumSize(600,480)
         self.center()
         self.write_file = False
         self.scalars_result = (0,0,0,0,0)
