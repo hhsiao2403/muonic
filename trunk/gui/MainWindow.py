@@ -21,6 +21,10 @@ import time
 import gc
 gc.set_threshold(1000000)
 
+reso_w = 600
+reso_h = 400
+
+
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
 
@@ -30,16 +34,16 @@ SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Ep
 
 class MainWindow(QtGui.QMainWindow):
     
-    def __init__(self, inqueue, outqueue, endcommand, filename, debug, win_parent = None):
+    def __init__(self, inqueue, outqueue, endcommand, filename, debug, timewindow, win_parent = None):
         self.debug = debug
         self.filename = filename             
-        
+        self.timewindow = timewindow
+
         if self.debug: print "Welcome to MainWindow!"
         
         
         QtGui.QMainWindow.__init__(self, win_parent)
-        self.resize(600, 480)
-        #self.resize(800, 600)
+        self.resize(reso_w, reso_h)
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))      
 
@@ -65,7 +69,7 @@ class MainWindow(QtGui.QMainWindow):
     def create_widgets(self):       
        
         print "Uebergabe debug", self.debug
-        self.subwindow = SubWindow(self, self.debug)       
+        self.subwindow = SubWindow(self, self.timewindow, self.debug)       
         self.setCentralWidget(self.subwindow)
 
         exit = QtGui.QAction(QtGui.QIcon('/usr/share/icons/gnome/24x24/actions/exit.png'), 'Exit', self)
@@ -249,16 +253,17 @@ class MainWindow(QtGui.QMainWindow):
 
 
 class SubWindow(QtGui.QWidget):
-    def __init__(self, mainwindow, debug):
+    def __init__(self, mainwindow, timewindow, debug):
         QtGui.QWidget.__init__(self)
         
+        self.timewindow = timewindow
         self.debug = debug
         self.mainwindow = mainwindow
-        self.setGeometry(0,0, 600,480)
+        self.setGeometry(0,0, reso_w,reso_h)
         self.setWindowTitle("Debreate")
         self.setWindowIcon(QtGui.QIcon("icon.png"))
-        self.resize(600,480)
-        self.setMinimumSize(600,480)
+        self.resize(reso_w,reso_h)
+        self.setMinimumSize(reso_w,reso_h)
         self.center()
         self.write_file = False
         self.scalars_result = (0,0,0,0,0)
@@ -326,10 +331,10 @@ class SubWindow(QtGui.QWidget):
         
         self.setLayout(vbox)
         
-        self.scalars_monitor = ScalarsMonitor(self, debug)
+        self.scalars_monitor = ScalarsMonitor(self, self.timewindow, debug)
         self.lifetime_monitor = LifetimeMonitor(self)
         self.timerEvent(None)
-        self.timer = self.startTimer(2000)
+        self.timer = self.startTimer(self.timewindow*1000)
 
         # instantiate the navigation toolbar
         ntb = NavigationToolbar(self.scalars_monitor, self)

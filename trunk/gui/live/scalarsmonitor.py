@@ -6,6 +6,8 @@ import numpy as n
 from PyQt4 import QtGui
 # Matplotlib Figure object
 from matplotlib.figure import Figure
+import matplotlib.patches as patches
+
 # import the Qt4Agg FigureCanvas object, that binds Figure to
 # Qt4Agg backend. It also inherits from QWidget
 from matplotlib.backends.backend_qt4agg \
@@ -19,9 +21,10 @@ import NavigationToolbar2QTAgg as NavigationToolbar
 
 class ScalarsMonitor(FigureCanvas):
     """Matplotlib Figure widget to display CPU utilization"""
-    def __init__(self,parent,debug):
+    def __init__(self, parent, timewindow, debug):
        
         self.debug = debug
+        self.timewindow = timewindow
         #print "debug in sclasers monitor", self.debug
 
         # Total number of iterations
@@ -29,10 +32,14 @@ class ScalarsMonitor(FigureCanvas):
         #self.MAXITERS = 300
         #max length of shown plot is 10 minutes!
         self.MAXLENGTH = 40
+        
+        self.highest=0
+        self.lowest=0
 
         # first image setup
-        self.fig = Figure()
+        self.fig = Figure(facecolor='white')
         self.ax = self.fig.add_subplot(111)
+        self.fig.subplots_adjust(right=0.7)
         # initialization of the canvas
         FigureCanvas.__init__(self, self.fig)
         # set specific limits for X and Y axes
@@ -132,6 +139,15 @@ class ScalarsMonitor(FigureCanvas):
         #self.l_trigger.set_data(self.l_time, self.trigger)
         #       
 
+        ma2 = max( max(self.chan0), max(self.chan1), max(self.chan2), 
+                   max(self.chan3))
+        mi2 = min( min(self.chan0), min(self.chan1), min(self.chan2), 
+                   min(self.chan3), min(self.trigger))
+        
+        if ma2 > self.highest:
+            self.highest = ma2
+        if mi2 < self.lowest:
+            self.lowest = mi2
         
         if self.debug: print self.chan0, "Chan0 to plot"
         ma = max( max(self.chan0), max(self.chan1), max(self.chan2), 
@@ -139,8 +155,15 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.set_ylim(0, ma*1.1)
         self.ax.set_xlim(self.l_time[0], self.l_time[-1])
         #if self.debug: print 'SCALARSMONITOR self.chan0', self.chan0 
-        string = 'ch0=%.1f Hz \nch1=%.1f Hz \nch2=%.1f Hz \nch3=%.1f Hz \ntrig=%.1f Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean())
-        self.ax.text(1.00, 0.9, string, transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
+        string = 'channel0 = %.1f Hz \nchannel1 = %.1f Hz \nchannel2 = %.1f Hz \nchannel3 = %.1f Hz \ntrigger = %.1f Hz \n\nrunning for %.2f h \nmax rate = %.1f Hz \nmin rate = %.1f Hz \ntime window = %.1f s' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.l_time[-1]/3600.0, ma2, mi2, self.timewindow)
+        
+        #patch = patches.Rectangle(
+        #    (1.1, 0.0), 0.8, 1,
+        #    fill=True, edgecolor=None, facecolor='blue', transform=self.ax.transAxes, clip_on=False)
+        #self.ax.add_patch(patch)
+
+        self.ax.text(1.05, 0.0, string, transform=self.ax.transAxes)#, bbox=dict(facecolor = 'white', alpha=1, pad=20))
+        
         
 
 #         self.ax.text(1.05, 1.0, 'ch0  %1.f Hz \n' %n.array(self.chan0).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1)

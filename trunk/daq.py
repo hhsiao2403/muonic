@@ -67,9 +67,10 @@ class ThreadedClient():
         self.debug = opts.debug
         self.sim = opts.sim
         self.filename = opts.filename
-        
+        self.timewindow = float(opts.timewindow)
+
         # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.debug) 
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.debug, self.timewindow) 
         self.gui.show()
 
         # A timer to periodically call periodicCall :-)
@@ -129,6 +130,7 @@ if __name__ == '__main__':
     parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
     parser.add_option("-d", "--debug", action="store_true", dest="debug", help="output for debugging", default=False)
     parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
+    parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
     opts, args = parser.parse_args()
     if opts.filename is None:
         print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
