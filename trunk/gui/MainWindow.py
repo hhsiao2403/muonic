@@ -1,14 +1,13 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
+# for exceptions
 import Queue
 
 from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
 from gui.ThresholdDialog import ThresholdDialog
 from gui.HelpWindow import HelpWindow
-from gui.live.ScalarsWindow import ScalarsWindow
-#from gui.live.scalarsmonitor import ScalarsWindow as ScalarsWindow2
 from gui.live.scalarsmonitor import ScalarsMonitor
 from gui.live.lifetimemonitor import LifetimeMonitor
 from matplotlib.backends.backend_qt4agg \
@@ -35,6 +34,8 @@ SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Ep
 class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, filename, debug, timewindow, win_parent = None):
+
+        # instanciate the mainwindow
         self.debug = debug
         self.filename = filename             
         self.timewindow = timewindow
@@ -47,7 +48,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle(_NAME)
         self.statusBar().showMessage(tr('MainWindow','Ready'))      
 
-        # scalars 
+        # prepare fields for scalars 
         self.readout_scalars = False
         self.scalars_ch0_previous = 0
         self.scalars_ch1_previous = 0
@@ -58,7 +59,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.data_file = open('data.txt', 'w')
         self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | R0 | R1 | R2 | R3 | trigger | Delta_time \n')
- 
+
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.endcommand = endcommand
@@ -72,24 +73,21 @@ class MainWindow(QtGui.QMainWindow):
         self.subwindow = SubWindow(self, self.timewindow, self.debug)       
         self.setCentralWidget(self.subwindow)
 
+        # provide buttons to exit the application
         exit = QtGui.QAction(QtGui.QIcon('/usr/share/icons/gnome/24x24/actions/exit.png'), 'Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip(tr('MainWindow','Exit application'))
         #self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
         self.connect(exit, QtCore.SIGNAL('triggered()'), self.exit_program)
         self.connect(self, QtCore.SIGNAL('closeEmitApp()'), QtCore.SLOT('close()') )
-        ##self.connect(self.okButton, QtCore.SIGNAL("clicked()"),
-        ##             self, QtCore.SLOT("accept()"))
-        ##self.connect(self.cancelButton, QtCore.SIGNAL("clicked()"),
-        ##             self, QtCore.SLOT("reject()"))
-
+        # prepare the threshold menu
         thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
         thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
         self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
         self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
         scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
-        self.connect(scalars, QtCore.SIGNAL('triggered()'), self.scalars_menu)
+        # create the menubar and fill it with the submenus
         menubar = self.menuBar()
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
@@ -97,13 +95,12 @@ class MainWindow(QtGui.QMainWindow):
         settings.addAction(thresholds)
         help = menubar.addMenu(tr('MainWindow','&Help'))
         help.addAction(helpdaqcommands)
-        liveanalysis = menubar.addMenu(tr('MainWindow','&Live Analysis'))
-        liveanalysis.addAction(scalars)
 
+        # add a toolbar and add some icons to it
         toolbar = self.addToolBar(tr('MainWindow','Exit'))
         toolbar.addAction(exit)
 
-
+    # exit the main program after verification
     def verification(self, question_string):
         reply = QtGui.QMessageBox.question(self, 'Message',
                 question_string, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
@@ -111,25 +108,25 @@ class MainWindow(QtGui.QMainWindow):
             return True
         else:
             return False
-
-
+    
     def exit_program(self):
-        # exit the main program after verification
-        #q = Verification()
-        #q.show()
         if self.verification('Do you really want to exit?'):
-            print 'Exit!'
+            if self.debug: print 'Exit!'
+            self.endcommand()
             self.emit(QtCore.SIGNAL('closeEmitApp()'))
             
-        #q.exec_()
-
-
     #the individual menus
     def threshold_menu(self):
         threshold_window = ThresholdDialog()
         rv = threshold_window.exec_()
         if rv == 1:
             # Here we should set the thresholds
+
+            # TODO: remove str -> int -> str conversion
+            if self.debug: print type(threshold_window.ch0_input.text())
+            if self.debug: print threshold_window.ch0_input.text()
+
+            # TODO: catch exception
             thresh_ch0 = int(threshold_window.ch0_input.text())
             thresh_ch1 = int(threshold_window.ch1_input.text())
             thresh_ch2 = int(threshold_window.ch2_input.text())
@@ -138,17 +135,12 @@ class MainWindow(QtGui.QMainWindow):
             self.outqueue.put('TL 1 ' + str(thresh_ch1))
             self.outqueue.put('TL 2 ' + str(thresh_ch2))
             self.outqueue.put('TL 3 ' + str(thresh_ch3))
-            #self.outqueue.task_done() 
+
+
     def help_menu(self):
         help_window = HelpWindow()
-        #rv = threshold_window.exec_()
         help_window.exec_()
-        #tr.exec_()	
 
-    def scalars_menu(self):
-        
-        scalars_window = ScalarsWindow(self.scalars)
-        rv = scalars_window.exec_()
 
     #this functions gets everything out of the inqueue
     #All calculations should happen here
@@ -172,17 +164,19 @@ class MainWindow(QtGui.QMainWindow):
                 if msg[0]=='D' and msg[1] == 'S':
                     if len(msg) > 5:
 
+                         # This is necessary, that the first (unphysical)
+                         # value is omitted from the calculation
+                         # of the rates
                          if not self.readout_scalars:
                              self.readout_scalars = True
                              break
                          
-                         self.scalars = msg
-                         self.scalars = self.scalars.split()
+                         self.scalars = msg.split()
                          #make a time window and reset SCALARS_LAST_TIME
                          global SCALARS_LAST_TIME
                          time_window = time.time() - SCALARS_LAST_TIME 
                          SCALARS_LAST_TIME = time.time()
-                         #print time_window, 'time window'
+                         if self.debug: print time_window, 'time window'
 
                          for item in self.scalars:
                              if ("S0" in item) & (len(item) == 11):
@@ -198,7 +192,7 @@ class MainWindow(QtGui.QMainWindow):
                              elif ("S5" in item) & (len(item) == 11):
                                  self.scalars_time = float(int(item[3:],16))
                              else:
-                                 #print 'PROCESS INCOMING: unknown item detected!',item
+                                 if self.debug: print 'PROCESS INCOMING: unknown item detected!',item
                                  pass
 
                          self.scalars_diff_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
@@ -207,27 +201,14 @@ class MainWindow(QtGui.QMainWindow):
                          self.scalars_diff_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
                          self.scalars_diff_trigger = self.scalars_trigger - self.scalars_trigger_previous 
 
-                         #cut off the plot, set maximum rate to 35 Hz
-# if self.scalars_diff_ch0 > 35:
-#     self.scalars_diff_ch0 = 35
-# if self.scalars_diff_ch1 > 35:
-#     self.scalars_diff_ch1 = 35
-# if self.scalars_diff_ch2 > 35:
-#     self.scalars_diff_ch2 = 35
-# if self.scalars_diff_ch3 > 35:
-#     self.scalars_diff_ch3 = 35
-# #the triggerrate can be larger    
-# if self.scalars_diff_trigger > 60:
-#     self.scalars_diff_trigger = 60
-# 
                          self.scalars_ch0_previous = self.scalars_ch0
                          self.scalars_ch1_previous = self.scalars_ch1
                          self.scalars_ch2_previous = self.scalars_ch2
                          self.scalars_ch3_previous = self.scalars_ch3
                          self.scalars_trigger_previous = self.scalars_trigger
-                         #if the time window is too small
-                         #this can cause an unphysical 
-                         #high rate
+                         # if the time window is too small
+                         # this can cause an unphysical 
+                         # high rate
                          if time_window < 0.5:
                              print 'PROCESS INCOMING: WARN: time window to small, setting time_window = 0.5'
                              time_window = 0.5
@@ -249,10 +230,15 @@ class MainWindow(QtGui.QMainWindow):
         if self.subwindow.write_file:
             self.subwindow.outputfile.close()
         self.data_file.close()
-        self.endcommand()
+        self.exit_program()
 
 
 class SubWindow(QtGui.QWidget):
+    """
+    The SubWindow should hold the tabs. All functionality should
+    be represented by tabs in the SubWindow
+    """
+
     def __init__(self, mainwindow, timewindow, debug):
         QtGui.QWidget.__init__(self)
         
@@ -268,9 +254,7 @@ class SubWindow(QtGui.QWidget):
         self.write_file = False
         self.scalars_result = (0,0,0,0,0)
 
-
-
-
+        # provide the items which should go into the tabs
         self.label = QtGui.QLabel(tr('MainWindow','Command'))
         self.hello_edit = LineEdit()
         self.hello_button = QtGui.QPushButton(tr('MainWindow','Send'))
@@ -338,12 +322,12 @@ class SubWindow(QtGui.QWidget):
 
         # instantiate the navigation toolbar
         ntb = NavigationToolbar(self.scalars_monitor, self)
-        # pack these widget into the vertical box
+        # pack theses widget into the vertical box
         p2_vertical.addWidget(self.scalars_monitor)
         p2_vertical.addWidget(ntb)
 
         ntb = NavigationToolbar(self.lifetime_monitor, self)
-        # pack these widget into the vertical box
+        # pack these widgets into the vertical box
         p3_vertical.addWidget(self.lifetime_monitor)
         p3_vertical.addWidget(ntb)
 
@@ -358,7 +342,6 @@ class SubWindow(QtGui.QWidget):
         text = str(self.hello_edit.displayText())
         if len(text) > 0:
             self.mainwindow.outqueue.put(str(self.hello_edit.displayText()))
-            #self.outqueue.task_done()
             self.hello_edit.add_hist_item(text)
         self.hello_edit.clear()
 
@@ -387,7 +370,6 @@ class SubWindow(QtGui.QWidget):
             def periodic_put():
                 for c in commands:
                     self.mainwindow.outqueue.put(c)
-                    #self.mainwindow.outqueue.task_done()
             self.periodic_put = periodic_put
             self.timer = QtCore.QTimer()
             QtCore.QObject.connect(self.timer,
@@ -408,7 +390,7 @@ class SubWindow(QtGui.QWidget):
         """Custom timerEvent code, called at timer event receive"""
         #get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
-        #self.mainwindow.outqueue.task_done()
+        #for debugging: check the garbage collector
         if self.debug: print "GC:", len(gc.get_objects()), "objects traced by gc"
         not_reachable = gc.collect()
         if self.debug: print "GC: All objects collected!"

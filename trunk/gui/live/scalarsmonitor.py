@@ -1,5 +1,4 @@
 # for command-line arguments
-import sys
 import pylab as p
 import numpy as n
 # Python Qt4 bindings for GUI objects
@@ -16,9 +15,6 @@ import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
-
-
-
 class ScalarsMonitor(FigureCanvas):
     """Matplotlib Figure widget to display CPU utilization"""
     def __init__(self, parent, timewindow, debug):
@@ -27,9 +23,7 @@ class ScalarsMonitor(FigureCanvas):
         self.timewindow = timewindow
         #print "debug in sclasers monitor", self.debug
 
-        # Total number of iterations
         
-        #self.MAXITERS = 300
         #max length of shown plot is 10 minutes!
         self.MAXLENGTH = 40
         

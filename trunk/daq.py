@@ -22,6 +22,7 @@
 # It is licenced under the Python licence, http://www.python.org/psf/license/
 
 import sys
+#even if multiprocessing.Queue is used, Queue is needed 
 import Queue
 
 #test if more than one cpu is available
@@ -34,6 +35,8 @@ multicore = False
 
 if not multicore: 
     import threading
+else:
+    print " using multiprocessing expansion..."
 
 import os as os
 
@@ -55,6 +58,7 @@ class ThreadedClient():
     def __init__(self, opts):
         # Create the queue
         if multicore:
+            # mult.Queue or mult.JoinableQueue?
             self.outqueue = mult.JoinableQueue()
             self.inqueue  = mult.JoinableQueue()
         else:    
