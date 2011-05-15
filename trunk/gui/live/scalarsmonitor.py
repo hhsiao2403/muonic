@@ -1,6 +1,7 @@
 # for command-line arguments
 import pylab as p
 import numpy as n
+from datetime import datetime
 # Python Qt4 bindings for GUI objects
 from PyQt4 import QtGui
 # Matplotlib Figure object
@@ -29,11 +30,13 @@ class ScalarsMonitor(FigureCanvas):
         
         self.highest=0
         self.lowest=0
+        self.now = datetime.now()#.strftime('%d.%m.%Y %H:%M:%S')
+ 
 
         # first image setup
         self.fig = Figure(facecolor='white')
         self.ax = self.fig.add_subplot(111)
-        self.fig.subplots_adjust(right=0.7)
+        self.fig.subplots_adjust(left=0.1, right=0.6)
         # initialization of the canvas
         FigureCanvas.__init__(self, self.fig)
         # set specific limits for X and Y axes
@@ -54,6 +57,11 @@ class ScalarsMonitor(FigureCanvas):
         self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='chan2',lw=3)
         self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='chan3',lw=3)
         self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trigger',lw=3)
+        self.N0 = 0
+        self.N1 = 0
+        self.N2 = 0
+        self.N3 = 0
+        self.NT = 0
 	# add legend to plot
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
         #catch error which occurs sometimes for some 
@@ -71,6 +79,7 @@ class ScalarsMonitor(FigureCanvas):
 
         if self.debug: print self.l_chan0, "chan0"
         self.setParent(parent)
+        
        
 
     def update_plot(self, result):
@@ -107,6 +116,11 @@ class ScalarsMonitor(FigureCanvas):
         self.trigger.append(result[4])
         self.time_window += result[5]
         self.l_time.append(self.time_window)
+        self.N0 += result[6]
+        self.N1 += result[7]
+        self.N2 += result[8]
+        self.N3 += result[9]
+        self.NT += result[10]
 
         if len(self.chan0) >  self.MAXLENGTH:
             self.chan0.remove(self.chan0[0])
@@ -149,7 +163,11 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.set_ylim(0, ma*1.1)
         self.ax.set_xlim(self.l_time[0], self.l_time[-1])
         #if self.debug: print 'SCALARSMONITOR self.chan0', self.chan0 
-        string = 'channel0 = %.1f Hz \nchannel1 = %.1f Hz \nchannel2 = %.1f Hz \nchannel3 = %.1f Hz \ntrigger = %.1f Hz \n\nrunning for %.2f h \nmax rate = %.1f Hz \nmin rate = %.1f Hz \ntime window = %.1f s' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.l_time[-1]/3600.0, ma2, mi2, self.timewindow)
+        now2 = datetime.now()
+        dt = (now2 - self.now)  
+        dt1 = dt.seconds + dt.days * 3600 * 24
+        
+        string = 'start: %s \nchannel0 = %.2e Hz \nchannel1 = %.2e Hz \nchannel2 = %.2e Hz \nchannel3 = %.2e Hz \ntrigger = %.2e Hz \nN0 = %.2e \nN1 = %.2e \nN2 = %.2e \nN3 = %.2e \nNT = %.2e \n\nrunning for %.2e s \nrunning for %.4e s \nmax rate = %.4e Hz \nmin rate = %.2e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0, self.N1, self.N2, self.N3, self.NT, dt1, self.time_window, ma2, mi2, self.timewindow)
         
         #patch = patches.Rectangle(
         #    (1.1, 0.0), 0.8, 1,
