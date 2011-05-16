@@ -57,11 +57,19 @@ class ScalarsMonitor(FigureCanvas):
         self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='chan2',lw=3)
         self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='chan3',lw=3)
         self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trigger',lw=3)
+        self.skip = 0
+
+        self.first = True
         self.N0 = 0
         self.N1 = 0
         self.N2 = 0
         self.N3 = 0
         self.NT = 0
+        self.N0_0 = 0
+        self.N1_0 = 0
+        self.N2_0 = 0
+        self.N3_0 = 0
+        self.NT_0 = 0
 	# add legend to plot
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
         #catch error which occurs sometimes for some 
@@ -109,13 +117,23 @@ class ScalarsMonitor(FigureCanvas):
 
         if self.debug: print result
         # update lines data using the lists with new data
-        self.chan0.append(result[0])
-        self.chan1.append(result[1])
-        self.chan2.append(result[2])
-        self.chan3.append(result[3])
-        self.trigger.append(result[4])
-        self.time_window += result[5]
-        self.l_time.append(self.time_window)
+        if self.skip > 1:
+            self.chan0.append(result[0])
+            self.chan1.append(result[1])
+            self.chan2.append(result[2])
+            self.chan3.append(result[3])
+            self.trigger.append(result[4])
+            self.time_window += result[5]
+            self.l_time.append(self.time_window)
+        
+        if self.first:
+            self.N0_0 = result[6]
+            self.N1_0 = result[7]
+            self.N2_0 = result[8]
+            self.N3_0 = result[9]
+            self.NT_0 = result[10]
+            self.first = False
+            
         self.N0 += result[6]
         self.N1 += result[7]
         self.N2 += result[8]
@@ -132,12 +150,14 @@ class ScalarsMonitor(FigureCanvas):
 
       
         if self.debug: print self.l_chan0, type(self.l_chan0)
-        self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
-        self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
-        self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
-        self.l_chan3, = self.ax.plot(self.l_time,self.chan3, c='b', label='chan3',lw=2)
-        self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trigger',lw=2)
-
+        if self.skip > 1:
+            self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
+            self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
+            self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
+            self.l_chan3, = self.ax.plot(self.l_time,self.chan3, c='b', label='chan3',lw=2)
+            self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trigger',lw=2)
+        else:
+            self.skip += 1
 
 
         #self.l_chan0.set_data(self.l_time, self.chan0)
@@ -167,7 +187,7 @@ class ScalarsMonitor(FigureCanvas):
         dt = (now2 - self.now)  
         dt1 = dt.seconds + dt.days * 3600 * 24
         
-        string = 'start: %s \nchannel0 = %.2e Hz \nchannel1 = %.2e Hz \nchannel2 = %.2e Hz \nchannel3 = %.2e Hz \ntrigger = %.2e Hz \nN0 = %.2e \nN1 = %.2e \nN2 = %.2e \nN3 = %.2e \nNT = %.2e \n\nrunning for %.2e s \nrunning for %.4e s \nmax rate = %.4e Hz \nmin rate = %.2e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0, self.N1, self.N2, self.N3, self.NT, dt1, self.time_window, ma2, mi2, self.timewindow)
+        string = 'start: %s \nchannel0 = %.2e Hz \nchannel1 = %.2e Hz \nchannel2 = %.2e Hz \nchannel3 = %.2e Hz \ntrigger = %.2e Hz \nN0 = %.2e \nN1 = %.2e \nN2 = %.2e \nN3 = %.2e \nNT = %.2e \n\nrunning for %.2e s \nrunning for %.4e s \nmax rate = %.4e Hz \nmin rate = %.2e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0, dt1, self.time_window, ma2, mi2, self.timewindow)
         
         #patch = patches.Rectangle(
         #    (1.1, 0.0), 0.8, 1,
