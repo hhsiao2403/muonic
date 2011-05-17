@@ -187,7 +187,7 @@ class ScalarsMonitor(FigureCanvas):
         dt = (now2 - self.now)  
         dt1 = dt.seconds + dt.days * 3600 * 24
         
-        string = 'start: %s \nchannel0 = %.2e Hz \nchannel1 = %.2e Hz \nchannel2 = %.2e Hz \nchannel3 = %.2e Hz \ntrigger = %.2e Hz \nN0 = %.2e \nN1 = %.2e \nN2 = %.2e \nN3 = %.2e \nNT = %.2e \n\nrunning for %.2e s \nrunning for %.4e s \nmax rate = %.4e Hz \nmin rate = %.2e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0, dt1, self.time_window, ma2, mi2, self.timewindow)
+        string = 'start: %s \nchannel0 = %.5e Hz \nchannel1 = %.5e Hz \nchannel2 = %.5e Hz \nchannel3 = %.5e Hz \ntrigger = %.5e Hz \nN0 = %.5e \nN1 = %.5e \nN2 = %.5e \nN3 = %.5e \nNT = %.5e \n\nrunning for %.5e s \nrunning for %.5e s \nmax rate = %.5e Hz \nmin rate = %.5e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0, dt1, self.time_window, ma2, mi2, self.timewindow)
         
         #patch = patches.Rectangle(
         #    (1.1, 0.0), 0.8, 1,
