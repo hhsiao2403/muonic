@@ -57,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
         self.scalars_trigger_previous = 0
         self.scalars_time = 0
         
-        self.data_file = open('data.txt', 'w')
+        self.data_file = open(self.filename, 'w')
         self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | R0 | R1 | R2 | R3 | trigger | Delta_time \n')
 
         self.inqueue = inqueue
@@ -96,9 +96,10 @@ class MainWindow(QtGui.QMainWindow):
         help = menubar.addMenu(tr('MainWindow','&Help'))
         help.addAction(helpdaqcommands)
 
+        ## keep as example but takes to much space at the moment
         # add a toolbar and add some icons to it
-        toolbar = self.addToolBar(tr('MainWindow','Exit'))
-        toolbar.addAction(exit)
+        # toolbar = self.addToolBar(tr('MainWindow','Exit'))
+        # toolbar.addAction(exit)
 
     # exit the main program after verification
     def verification(self, question_string):
@@ -161,63 +162,65 @@ class MainWindow(QtGui.QMainWindow):
                     self.subwindow.outputfile.write(str(msg)+'\n')
 
                 # check for scalar information
-                if msg[0]=='D' and msg[1] == 'S':
-                    if len(msg) > 5:
-
-                         # This is necessary, that the first (unphysical)
-                         # value is omitted from the calculation
-                         # of the rates
-                         if not self.readout_scalars:
-                             self.readout_scalars = True
-                             break
+                if len(msg) >= 2 and msg[0]=='D' and msg[1] == 'S':                    
+                    if len(msg) > 5 :
+                        # This is necessary, that the first (unphysical)
+                        # value is omitted from the calculation
+                        # of the rates
+                        if not self.readout_scalars:
+                            self.readout_scalars = True
+                            break
                          
-                         self.scalars = msg.split()
+                        self.scalars = msg.split()
                          #make a time window and reset SCALARS_LAST_TIME
-                         global SCALARS_LAST_TIME
-                         time_window = time.time() - SCALARS_LAST_TIME 
-                         SCALARS_LAST_TIME = time.time()
-                         if self.debug: print time_window, 'time window'
+                        global SCALARS_LAST_TIME
+                        time_window = time.time() - SCALARS_LAST_TIME 
+                        SCALARS_LAST_TIME = time.time()
+                        if self.debug: print time_window, 'time window'
 
-                         for item in self.scalars:
-                             if ("S0" in item) & (len(item) == 11):
-                                 self.scalars_ch0 = int(item[3:],16)
-                             elif ("S1" in item) & (len(item) == 11):
-                                 self.scalars_ch1 = int(item[3:],16)
-                             elif ("S2" in item) & (len(item) == 11):
-                                 self.scalars_ch2 = int(item[3:],16)
-                             elif ("S3" in item) & (len(item) == 11):
-                                 self.scalars_ch3 = int(item[3:],16)
-                             elif ("S4" in item) & (len(item) == 11):
-                                 self.scalars_trigger = int(item[3:],16)
-                             elif ("S5" in item) & (len(item) == 11):
-                                 self.scalars_time = float(int(item[3:],16))
-                             else:
-                                 if self.debug: print 'PROCESS INCOMING: unknown item detected!',item
-                                 pass
+                        for item in self.scalars:
+                            if ("S0" in item) & (len(item) == 11):
+                                self.scalars_ch0 = int(item[3:],16)
+                            elif ("S1" in item) & (len(item) == 11):
+                                self.scalars_ch1 = int(item[3:],16)
+                            elif ("S2" in item) & (len(item) == 11):
+                                self.scalars_ch2 = int(item[3:],16)
+                            elif ("S3" in item) & (len(item) == 11):
+                                self.scalars_ch3 = int(item[3:],16)
+                            elif ("S4" in item) & (len(item) == 11):
+                                self.scalars_trigger = int(item[3:],16)
+                            elif ("S5" in item) & (len(item) == 11):
+                                self.scalars_time = float(int(item[3:],16))
+                            else:
+                                if self.debug: print 'PROCESS INCOMING: unknown item detected!',item
+                                pass
 
-                         self.scalars_diff_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
-                         self.scalars_diff_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
-                         self.scalars_diff_ch2 = self.scalars_ch2 - self.scalars_ch2_previous 
-                         self.scalars_diff_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
-                         self.scalars_diff_trigger = self.scalars_trigger - self.scalars_trigger_previous 
-
-                         self.scalars_ch0_previous = self.scalars_ch0
-                         self.scalars_ch1_previous = self.scalars_ch1
-                         self.scalars_ch2_previous = self.scalars_ch2
-                         self.scalars_ch3_previous = self.scalars_ch3
-                         self.scalars_trigger_previous = self.scalars_trigger
+                        self.scalars_diff_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
+                        self.scalars_diff_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
+                        self.scalars_diff_ch2 = self.scalars_ch2 - self.scalars_ch2_previous 
+                        self.scalars_diff_ch3 = self.scalars_ch3 - self.scalars_ch3_previous 
+                        self.scalars_diff_trigger = self.scalars_trigger - self.scalars_trigger_previous 
+                        
+                        self.scalars_ch0_previous = self.scalars_ch0
+                        self.scalars_ch1_previous = self.scalars_ch1
+                        self.scalars_ch2_previous = self.scalars_ch2
+                        self.scalars_ch3_previous = self.scalars_ch3
+                        self.scalars_trigger_previous = self.scalars_trigger
                          # if the time window is too small
                          # this can cause an unphysical 
                          # high rate
-                         if time_window < 0.5:
-                             print 'PROCESS INCOMING: WARN: time window to small, setting time_window = 0.5'
-                             time_window = 0.5
+                        if time_window < 0.5:
+                            print 'PROCESS INCOMING: WARN: time window to small, setting time_window = 0.5'
+                            time_window = 0.5
                          
                          #send the counted scalars to the subwindow
-                         scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window, self.scalars_diff_trigger/time_window, time_window, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_trigger)
-                         self.subwindow.scalars_monitor.update_plot(scalars_result)
+                        scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window, self.scalars_diff_trigger/time_window, time_window, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_trigger)
+                        if scalars_result:
+                            self.subwindow.scalars_monitor.update_plot(scalars_result)
                          #write the rates to data file
-                         self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
+                        self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
+                        if self.debug:
+                            print "DATA was written to file"
                          
             except Queue.Empty:
                 pass

@@ -144,7 +144,7 @@ if __name__ == '__main__':
         if decision != 'yes':
             print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
             sys.exit()
-       
+    
     main(opts)
 
 # vim: ai ts=4 sts=4 et sw=4

@@ -45,18 +45,18 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.grid()
         #self.ax.set_title('Rate')
         self.ax.set_xlabel('time in s')
-        self.ax.set_ylabel('Rate in Hz')
+        self.ax.set_ylabel('rate in Hz')
         # and disable figure-wide autoscale
         self.ax.set_autoscale_on(False)
         #self.ax.set_autoscale_on(True)
         # generates first "empty" plots
         self.time_window = 0
         self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[], [], [], [], [], []
-        self.l_chan0, = self.ax.plot([],self.chan0, c='y', label='chan0',lw=3)
-        self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='chan1',lw=3)
-        self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='chan2',lw=3)
-        self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='chan3',lw=3)
-        self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trigger',lw=3)
+        self.l_chan0, = self.ax.plot([],self.chan0, c='y', label='ch0',lw=3)
+        self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='ch1',lw=3)
+        self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='ch2',lw=3)
+        self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='ch3',lw=3)
+        self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trg',lw=3)
         self.skip = 0
 
         self.first = True
@@ -74,11 +74,11 @@ class ScalarsMonitor(FigureCanvas):
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
         #catch error which occurs sometimes for some 
         #pylab versions
-        #try:
-         #   self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
+        try:
+            self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=0.5)
         #except(TypeError):
-        #except:
-        self.ax.legend()
+        except:
+            self.ax.legend('upper left')
 
         # force a redraw of the Figure
         self.fig.canvas.draw()
@@ -87,8 +87,13 @@ class ScalarsMonitor(FigureCanvas):
 
         if self.debug: print self.l_chan0, "chan0"
         self.setParent(parent)
+
         
-       
+    def color(self, string, color="none"):
+        """output colored strings on the terminal"""
+        colors = { "green": '\033[92m', 'yellow' : '\033[93m', 'red' : '\033[91m', 'blue' : '\033[94m', 'none' : '\033[0m'}
+        return colors[color] + string + colors["none"]   
+
 
     def update_plot(self, result):
 
@@ -109,9 +114,10 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.set_autoscale_on(False)
         #self.ax.set_autoscale_on(True)
         try:
-            self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0.)
-        except(TypeError):
-            self.ax.legend()
+            self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=0.5)
+        #except(TypeError):
+        except:
+            self.ax.legend('upper left')
 
 
 
@@ -151,11 +157,11 @@ class ScalarsMonitor(FigureCanvas):
       
         if self.debug: print self.l_chan0, type(self.l_chan0)
         if self.skip > 1:
-            self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
-            self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
-            self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
-            self.l_chan3, = self.ax.plot(self.l_time,self.chan3, c='b', label='chan3',lw=2)
-            self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trigger',lw=2)
+            self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='ch0',lw=2)
+            self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='ch1',lw=2)
+            self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='ch2',lw=2)
+            self.l_chan3, = self.ax.plot(self.l_time,self.chan3, c='b', label='ch3',lw=2)
+            self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trg',lw=2)
         else:
             self.skip += 1
 
@@ -167,35 +173,60 @@ class ScalarsMonitor(FigureCanvas):
         #self.l_trigger.set_data(self.l_time, self.trigger)
         #       
 
-        ma2 = max( max(self.chan0), max(self.chan1), max(self.chan2), 
-                   max(self.chan3))
-        mi2 = min( min(self.chan0), min(self.chan1), min(self.chan2), 
-                   min(self.chan3), min(self.trigger))
+        try:
+            ma2 = max( max(self.chan0), max(self.chan1), max(self.chan2), 
+                       max(self.chan3))
+            mi2 = min( min(self.chan0), min(self.chan1), min(self.chan2), 
+                       min(self.chan3), min(self.trigger))
         
+        except:
+            ma2 = 0
+            mi2 = 1e15
+
+
         if ma2 > self.highest:
             self.highest = ma2
         if mi2 < self.lowest:
             self.lowest = mi2
         
         if self.debug: print self.chan0, "Chan0 to plot"
-        ma = max( max(self.chan0), max(self.chan1), max(self.chan2), 
-                  max(self.chan3), max(self.trigger)  )
+        
+        try:
+            ma = max( max(self.chan0), max(self.chan1), max(self.chan2), 
+                      max(self.chan3), max(self.trigger)  )
+        except:
+            ma = 1
+            
         self.ax.set_ylim(0, ma*1.1)
-        self.ax.set_xlim(self.l_time[0], self.l_time[-1])
+        
+        try:
+            self.ax.set_xlim(self.l_time[0], self.l_time[-1])
+        except:
+            pass
+
         #if self.debug: print 'SCALARSMONITOR self.chan0', self.chan0 
         now2 = datetime.now()
         dt = (now2 - self.now)  
         dt1 = dt.seconds + dt.days * 3600 * 24
         
-        string = 'start: %s \nchannel0 = %.5e Hz \nchannel1 = %.5e Hz \nchannel2 = %.5e Hz \nchannel3 = %.5e Hz \ntrigger = %.5e Hz \nN0 = %.5e \nN1 = %.5e \nN2 = %.5e \nN3 = %.5e \nNT = %.5e \n\nrunning for %.5e s \nrunning for %.5e s \nmax rate = %.5e Hz \nmin rate = %.5e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0, dt1, self.time_window, ma2, mi2, self.timewindow)
+        #string = 'started: %s \nchannel0 = %.8e Hz \nchannel1 = %.8e Hz \nchannel2 = %.8e Hz \nchannel3 = %.8e Hz \ntrigger = %.8e Hz \nN0 = %.8e \nN1 = %.8e \nN2 = %.8e \nN3 = %.8e \nNT = %.8e \n\ntime = %.8e s \ndaq time = %.8e s \nmax rate = %.8e Hz \nmin rate = %.8e Hz \ntime window = %.1f s' % ( self.now.strftime('%d.%m.%Y %H:%M:%S'), n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean(), self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0, dt1, self.time_window, ma2, mi2, self.timewindow)
+
+        string1 = 'started: %s ' % self.now.strftime('%d.%m.%Y %H:%M:%S')
+        string2 = 'nchannel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean() )
+        string3 = 'N0 = %.8e \nN1 = %.8e \nN2 = %.8e \nN3 = %.8e \nNT = %.8e' % (self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0)
+        string4 = '\ntime = %.8e s \ndaq time = %.8e s \nmax rate = %.4e Hz \nmin rate = %.4e Hz \ntime window = %.1f s' % ( dt1, self.time_window, ma2, mi2, self.timewindow )
+                             
         
         #patch = patches.Rectangle(
         #    (1.1, 0.0), 0.8, 1,
         #    fill=True, edgecolor=None, facecolor='blue', transform=self.ax.transAxes, clip_on=False)
         #self.ax.add_patch(patch)
 
-        self.ax.text(1.05, 0.0, string, transform=self.ax.transAxes)#, bbox=dict(facecolor = 'white', alpha=1, pad=20))
-        
+        #self.ax.text(1.05, 0.0, string1+string2+string3+string4, 
+        #            transform=self.ax.transAxes)#, bbox=dict(facecolor = 'white', alpha=1, pad=20))
+        self.ax.text(1.1, -0.1, string1+string4, transform=self.ax.transAxes) 
+        self.ax.text(1.1, 0.35, string3, transform=self.ax.transAxes, color='blue') 
+        self.ax.text(1.1, 0.75, string2, transform=self.ax.transAxes, color='green') 
         
 
 #         self.ax.text(1.05, 1.0, 'ch0  %1.f Hz \n' %n.array(self.chan0).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1)
@@ -204,7 +235,12 @@ class ScalarsMonitor(FigureCanvas):
 #         self.ax.text(1, 0.7, 'ch3  %1.f Hz' %n.array(self.chan3).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
 #         self.ax.text(1, 0.6, 'trig %1.f Hz' %n.array(self.trigger).mean(), transform=self.ax.transAxes, bbox=dict(facecolor = 'white', alpha=1))
 #         
-        self.ax.legend()
+        #self.ax.legend()
+        try:
+            self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=0.5)
+        except:
+            self.ax.legend('upper left')
+            
         self.fig.canvas.draw()
         
 
