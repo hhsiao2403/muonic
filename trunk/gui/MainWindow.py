@@ -83,16 +83,23 @@ class MainWindow(QtGui.QMainWindow):
         # prepare the threshold menu
         thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
         thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
+        clear = QtGui.QAction(QtGui.QIcon(''),'clear', self)
+        clear.setStatusTip(tr('MainWindow','clear plots'))
+        
         self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
         self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
         scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
+        self.connect(clear, QtCore.SIGNAL('triggered()'), self.clear_function)
         # create the menubar and fill it with the submenus
+        
         menubar = self.menuBar()
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
         settings = menubar.addMenu(tr('MainWindow', '&Settings'))
         settings.addAction(thresholds)
+        settings.addAction(clear)
+
         help = menubar.addMenu(tr('MainWindow','&Help'))
         help.addAction(helpdaqcommands)
 
@@ -141,6 +148,12 @@ class MainWindow(QtGui.QMainWindow):
     def help_menu(self):
         help_window = HelpWindow()
         help_window.exec_()
+
+        
+    def clear_function(self):
+        #if self.debug: 
+        print "clear was called"
+        self.subwindow.scalars_monitor.reset()
 
 
     #this functions gets everything out of the inqueue

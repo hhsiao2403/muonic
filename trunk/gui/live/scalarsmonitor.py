@@ -18,19 +18,18 @@ import NavigationToolbar2QTAgg as NavigationToolbar
 
 class ScalarsMonitor(FigureCanvas):
     """Matplotlib Figure widget to display CPU utilization"""
-    def __init__(self, parent, timewindow, debug):
-       
+    def __init__(self, parent, timewindow, debug):   
+                
         self.debug = debug
         self.timewindow = timewindow
         #print "debug in sclasers monitor", self.debug
-
         
         #max length of shown plot is 10 minutes!
         self.MAXLENGTH = 40
         
-        self.highest=0
-        self.lowest=0
-        self.now = datetime.now()#.strftime('%d.%m.%Y %H:%M:%S')
+        ##self.highest=0
+        ##self.lowest=0
+        ##self.now = datetime.now()#.strftime('%d.%m.%Y %H:%M:%S')
  
 
         # first image setup
@@ -40,8 +39,8 @@ class ScalarsMonitor(FigureCanvas):
         # initialization of the canvas
         FigureCanvas.__init__(self, self.fig)
         # set specific limits for X and Y axes
-        self.ax.set_xlim(0, 1)
-        self.ax.set_ylim(-5, 100)
+        ##self.ax.set_xlim(0, 1)
+        ##self.ax.set_ylim(-5, 100)
         self.ax.grid()
         #self.ax.set_title('Rate')
         self.ax.set_xlabel('time in s')
@@ -50,27 +49,30 @@ class ScalarsMonitor(FigureCanvas):
         self.ax.set_autoscale_on(False)
         #self.ax.set_autoscale_on(True)
         # generates first "empty" plots
-        self.time_window = 0
-        self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[], [], [], [], [], []
-        self.l_chan0, = self.ax.plot([],self.chan0, c='y', label='ch0',lw=3)
-        self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='ch1',lw=3)
-        self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='ch2',lw=3)
-        self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='ch3',lw=3)
-        self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trg',lw=3)
-        self.skip = 0
+        ##self.time_window = 0
+        ##self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[], [], [], [], [], []
+        ##self.l_chan0, = self.ax.plot([],self.chan0, c='y', label='ch0',lw=3)
+        ##self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='ch1',lw=3)
+        ##self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='ch2',lw=3)
+        ##self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='ch3',lw=3)
+        ##self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trg',lw=3)
+        ##self.skip = 0
+        ##
+        ##self.first = True
+        ##self.N0 = 0
+        ##self.N1 = 0
+        ##self.N2 = 0
+        ##self.N3 = 0
+        ##self.NT = 0
+        ##self.N0_0 = 0
+        ##self.N1_0 = 0
+        ##self.N2_0 = 0
+        ##self.N3_0 = 0
+        ##self.NT_0 = 0
+	
+        self.reset()
 
-        self.first = True
-        self.N0 = 0
-        self.N1 = 0
-        self.N2 = 0
-        self.N3 = 0
-        self.NT = 0
-        self.N0_0 = 0
-        self.N1_0 = 0
-        self.N2_0 = 0
-        self.N3_0 = 0
-        self.NT_0 = 0
-	# add legend to plot
+        ## add legend to plot
         #self.ax.legend(bbox_to_anchor=(1, 1), loc=2, borderaxespad=0.)
         #catch error which occurs sometimes for some 
         #pylab versions
@@ -83,11 +85,43 @@ class ScalarsMonitor(FigureCanvas):
         # force a redraw of the Figure
         self.fig.canvas.draw()
         # initialize the iteration counter
-        self.cnt = 0
+        ##self.cnt = 0
 
         if self.debug: print self.l_chan0, "chan0"
         self.setParent(parent)
 
+        
+        
+    def reset(self):
+        "reseting all data"
+
+        self.highest=0
+        self.lowest=0
+        self.now = datetime.now()#.strftime('%d.%m.%Y %H:%M:%S')
+        self.ax.set_xlim(0, 1)
+        self.ax.set_ylim(-5, 100)
+        
+        self.time_window = 0
+        self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[], [], [], [], [], []
+        self.l_chan0, = self.ax.plot([],self.chan0, c='y', label='ch0',lw=3)
+        self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='ch1',lw=3)
+        self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='ch2',lw=3)
+        self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='ch3',lw=3)
+        self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trg',lw=3)
+        self.skip = 0
+        self.first = True
+        self.N0 = 0
+        self.N1 = 0
+        self.N2 = 0
+        self.N3 = 0
+        self.NT = 0
+        self.N0_0 = 0
+        self.N1_0 = 0
+        self.N2_0 = 0
+        self.N3_0 = 0
+        self.NT_0 = 0
+        self.cnt = 0
+        
         
     def color(self, string, color="none"):
         """output colored strings on the terminal"""
