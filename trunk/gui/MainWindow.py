@@ -1,6 +1,12 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
+# set up logging
+import logging
+
+
+
+
 # for exceptions
 import Queue
 
@@ -30,17 +36,31 @@ _NAME = 'muonic'
 #define some global variables to calculate the rates
 SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Epoch
 
+# frequency of the DAQ card
+freq = 25e6 # 25 MHz
+
+
 
 class MainWindow(QtGui.QMainWindow):
     
-    def __init__(self, inqueue, outqueue, endcommand, filename, debug, timewindow, win_parent = None):
+    def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, win_parent = None):
 
         # instanciate the mainwindow
-        self.debug = debug
+
+	# setup logging
+        #logger = logging.getLogger(__name__)
+        #logger.setLevel(int(debug))
+        #ch = logging.StreamHandler()
+        #ch.setLevel(int(debug))
+        #formatter = logging.Formatter('%(levelname)s:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
+        #ch.setFormatter(formatter)
+        #logger.addHandler(ch)
+
+        self.logger = logger
         self.filename = filename             
         self.timewindow = timewindow
 
-        if self.debug: print "Welcome to MainWindow!"
+        self.logger.debug("Welcome to MainWindow!")
         
         
         QtGui.QMainWindow.__init__(self, win_parent)
@@ -69,8 +89,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def create_widgets(self):       
        
-        print "Uebergabe debug", self.debug
-        self.subwindow = SubWindow(self, self.timewindow, self.debug)       
+        self.subwindow = SubWindow(self, self.timewindow, self.logger)       
         self.setCentralWidget(self.subwindow)
 
         # provide buttons to exit the application
@@ -119,7 +138,7 @@ class MainWindow(QtGui.QMainWindow):
     
     def exit_program(self):
         if self.verification('Do you really want to exit?'):
-            if self.debug: print 'Exit!'
+            self.logger.debug('Exit!')
             self.endcommand()
             self.emit(QtCore.SIGNAL('closeEmitApp()'))
             
@@ -131,18 +150,29 @@ class MainWindow(QtGui.QMainWindow):
             # Here we should set the thresholds
 
             # TODO: remove str -> int -> str conversion
-            if self.debug: print type(threshold_window.ch0_input.text())
-            if self.debug: print threshold_window.ch0_input.text()
+            self.logger.debug("Type of input text is %s and its value is %s" %(type(threshold_window.ch0_input.text()),threshold_window.ch0_input.text()))
 
-            # TODO: catch exception
-            thresh_ch0 = int(threshold_window.ch0_input.text())
-            thresh_ch1 = int(threshold_window.ch1_input.text())
-            thresh_ch2 = int(threshold_window.ch2_input.text())
-            thresh_ch3 = int(threshold_window.ch3_input.text())
-            self.outqueue.put('TL 0 ' + str(thresh_ch0))
-            self.outqueue.put('TL 1 ' + str(thresh_ch1))
-            self.outqueue.put('TL 2 ' + str(thresh_ch2))
-            self.outqueue.put('TL 3 ' + str(thresh_ch3))
+            try: 
+                thresh_ch0 = int(threshold_window.ch0_input.text())
+	        self.outqueue.put('TL 0 ' + str(thresh_ch0))
+            except ValueError:
+		self.logger.info("Can't convert to integer: field 0")
+            try:
+		thresh_ch1 = int(threshold_window.ch1_input.text())
+                self.outqueue.put('TL 1 ' + str(thresh_ch1))
+            except ValueError:
+		self.logger.info("Can't convert to integer: field 1")
+            try:
+		thresh_ch2 = int(threshold_window.ch2_input.text())
+                self.outqueue.put('TL 2 ' + str(thresh_ch2))
+            except ValueError:
+		self.logger.info("Can't convert to integer: field 2")
+            try:
+		thresh_ch3 = int(threshold_window.ch3_input.text())
+                self.outqueue.put('TL 3 ' + str(thresh_ch3))
+            except ValueError:
+		self.logger.info("Can't convert to integer: field 3")
+	    
 
 
     def help_menu(self):
@@ -151,8 +181,7 @@ class MainWindow(QtGui.QMainWindow):
 
         
     def clear_function(self):
-        #if self.debug: 
-        print "clear was called"
+        self.logger.debug("Clear was called")
         self.subwindow.scalars_monitor.reset()
 
 
@@ -163,7 +192,7 @@ class MainWindow(QtGui.QMainWindow):
         Handle all the messages currently in the queue (if any).
         """
         
-        if self.debug: print  "PROCESS INCOMING: length of inqueue: ", self.    inqueue.qsize()
+        self.logger.debug("length of inqueue: %s" %self.inqueue.qsize())
         while self.inqueue.qsize():
 
             try:
@@ -189,7 +218,7 @@ class MainWindow(QtGui.QMainWindow):
                         global SCALARS_LAST_TIME
                         time_window = time.time() - SCALARS_LAST_TIME 
                         SCALARS_LAST_TIME = time.time()
-                        if self.debug: print time_window, 'time window'
+                        self.logger.debug("Time window %s" %time_window)
 
                         for item in self.scalars:
                             if ("S0" in item) & (len(item) == 11):
@@ -205,8 +234,7 @@ class MainWindow(QtGui.QMainWindow):
                             elif ("S5" in item) & (len(item) == 11):
                                 self.scalars_time = float(int(item[3:],16))
                             else:
-                                if self.debug: print 'PROCESS INCOMING: unknown item detected!',item
-                                pass
+                                self.logger.debug("unknown item detected: %s" %item.__repr__())
 
                         self.scalars_diff_ch0 = self.scalars_ch0 - self.scalars_ch0_previous 
                         self.scalars_diff_ch1 = self.scalars_ch1 - self.scalars_ch1_previous 
@@ -223,7 +251,7 @@ class MainWindow(QtGui.QMainWindow):
                          # this can cause an unphysical 
                          # high rate
                         if time_window < 0.5:
-                            print 'PROCESS INCOMING: WARN: time window to small, setting time_window = 0.5'
+                            self.logger.info("time window to small, setting time_window = 0.5")
                             time_window = 0.5
                          
                          #send the counted scalars to the subwindow
@@ -232,8 +260,7 @@ class MainWindow(QtGui.QMainWindow):
                             self.subwindow.scalars_monitor.update_plot(scalars_result)
                          #write the rates to data file
                         self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
-                        if self.debug:
-                            print "DATA was written to file"
+                        self.logger.debug("DATA was written to file")
                          
             except Queue.Empty:
                 pass
@@ -255,11 +282,21 @@ class SubWindow(QtGui.QWidget):
     be represented by tabs in the SubWindow
     """
 
-    def __init__(self, mainwindow, timewindow, debug):
+    def __init__(self, mainwindow, timewindow, logger):
+	# setup logging
+        #logger = logging.getLogger(__name__)
+        #logger.setLevel(int(debug))
+        #ch = logging.StreamHandler()
+        #ch.setLevel(int(debug))
+        #formatter = logging.Formatter('%(levelname)s:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
+        #ch.setFormatter(formatter)
+        #logger.addHandler(ch)
+
+	self.logger = logger
         QtGui.QWidget.__init__(self)
         
         self.timewindow = timewindow
-        self.debug = debug
+        #self.debug = debug
         self.mainwindow = mainwindow
         self.setGeometry(0,0, reso_w,reso_h)
         self.setWindowTitle("Debreate")
@@ -330,8 +367,9 @@ class SubWindow(QtGui.QWidget):
         vbox.addWidget(tab_widget)
         
         self.setLayout(vbox)
-        
-        self.scalars_monitor = ScalarsMonitor(self, self.timewindow, debug)
+       
+	debug = True 
+        self.scalars_monitor = ScalarsMonitor(self, self.timewindow, self.logger)
         self.lifetime_monitor = LifetimeMonitor(self)
         self.timerEvent(None)
         self.timer = self.startTimer(self.timewindow*1000)
@@ -407,11 +445,10 @@ class SubWindow(QtGui.QWidget):
         #get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
         #for debugging: check the garbage collector
-        if self.debug: print "GC:", len(gc.get_objects()), "objects traced by gc"
-        not_reachable = gc.collect()
-        if self.debug: print "GC: All objects collected!"
-        if self.debug: print "GC:", not_reachable, "objects were not reachable!"
-        if self.debug: print "GC:", len(gc.get_objects()), "objects traced by gc"
+        self.logger.debug("%s objects traced by GC" %len(gc.get_objects()))
+        self.logger.debug("All objects collected! by GC")
+        self.logger.debug("%s objects were not reachalbe" %gc.collect().__repr__())
+        self.logger.debug("%s objects traced by GC " %len(gc.get_objects()))
 
         #make lifetime histogram
         mu, sigma = 100, 15
