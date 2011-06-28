@@ -21,32 +21,6 @@
 # Adapted by Boudewijn Rempt, Netherlands. 2002-04-15
 # It is licenced under the Python licence, http://www.python.org/psf/license/
 
-import sys
-#even if multiprocessing.Queue is used, Queue is needed 
-import Queue
-
-#test if more than one cpu is available
-import multiprocessing as mult
-multicore = mult.cpu_count() > 1
-print " %d cpus found!" %mult.cpu_count()
-
-#disable multicore support at the moment
-multicore = False
-
-if not multicore: 
-    import threading
-else:
-    print " using multiprocessing expansion..."
-
-import os as os
-
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-
-from daq.DaqConnection import DaqConnection
-from daq.SimDaqConnection import SimDaqConnection
-from gui.MainWindow import MainWindow
-from optparse import OptionParser
 
 
 class ThreadedClient():
@@ -55,9 +29,12 @@ class ThreadedClient():
     endApplication could reside in the GUI part, but putting them here
     means that you have all the thread controls in a single place.
     """
-    def __init__(self, opts):
+    def __init__(self, opts,logger):
+
+        global MULTICORE
+
         # Create the queue
-        if multicore:
+        if MULTICORE:
             # mult.Queue or mult.JoinableQueue?
             self.outqueue = mult.JoinableQueue()
             self.inqueue  = mult.JoinableQueue()
@@ -68,13 +45,13 @@ class ThreadedClient():
         self.running = 1
         
         # get option parser options
-        self.debug = opts.debug
+        self.logger = logger
         self.sim = opts.sim
         self.filename = opts.filename
         self.timewindow = float(opts.timewindow)
 
         # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.debug, self.timewindow) 
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.logger, self.timewindow) 
         self.gui.show()
 
         # A timer to periodically call periodicCall :-)
@@ -87,13 +64,13 @@ class ThreadedClient():
         self.timer.start(1000)
 
         if self.sim:
-            self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.debug)
+            self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.logger)
         else:
-            self.daq = DaqConnection(self.inqueue, self.outqueue, self.debug)
+            self.daq = DaqConnection(self.inqueue, self.outqueue, self.logger)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-        if multicore:
+        if MULTICORE:
             self.readthread = mult.Process(target=self.daq.read)
             self.writethread = mult.Process(target=self.daq.write)
         else:
@@ -113,28 +90,32 @@ class ThreadedClient():
         """
         self.gui.processIncoming()
         if not self.running:
-            global root
             self.daq.running = False
             root.quit()
 
     def endApplication(self):
         self.running = False
-
-          
-
-def main(opts):
+ 
+def main(opts,logger):
     root = QtGui.QApplication(sys.argv)
-    client = ThreadedClient(opts)
+    client = ThreadedClient(opts,logger)
     root.exec_()
 
 if __name__ == '__main__':
-    #arg = sys.argv
+
+    import sys
+    import os
+    from optparse import OptionParser
+
+
+
     usage = "%prog [options] -f <data output file> \nspecify the file type by a command line switch."
     parser = OptionParser(usage=usage)
     parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
-    parser.add_option("-d", "--debug", action="store_true", dest="debug", help="output for debugging", default=False)
+    #parser.add_option("-d", "--debug", action="store_true", dest="debug", help="output for debugging", default=False)
     parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
     parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
+    parser.add_option("-d", "--debug", dest="loglevel", action="store_const", const=10 , help="switch to loglevel debug", default=20)
     opts, args = parser.parse_args()
     if opts.filename is None:
         print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
@@ -144,7 +125,45 @@ if __name__ == '__main__':
         if decision != 'yes':
             print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
             sys.exit()
+
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(int(opts.loglevel))
+    ch = logging.StreamHandler()
+    ch.setLevel(int(opts.loglevel))
+    formatter = logging.Formatter('%(levelname)s:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    #even if multiprocessing.Queue is used, Queue is needed 
+    import Queue
+   
+
+    #test if more than one cpu is available
+    try:
+        import multiprocessing as mult
+        MULTICORE = mult.cpu_count() > 1
+        logger.info("%d cpus found!" %mult.cpu_count())
+   
+    except ImportError:
+        logger.info("python-multiprocessing is not available, using python thrading instead")
+        MULTICORE = False
     
-    main(opts)
+    if not MULTICORE: 
+        import threading
+    else:
+        logger.info("using python-multiprocessing expansion")
+    
+    
+    from PyQt4 import QtCore
+    from PyQt4 import QtGui
+    
+    from daq.DaqConnection import DaqConnection
+    from daq.SimDaqConnection import SimDaqConnection
+    from gui.MainWindow import MainWindow
+
+    # make it so!
+    main(opts,logger)
 
 # vim: ai ts=4 sts=4 et sw=4
