@@ -16,7 +16,7 @@ from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
 class ScalarsMonitor(FigureCanvas):
-    """Matplotlib Figure widget to display CPU utilization"""
+    """Matplotlib Figure widget to display a plot of the rates"""
     def __init__(self, parent, timewindow, logger):
        
         self.logger = logger
@@ -69,7 +69,7 @@ class ScalarsMonitor(FigureCanvas):
         # initialize the iteration counter
         self.cnt = 0
 
-        logger.debug("chan 0 %s" %self.l_chan0)
+        self.logger.debug("chan 0 %s" %self.l_chan0)
         self.setParent(parent)
        
 
@@ -98,7 +98,7 @@ class ScalarsMonitor(FigureCanvas):
 
 
 
-        logger.debug("Result %s" %result.__repr__())
+        self.logger.debug("Result %s" %result.__repr__())
         # update lines data using the lists with new data
         self.chan0.append(result[0])
         self.chan1.append(result[1])
@@ -117,7 +117,7 @@ class ScalarsMonitor(FigureCanvas):
             self.l_time.remove(self.l_time[0])
 
       
-        logger.debug("self.l_chan0 %s %s" %(self.l_chan0, type(self.l_chan0)))
+        self.logger.debug("self.l_chan0 %s %s" %(self.l_chan0, type(self.l_chan0)))
         self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='chan0',lw=2)
         self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='chan1',lw=2)
         self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='chan2',lw=2)
@@ -143,7 +143,7 @@ class ScalarsMonitor(FigureCanvas):
         if mi2 < self.lowest:
             self.lowest = mi2
         
-        logger.debug("Chan0 to plot %s" %self.chan0.__repr__())
+        self.logger.debug("Chan0 to plot %s" %self.chan0.__repr__())
         ma = max( max(self.chan0), max(self.chan1), max(self.chan2), 
                   max(self.chan3), max(self.trigger)  )
         self.ax.set_ylim(0, ma*1.1)
