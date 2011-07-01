@@ -253,6 +253,7 @@ class MainWindow(QtGui.QMainWindow):
 
             try:
                 msg = self.inqueue.get(0)
+                self.logger.debug("Got item from inqueue: %s" %msg.__repr__())
                 # Check contents of message and do what it says
                 # As a test, we simply print it
                 self.subwindow.text_box.appendPlainText(str(msg))
@@ -500,6 +501,8 @@ class SubWindow(QtGui.QWidget):
         """Custom timerEvent code, called at timer event receive"""
         #get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
+        #self.mainwindow.outqueue.task_done()
+
         #for debugging: check the garbage collector
         self.logger.debug("%s objects traced by GC" %len(gc.get_objects()))
         self.logger.debug("All objects collected! by GC")

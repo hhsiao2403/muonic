@@ -36,8 +36,11 @@ class ThreadedClient():
         # Create the queue
         if MULTICORE:
             # mult.Queue or mult.JoinableQueue?
-            self.outqueue = mult.JoinableQueue()
-            self.inqueue  = mult.JoinableQueue()
+            # self.outqueue = mult.JoinableQueue()
+            # self.inqueue  = mult.JoinableQueue()
+            self.outqueue = mult.Queue()
+            self.inqueue  = mult.Queue()
+            
         else:    
             self.outqueue = Queue.Queue()
             self.inqueue = Queue.Queue()
@@ -71,17 +74,20 @@ class ThreadedClient():
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
         if MULTICORE:
-            self.readthread = mult.Process(target=self.daq.read)
-            self.writethread = mult.Process(target=self.daq.write)
+            self.readthread = mult.Process(target=self.daq.read,name="pREADER")
+            if not self.sim:
+                self.writethread = mult.Process(target=self.daq.write,name="pWRITER")
         else:
             self.readthread = threading.Thread(target=self.daq.read)
-            self.writethread = threading.Thread(target=self.daq.write)
+            if not self.sim:
+                self.writethread = threading.Thread(target=self.daq.write)
         
         # Set daemon flag so that the threads finish when the main app finishes
         self.readthread.daemon = True
-        self.writethread.daemon = True
         self.readthread.start()
-        self.writethread.start()
+        if not self.sim:
+            self.writethread.daemon = True
+            self.writethread.start()
         
 
     def periodicCall(self):
@@ -132,7 +138,7 @@ if __name__ == '__main__':
     logger.setLevel(int(opts.loglevel))
     ch = logging.StreamHandler()
     ch.setLevel(int(opts.loglevel))
-    formatter = logging.Formatter('%(levelname)s:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
+    formatter = logging.Formatter('%(levelname)s:%(process)d:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
@@ -149,7 +155,9 @@ if __name__ == '__main__':
     except ImportError:
         logger.info("python-multiprocessing is not available, using python thrading instead")
         MULTICORE = False
-    
+
+
+    #MULTICORE = False
     if not MULTICORE: 
         import threading
     else:
