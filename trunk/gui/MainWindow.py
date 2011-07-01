@@ -13,6 +13,7 @@ import Queue
 from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
 from gui.ThresholdDialog import ThresholdDialog
+from gui.ConfigDialog import ConfigDialog
 from gui.HelpWindow import HelpWindow
 from gui.live.scalarsmonitor import ScalarsMonitor
 from gui.live.lifetimemonitor import LifetimeMonitor
@@ -47,14 +48,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # instanciate the mainwindow
 
-	# setup logging
-        #logger = logging.getLogger(__name__)
-        #logger.setLevel(int(debug))
-        #ch = logging.StreamHandler()
-        #ch.setLevel(int(debug))
-        #formatter = logging.Formatter('%(levelname)s:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
-        #ch.setFormatter(formatter)
-        #logger.addHandler(ch)
 
         self.logger = logger
         self.filename = filename             
@@ -102,14 +95,24 @@ class MainWindow(QtGui.QMainWindow):
         # prepare the threshold menu
         thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
         thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
+        self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
+        
+        # prepare the config menu
+        config = QtGui.QAction(QtGui.QIcon(''),'Channel Configuration', self)
+        config.setStatusTip(tr('MainWindow','Configuer the Coincidences and channels'))
+        self.connect(config, QtCore.SIGNAL('triggered()'), self.config_menu)
+        
+
+        # the clear button
         clear = QtGui.QAction(QtGui.QIcon(''),'clear', self)
         clear.setStatusTip(tr('MainWindow','clear plots'))
         
-        self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
         self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
         scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
         self.connect(clear, QtCore.SIGNAL('triggered()'), self.clear_function)
+
+
         # create the menubar and fill it with the submenus
         
         menubar = self.menuBar()
@@ -117,6 +120,7 @@ class MainWindow(QtGui.QMainWindow):
         file.addAction(exit)
         settings = menubar.addMenu(tr('MainWindow', '&Settings'))
         settings.addAction(thresholds)
+        settings.addAction(config)
         settings.addAction(clear)
 
         help = menubar.addMenu(tr('MainWindow','&Help'))
@@ -174,6 +178,58 @@ class MainWindow(QtGui.QMainWindow):
 		self.logger.info("Can't convert to integer: field 3")
 	    
 
+    def config_menu(self):
+        config_window = ConfigDialog()
+        rv = config_window.exec_()
+        if rv == 1:
+            
+            chan0_active = config_window.activateChan0.isChecked() 
+            chan1_active = config_window.activateChan1.isChecked() 
+            chan2_active = config_window.activateChan2.isChecked() 
+            chan3_active = config_window.activateChan3.isChecked() 
+                        
+            singles = config_window.coincidenceSingles.isChecked() 
+            twofold = config_window.coincidenceTwofold.isChecked() 
+            threefold = config_window.coincidenceThreefold.isChecked() 
+            fourfold = config_window.coincidenceFourfold.isChecked() 
+
+        msg = 'WC 00 '
+        
+        coincidence_set = False
+        for coincidence in [(singles,'0'),(twofold,'1'),(threefold,'2'),(fourfold,'3')]:
+            if coincidence[0]:
+                msg += coincidence[1]
+                coincidence_set = True
+        
+        # else case, just in case
+        if not coincidence_set:
+            msg += '0'
+
+        channel_set = False
+        enable = ['0','0','0','0']
+        for channel in enumerate([chan3_active,chan2_active,chan1_active,chan0_active]):
+            if channel[1]:
+                enable[channel[0]] = '1'
+                channel_set = True
+        
+        if not channel_set:
+            msg += '0'
+            
+        else:
+            msg += hex(int(''.join(enable),2))[-1].capitalize()
+        
+        self.outqueue.put(msg)
+        self.logger.info('The following message was sent to DAQ: %s' %msg)
+                
+
+        self.logger.debug('channel0 selected %s' %chan0_active)
+        self.logger.debug('channel1 selected %s' %chan1_active)
+        self.logger.debug('channel2 selected %s' %chan2_active)
+        self.logger.debug('channel3 selected %s' %chan3_active)
+        self.logger.debug('coincidence singles %s' %singles)
+        self.logger.debug('coincidence twofold %s' %twofold)
+        self.logger.debug('coincidence threefold %s' %threefold)
+        self.logger.debug('coincidence fourfold %s' %fourfold)
 
     def help_menu(self):
         help_window = HelpWindow()

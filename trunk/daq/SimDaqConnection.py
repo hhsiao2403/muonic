@@ -111,10 +111,10 @@ class SimDaq():
 
 class SimDaqConnection(object):
 
-    def __init__(self, inqueue, outqueue, debug):
+    def __init__(self, inqueue, outqueue, logger):
 
-        self.debug = debug
-        self.port = SimDaq(self.debug)
+        self.logger = logger
+        self.port = SimDaq(self.logger)
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.running = 1
