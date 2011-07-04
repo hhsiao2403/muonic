@@ -59,7 +59,8 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, win_parent)
         self.resize(reso_w, reso_h)
         self.setWindowTitle(_NAME)
-        self.statusBar().showMessage(tr('MainWindow','Ready'))      
+        self.statusbar = QtGui.QMainWindow.statusBar(self)
+        self.statusbar.showMessage(tr('MainWindow','Ready'))      
 
         # prepare fields for scalars 
         self.readout_scalars = False
@@ -340,20 +341,11 @@ class SubWindow(QtGui.QWidget):
     """
 
     def __init__(self, mainwindow, timewindow, logger):
-	# setup logging
-        #logger = logging.getLogger(__name__)
-        #logger.setLevel(int(debug))
-        #ch = logging.StreamHandler()
-        #ch.setLevel(int(debug))
-        #formatter = logging.Formatter('%(levelname)s:%(module)s:%(funcName)s:%(lineno)d:%(message)s')
-        #ch.setFormatter(formatter)
-        #logger.addHandler(ch)
 
-	self.logger = logger
+        self.logger = logger
         QtGui.QWidget.__init__(self)
         
         self.timewindow = timewindow
-        #self.debug = debug
         self.mainwindow = mainwindow
         self.setGeometry(0,0, reso_w,reso_h)
         self.setWindowTitle("Debreate")
@@ -425,7 +417,7 @@ class SubWindow(QtGui.QWidget):
         
         self.setLayout(vbox)
        
-	debug = True 
+        debug = True 
         self.scalars_monitor = ScalarsMonitor(self, self.timewindow, self.logger)
         self.lifetime_monitor = LifetimeMonitor(self)
         self.timerEvent(None)
@@ -468,7 +460,7 @@ class SubWindow(QtGui.QWidget):
                 self.outputfile = open(filename,'w')
             self.write_file = True
             self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%filename))
-            self.statusBar().addPermanentWidget(self.file_label)
+            self.mainwindow.statusbar.addPermanentWidget(self.file_label)
 
 
     def on_periodic_clicked(self):
@@ -489,11 +481,11 @@ class SubWindow(QtGui.QWidget):
             self.periodic_put()
             self.timer.start(period)
             self.periodic_status_label = QtGui.QLabel(tr('MainWindow','%s every %s sec'%(command,period/1000)))
-            self.statusBar().addPermanentWidget(self.periodic_status_label)
+            self.mainwindow.statusbar.addPermanentWidget(self.periodic_status_label)
         else:
             try:
                 self.timer.stop()
-                self.statusBar().removeWidget(self.periodic_status_label)
+                self.mainwindow.statusbar.removeWidget(self.periodic_status_label)
             except AttributeError:
                 pass
 
