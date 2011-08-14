@@ -19,30 +19,62 @@ class ConfigDialog(QtGui.QDialog):
 
 	# size of window etc..
         self.setObjectName(_fromUtf8("Configure"))
-        self.resize(383, 287)
+        self.resize(520, 360)
         self.setModal(True)
 
 	# the 'ok' and 'cancel' buttons
         self.buttonBox = QtGui.QDialogButtonBox(self)
-        self.buttonBox.setGeometry(QtCore.QRect(30, 240, 341, 32))
+        self.buttonBox.setGeometry(QtCore.QRect(30, 300, 300, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
 
-
 	# select the coincidences with Radio Buttons
-        self.coincidenceSingles = QtGui.QRadioButton(self)
+        # group them in a vertical box, so that they do not
+	# collide with the veto radio buttons
+        self.vlcoincWid = QtGui.QWidget(self)
+        self.vlcoincWid.setGeometry(QtCore.QRect(200, 40, 150, 120))
+        self.vlcoincWid.setObjectName(_fromUtf8("verticalLayoutWidget"))
+        self.vlcoinc = QtGui.QVBoxLayout(self.vlcoincWid)
+        self.vlcoinc.setMargin(0)
+        self.vlcoinc.setObjectName(_fromUtf8("verticalLayout"))
+
+        self.coincidenceSingles = QtGui.QRadioButton(self.vlcoincWid)
         self.coincidenceSingles.setGeometry(QtCore.QRect(210, 50, 145, 28))
         self.coincidenceSingles.setObjectName(_fromUtf8("radioButton"))
-        self.coincidenceTwofold = QtGui.QRadioButton(self)
+        self.vlcoinc.addWidget(self.coincidenceSingles)
+
+        self.coincidenceTwofold = QtGui.QRadioButton(self.vlcoincWid)
         self.coincidenceTwofold.setGeometry(QtCore.QRect(210, 90, 145, 28))
         self.coincidenceTwofold.setObjectName(_fromUtf8("radioButton_2"))
-        self.coincidenceThreefold = QtGui.QRadioButton(self)
+        self.vlcoinc.addWidget(self.coincidenceTwofold)
+
+        self.coincidenceThreefold = QtGui.QRadioButton(self.vlcoincWid)
         self.coincidenceThreefold.setGeometry(QtCore.QRect(210, 140, 145, 28))
         self.coincidenceThreefold.setObjectName(_fromUtf8("radioButton_3"))
-        self.coincidenceFourfold= QtGui.QRadioButton(self)
+        self.vlcoinc.addWidget(self.coincidenceThreefold)
+
+        self.coincidenceFourfold= QtGui.QRadioButton(self.vlcoincWid)
         self.coincidenceFourfold.setGeometry(QtCore.QRect(210, 180, 145, 28))
         self.coincidenceFourfold.setObjectName(_fromUtf8("radioButton_4"))
+        self.vlcoinc.addWidget(self.coincidenceFourfold)
+
+        # set Veto with RadioButtons
+        self.noveto = QtGui.QRadioButton(self)
+        self.noveto.setGeometry(QtCore.QRect(410, 50, 145, 28))
+        self.noveto.setObjectName(_fromUtf8("radioButton_5"))
+        self.vetochan1 = QtGui.QRadioButton(self)
+        self.vetochan1.setGeometry(QtCore.QRect(410, 90, 145, 28))
+        self.vetochan1.setObjectName(_fromUtf8("radioButton_7"))
+        self.vetochan2 = QtGui.QRadioButton(self)
+        self.vetochan2.setGeometry(QtCore.QRect(410, 140, 145, 28))
+        self.vetochan2.setObjectName(_fromUtf8("radioButton_8"))
+        self.vetochan3 = QtGui.QRadioButton(self)
+        self.vetochan3.setGeometry(QtCore.QRect(410, 180, 145, 28))
+        self.vetochan3.setObjectName(_fromUtf8("radioButton_9"))
+
+
+
 
 	# activate Channels with Checkboxes
         self.activateChan0 = QtGui.QCheckBox(self)
@@ -58,7 +90,8 @@ class ConfigDialog(QtGui.QDialog):
         self.activateChan3.setGeometry(QtCore.QRect(20, 180, 119, 28))
         self.activateChan3.setObjectName(_fromUtf8("checkBox_4"))
 
-	# two labels, one for the radio buttons, and one for the checkboxes
+	# three labels, one for the radio buttons, and one for the checkboxes, the last one for veto criterion
+
         self.labelChannel = QtGui.QLabel(self)
         self.labelChannel.setGeometry(QtCore.QRect(30, 10, 121, 23))
         self.labelChannel.setObjectName(_fromUtf8("label"))
@@ -67,6 +100,10 @@ class ConfigDialog(QtGui.QDialog):
         self.labelCoincidence = QtGui.QLabel(self)
         self.labelCoincidence.setGeometry(QtCore.QRect(210, 10, 121, 23))
         self.labelCoincidence.setObjectName(_fromUtf8("label_2"))
+
+        self.labelVeto = QtGui.QLabel(self)
+        self.labelVeto.setGeometry(QtCore.QRect(410, 10, 121, 23))
+        self.labelVeto.setObjectName(_fromUtf8("label_veto"))
 
         self.retranslateUi(self)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), self.accept)
@@ -83,8 +120,13 @@ class ConfigDialog(QtGui.QDialog):
         self.activateChan1.setText(tr("Dialog", "Chan1", None, QtGui.QApplication.UnicodeUTF8))
         self.activateChan2.setText(tr("Dialog", "Chan2", None, QtGui.QApplication.UnicodeUTF8))
         self.activateChan3.setText(tr("Dialog", "Chan3", None, QtGui.QApplication.UnicodeUTF8))
+        self.noveto.setText(tr("Dialog", "None", None, QtGui.QApplication.UnicodeUTF8))
+        self.vetochan1.setText(tr("Dialog", "Chan1", None, QtGui.QApplication.UnicodeUTF8))
+        self.vetochan2.setText(tr("Dialog", "Chan2", None, QtGui.QApplication.UnicodeUTF8))
+        self.vetochan3.setText(tr("Dialog", "Chan3", None, QtGui.QApplication.UnicodeUTF8))
         self.labelChannel.setText(tr("Dialog", "Use Channel", None, QtGui.QApplication.UnicodeUTF8))
         self.labelCoincidence.setText(tr("Dialog", "Coincidence ", None, QtGui.QApplication.UnicodeUTF8))
+        self.labelVeto.setText(tr("Dialog", "Use Veto ", None, QtGui.QApplication.UnicodeUTF8))
 
 
 if __name__ == "__main__":

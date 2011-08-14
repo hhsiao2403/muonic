@@ -26,11 +26,14 @@ class LifetimeMonitor(FigureCanvas):
     """
     
     
-    def __init__(self,parent):
+    def __init__(self,parent,logger):
        
         # Total number of iterations
 
         self.MAXITERS = 300
+        self.logger = logger
+        self.logger.info("Lifetimemonitor started")
+
 
         # first image setup
         self.fig = Figure()

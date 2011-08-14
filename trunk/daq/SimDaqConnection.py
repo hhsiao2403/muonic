@@ -2,9 +2,9 @@ import sys
 import time
 import Queue
 import numpy as n
-
+import gc
 from random import choice
-
+	
 class SimDaq():
 
     def __init__(self, logger):
@@ -15,7 +15,7 @@ class SimDaq():
         self.__lines_to_push__ = 10
         self.__simdaq_file__ = "simdaq.txt"
         self.__daq__ = open(self.__simdaq_file__)
-        self.__inWaiting__ = True
+        self.__inWaiting__ = True 
         self.__return_info__ = False
         self.__info__ = ""
         self.__scalars_ch0__ = 0
@@ -42,12 +42,18 @@ class SimDaq():
             else:
                 pass
 
-              
-        scalars_ch0 = int(n.random.normal(10,4.0,100)[0])
-        scalars_ch1 = int(n.random.normal(15,2.0,100)[0])
-        scalars_ch2 = int(n.random.normal(9,3.0,100)[0])
-        scalars_ch3 = int(n.random.normal(22,5.0,100)[0])
+        # draw rates from a poisson distribution,
+        scalars_ch0 = int(choice(n.random.poisson(12,100)))
+        self.logger.debug("scalars_ch0 %f" %scalars_ch0)
+	gc.collect()
+        scalars_ch1 = int(choice(n.random.poisson(10,100)))
+	gc.collect()
+        scalars_ch2 = int(choice(n.random.poisson(8,100)))
+	gc.collect()
+        scalars_ch3 = int(choice(n.random.poisson(11,100)))
+	gc.collect()
         scalars_trigger = scalars_ch0 + scalars_ch1 + scalars_ch2 + scalars_ch3
+ 	gc.collect()
 
         self.__scalars_ch0__ += scalars_ch0
         self.__scalars_ch1__ += scalars_ch1
@@ -89,11 +95,9 @@ class SimDaq():
 
     def __wait__(self,seconds):
         
-        self.__inWaiting__ = False
         time.sleep(seconds)
         self.__physics__()
         self.logger.debug("SIMULATION MODE!")
-        self.__inWaiting__ = True
 
     def push_info(self):
         return self.__info__
@@ -110,11 +114,14 @@ class SimDaq():
             pass
 
     def inWaiting(self):
-        if not self.__inWaiting__:
-            self.__wait__(0.5)
-            self.__inWaiting__ = choice([True,False])
-        
-        return self.__inWaiting__
+        if self.__inWaiting__:
+            self.__wait__(0.3)
+            #self.__inWaiting__ = choice([True,False])
+            return True
+
+        else:
+            #self.__inWaiting__ = True
+            return False
         
        
 
@@ -138,9 +145,10 @@ class SimDaqConnection(object):
         min_sleeptime = 0.01 # seconds
         max_sleeptime = 0.2 # seconds
         sleeptime = min_sleeptime #seconds
+        self.logger.info('')
         while self.running:
             
-            self.logger.debug("read:inqueue size is %d" %self.inqueue.qsize())
+            self.logger.info("inqueue size is %d" %self.inqueue.qsize())
             while self.inqueue.qsize():
                 try:
                     self.port.write(str(self.inqueue.get(0))+"\r")
@@ -152,13 +160,17 @@ class SimDaqConnection(object):
             if self.port.inWaiting():
                 while self.port.inWaiting():
                     self.outqueue.put(self.port.readline().strip())
+		    self.logger.info('We are waiting')
                     if self.port.__return_info__:
                         self.logger.debug("returning info")
                         self.outqueue.put(self.port.push_info())
+                        self.port.__inWaiting__ = False
                     #self.outqueue.task_done()
                 sleeptime = max(sleeptime/2, min_sleeptime)
+                self.port.__inWaiting__ = True
             else:
                 sleeptime = min(1.5 * sleeptime, max_sleeptime)
+
             time.sleep(sleeptime)
 
 

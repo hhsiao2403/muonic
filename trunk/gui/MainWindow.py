@@ -1,12 +1,6 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
-# set up logging
-import logging
-
-
-
-
 # for exceptions
 import Queue
 
@@ -19,6 +13,10 @@ from gui.live.scalarsmonitor import ScalarsMonitor
 from gui.live.lifetimemonitor import LifetimeMonitor
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
+from itertools import product
+
+import PulseAnalyzer as pa
+
 
 import os
 import numpy as n
@@ -30,12 +28,13 @@ gc.set_threshold(1000000)
 reso_w = 600
 reso_h = 400
 
-
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
 
-#define some global variables to calculate the rates
-SCALARS_LAST_TIME = time.time() #Return the current time in seconds since the Epoch
+#define some global variables 
+MUDECAYMODE = True
+CURRENTDAQSTATUS = dict()
+LASTQUERY = time.time()
 
 # frequency of the DAQ card
 freq = 25e6 # 25 MHz
@@ -46,16 +45,27 @@ class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, win_parent = None):
 
+
+        
+
         # instanciate the mainwindow
-
-
         self.logger = logger
+        self.logger.info("Welcome to MainWindow!")
+
         self.filename = filename             
         self.timewindow = timewindow
+        self.ini = True  # is it the first time all the functions are called?
+        
+        
+        # last time, when the 'DS' command was sent
+	self.lastscalarquery = time.time()
+        self.thisscalarquery = time.time()
+        
+        
+        # the pulseextractor for direct analysis
+        self.pulseextractor = pa.PulseExtractor() 
+        self.pulsebuffer =[]
 
-        self.logger.debug("Welcome to MainWindow!")
-        
-        
         QtGui.QMainWindow.__init__(self, win_parent)
         self.resize(reso_w, reso_h)
         self.setWindowTitle(_NAME)
@@ -76,6 +86,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self.inqueue = inqueue
         self.outqueue = outqueue
+	# we have to ensure that the DAQcard does not sent
+        # any automatic status reports every x seconds
+        self.outqueue.put('ST N!=1')
+        self.outqueue.put('ST 0')
+
         self.endcommand = endcommand
 
         self.create_widgets()
@@ -90,9 +105,10 @@ class MainWindow(QtGui.QMainWindow):
         exit = QtGui.QAction(QtGui.QIcon('/usr/share/icons/gnome/24x24/actions/exit.png'), 'Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip(tr('MainWindow','Exit application'))
-        #self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+
         self.connect(exit, QtCore.SIGNAL('triggered()'), self.exit_program)
         self.connect(self, QtCore.SIGNAL('closeEmitApp()'), QtCore.SLOT('close()') )
+
         # prepare the threshold menu
         thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
         thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
@@ -103,19 +119,17 @@ class MainWindow(QtGui.QMainWindow):
         config.setStatusTip(tr('MainWindow','Configuer the Coincidences and channels'))
         self.connect(config, QtCore.SIGNAL('triggered()'), self.config_menu)
         
-
         # the clear button
         clear = QtGui.QAction(QtGui.QIcon(''),'clear', self)
         clear.setStatusTip(tr('MainWindow','clear plots'))
-        
+       
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
         self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
         scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
         self.connect(clear, QtCore.SIGNAL('triggered()'), self.clear_function)
 
-
         # create the menubar and fill it with the submenus
-        
+       
         menubar = self.menuBar()
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
@@ -146,7 +160,9 @@ class MainWindow(QtGui.QMainWindow):
             self.logger.debug('Exit!')
             self.endcommand()
             self.emit(QtCore.SIGNAL('closeEmitApp()'))
-            
+        else:
+	    pass        
+    
     #the individual menus
     def threshold_menu(self):
         threshold_window = ThresholdDialog()
@@ -154,27 +170,27 @@ class MainWindow(QtGui.QMainWindow):
         if rv == 1:
             # Here we should set the thresholds
 
-            # TODO: remove str -> int -> str conversion
+            # We have to check for integers!
             self.logger.debug("Type of input text is %s and its value is %s" %(type(threshold_window.ch0_input.text()),threshold_window.ch0_input.text()))
 
-            try: 
-                thresh_ch0 = int(threshold_window.ch0_input.text())
-	        self.outqueue.put('TL 0 ' + str(thresh_ch0))
+            try:
+                int(threshold_window.ch0_input.text())
+	        self.outqueue.put('TL 0 ' + threshold_window.ch0_input.text())
             except ValueError:
 		self.logger.info("Can't convert to integer: field 0")
             try:
-		thresh_ch1 = int(threshold_window.ch1_input.text())
-                self.outqueue.put('TL 1 ' + str(thresh_ch1))
+		int(threshold_window.ch1_input.text())
+                self.outqueue.put('TL 1 ' + threshold_window.ch1_input.text())
             except ValueError:
 		self.logger.info("Can't convert to integer: field 1")
             try:
-		thresh_ch2 = int(threshold_window.ch2_input.text())
-                self.outqueue.put('TL 2 ' + str(thresh_ch2))
+		int(threshold_window.ch2_input.text())
+                self.outqueue.put('TL 2 ' + threshold_window.ch2_input.text())
             except ValueError:
 		self.logger.info("Can't convert to integer: field 2")
             try:
-		thresh_ch3 = int(threshold_window.ch3_input.text())
-                self.outqueue.put('TL 3 ' + str(thresh_ch3))
+		int(threshold_window.ch3_input.text())
+                self.outqueue.put('TL 3 ' + threshold_window.ch3_input.text())
             except ValueError:
 		self.logger.info("Can't convert to integer: field 3")
 	    
@@ -194,59 +210,80 @@ class MainWindow(QtGui.QMainWindow):
             threefold = config_window.coincidenceThreefold.isChecked() 
             fourfold = config_window.coincidenceFourfold.isChecked() 
 
-        msg = 'WC 00 '
-        
-        coincidence_set = False
-        for coincidence in [(singles,'0'),(twofold,'1'),(threefold,'2'),(fourfold,'3')]:
-            if coincidence[0]:
-                msg += coincidence[1]
-                coincidence_set = True
-        
-        # else case, just in case
-        if not coincidence_set:
-            msg += '0'
+            noveto = config_window.noveto.isChecked()
+            vetochan1 = config_window.vetochan1.isChecked()
+            vetochan2 = config_window.vetochan2.isChecked()
+            vetochan3 = config_window.vetochan3.isChecked()
 
-        channel_set = False
-        enable = ['0','0','0','0']
-        for channel in enumerate([chan3_active,chan2_active,chan1_active,chan0_active]):
-            if channel[1]:
-                enable[channel[0]] = '1'
-                channel_set = True
-        
-        if not channel_set:
-            msg += '0'
+            tmp_msg = ''
+    
+            for veto in [(noveto,'00'),(vetochan1,'01'),(vetochan2,'10'),(vetochan3,'11')]:
+                if veto[0]:
+                    tmp_msg += veto[1]
             
-        else:
-            msg += hex(int(''.join(enable),2))[-1].capitalize()
-        
-        self.outqueue.put(msg)
-        self.logger.info('The following message was sent to DAQ: %s' %msg)
+            if noveto:
+                # ensure that there is no veto active and reset the 
+                # temp message, just to be sure
+                tmp_msg = '00'
+    
+            coincidence_set = False
+            for coincidence in [(singles,'00'),(twofold,'01'),(threefold,'10'),(fourfold,'11')]:
+                if coincidence[0]:
+                    tmp_msg += coincidence[1]
+                    coincidence_set = True
+            
+            # else case, just in case
+            if not coincidence_set:
+                tmp_msg += '00'
+    
+            # now calculate the correct expression for the first
+            # four bits
+            self.logger.debug("The first four bits are set to %s" %tmp_msg)
+            msg = 'WC 00 ' + hex(int(''.join(tmp_msg),2))[-1].capitalize()
+    
+            channel_set = False
+            enable = ['0','0','0','0']
+            for channel in enumerate([chan3_active,chan2_active,chan1_active,chan0_active]):
+                if channel[1]:
+                    enable[channel[0]] = '1'
+                    channel_set = True
+            
+            if not channel_set:
+                msg += '0'
                 
-
-        self.logger.debug('channel0 selected %s' %chan0_active)
-        self.logger.debug('channel1 selected %s' %chan1_active)
-        self.logger.debug('channel2 selected %s' %chan2_active)
-        self.logger.debug('channel3 selected %s' %chan3_active)
-        self.logger.debug('coincidence singles %s' %singles)
-        self.logger.debug('coincidence twofold %s' %twofold)
-        self.logger.debug('coincidence threefold %s' %threefold)
-        self.logger.debug('coincidence fourfold %s' %fourfold)
+            else:
+                msg += hex(int(''.join(enable),2))[-1].capitalize()
+            
+            self.outqueue.put(msg)
+            self.logger.info('The following message was sent to DAQ: %s' %msg)
+                    
+    
+            self.logger.debug('channel0 selected %s' %chan0_active)
+            self.logger.debug('channel1 selected %s' %chan1_active)
+            self.logger.debug('channel2 selected %s' %chan2_active)
+            self.logger.debug('channel3 selected %s' %chan3_active)
+            self.logger.debug('coincidence singles %s' %singles)
+            self.logger.debug('coincidence twofold %s' %twofold)
+            self.logger.debug('coincidence threefold %s' %threefold)
+            self.logger.debug('coincidence fourfold %s' %fourfold)
 
     def help_menu(self):
         help_window = HelpWindow()
         help_window.exec_()
 
-        
     def clear_function(self):
         self.logger.debug("Clear was called")
         self.subwindow.scalars_monitor.reset()
 
-
     #this functions gets everything out of the inqueue
     #All calculations should happen here
+
+
+
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
+        NEW: It also queries the DAQ with the 'DS' command
         """
         
         self.logger.debug("length of inqueue: %s" %self.inqueue.qsize())
@@ -259,11 +296,14 @@ class MainWindow(QtGui.QMainWindow):
                 # As a test, we simply print it
                 self.subwindow.text_box.appendPlainText(str(msg))
                 if self.subwindow.write_file:
-                    self.subwindow.outputfile.write(str(msg)+'\n')
+                    try:
+                        self.subwindow.outputfile.write(str(msg)+'\n')
+                    except ValueError:
+			self.logger.info('Trying to write on closed file, captured!')
 
                 # check for scalar information
                 if len(msg) >= 2 and msg[0]=='D' and msg[1] == 'S':                    
-                    if len(msg) > 5 :
+                    #if len(msg) > 5 :
                         # This is necessary, that the first (unphysical)
                         # value is omitted from the calculation
                         # of the rates
@@ -272,10 +312,7 @@ class MainWindow(QtGui.QMainWindow):
                             break
                          
                         self.scalars = msg.split()
-                         #make a time window and reset SCALARS_LAST_TIME
-                        global SCALARS_LAST_TIME
-                        time_window = time.time() - SCALARS_LAST_TIME 
-                        SCALARS_LAST_TIME = time.time()
+                        time_window = self.thisscalarquery
                         self.logger.debug("Time window %s" %time_window)
 
                         for item in self.scalars:
@@ -313,14 +350,37 @@ class MainWindow(QtGui.QMainWindow):
                             time_window = 0.5
                          
                          #send the counted scalars to the subwindow
-                        scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window, self.scalars_diff_trigger/time_window, time_window, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_trigger)
-                        if scalars_result:
-                            self.subwindow.scalars_monitor.update_plot(scalars_result)
-                         #write the rates to data file
-                        self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
-                        self.logger.debug("DATA was written to file")
-                         
+                        self.subwindow.scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window, self.scalars_diff_trigger/time_window, time_window, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_trigger)
+                        #if self.scalars_result:
+                        #    self.subwindow.scalars_monitor.update_plot(self.scalars_result)
+                        #write the rates to data file
+                        # we have to catch IOErrors, can occur if program is 
+                        # exited
+                        try:
+                            self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
+                            self.logger.debug("DATA was written to %s" %self.data_file.__repr__())
+                        except ValueError:
+                           self.logger.warning("ValueError, DATA was not written to %s" %self.data_file.__repr__())
+                           pass                         
+                
+                elif MUDECAYMODE:
+                    # we now assume that we are using chan0-2 for data taking anch chan3 as veto
+                    pulses = self.pulseextractor.extract(msg)
+
+                    # if we have a decayed muon, we will see in one 20mu window
+                    # two pulses
+                    if pulses != None:
+                        re0 = [time[0] for time in pulses[1]]
+                        re1 = [time[0] for time in pulses[2]]
+                        re2 = [time[0] for time in pulses[3]]
+                        fe0 = [time[1] for time in pulses[1]]
+                        fe1 = [time[1] for time in pulses[2]]
+                        fe2 = [time[1] for time in pulses[3]]
+                   
+                    print pulses
+ 
             except Queue.Empty:
+                self.logger.debug("Queue empty!")
                 pass
    
     def closeEvent(self, ev):
@@ -336,16 +396,17 @@ class MainWindow(QtGui.QMainWindow):
 
 class SubWindow(QtGui.QWidget):
     """
-    The SubWindow should hold the tabs. All functionality should
-    be represented by tabs in the SubWindow
+    The SubWindow will provide a tabbed interface.
+    All functionality should be represented by tabs in the SubWindow
     """
 
     def __init__(self, mainwindow, timewindow, logger):
 
-        self.logger = logger
         QtGui.QWidget.__init__(self)
         
         self.timewindow = timewindow
+        self.logger = logger
+        self.logger.info("Timewindow is %4.2f" %self.timewindow)
         self.mainwindow = mainwindow
         self.setGeometry(0,0, reso_w,reso_h)
         self.setWindowTitle("Debreate")
@@ -354,7 +415,7 @@ class SubWindow(QtGui.QWidget):
         self.setMinimumSize(reso_w,reso_h)
         self.center()
         self.write_file = False
-        self.scalars_result = (0,0,0,0,0)
+        self.scalars_result = False 
 
         # provide the items which should go into the tabs
         self.label = QtGui.QLabel(tr('MainWindow','Command'))
@@ -417,11 +478,8 @@ class SubWindow(QtGui.QWidget):
         
         self.setLayout(vbox)
        
-        debug = True 
         self.scalars_monitor = ScalarsMonitor(self, self.timewindow, self.logger)
-        self.lifetime_monitor = LifetimeMonitor(self)
-        self.timerEvent(None)
-        self.timer = self.startTimer(self.timewindow*1000)
+        self.lifetime_monitor = LifetimeMonitor(self,self.logger)
 
         # instantiate the navigation toolbar
         ntb = NavigationToolbar(self.scalars_monitor, self)
@@ -431,10 +489,55 @@ class SubWindow(QtGui.QWidget):
 
         ntb = NavigationToolbar(self.lifetime_monitor, self)
         # pack these widgets into the vertical box
+        # activate Muondecay mode with a checkbox
+        self.activateMuondecay = QtGui.QCheckBox(self)
+        self.activateMuondecay.setText(tr("Dialog", "Check for decayed Muons \n- Warning! this will define your coincidence/Veto settings!", None, QtGui.QApplication.UnicodeUTF8))
+        QtCore.QObject.connect(self.activateMuondecay,
+                              QtCore.SIGNAL("clicked()"),
+                              self.activateMuondecayClicked
+                              )
+
+        self.displayMuons = QtGui.QLabel(self)
+        self.displayMuons.setText(tr("Dialog", "We have X decayed muons ", None, QtGui.QApplication.UnicodeUTF8))
+        self.lastDecay = QtGui.QLabel(self)
+        self.lastDecay.setText(tr("Dialog", "Last detected decay at time X ", None, QtGui.QApplication.UnicodeUTF8))
+ 
+	p3_vertical.addWidget(self.activateMuondecay)
+        p3_vertical.addWidget(self.displayMuons)
+        p3_vertical.addWidget(self.lastDecay)
         p3_vertical.addWidget(self.lifetime_monitor)
         p3_vertical.addWidget(ntb)
 
-             
+        # start a timer which does something every timewindow seconds
+        self.timerEvent(None)
+        self.timer = self.startTimer(self.timewindow*1000)
+
+    def activateMuondecayClicked(self):
+        """
+        What should be done if we are looking for mu-decays?
+	"""
+
+
+        global MUDECAYMODE
+
+        if not MUDECAYMODE:
+            if self.activateMuondecay.isChecked():
+                self.logger.warn("We now activate the Muondecay mode!\n All other Coincidence/Veto settings will be overriden!")
+                msg = "WC 00 EF"
+                self.mainwindow.outqueue.put(msg)
+                self.logger.info("We sent the following message to DAQ %s" %msg)
+                self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
+                MUDECAYMODE = True
+                self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for ddecaying muons!'))
+                self.mainwindow.statusbar.addWidget(self.mu_label)
+
+
+        else:
+
+            self.logger.info('Muondecay mode now deactivated, returning to previous setting (if available)')
+            self.mainwindow.statusbar.removeWidget(self.mu_label)
+	    MUDECAYMODE = False
+     
 
     def center(self):
         screen = QtGui.QDesktopWidget().screenGeometry()
@@ -491,9 +594,24 @@ class SubWindow(QtGui.QWidget):
 
     def timerEvent(self,ev):
         """Custom timerEvent code, called at timer event receive"""
-        #get the scalar information from the card
+        # get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
-        #self.mainwindow.outqueue.task_done()
+
+        # we have to know, when we sent the command
+        # we define an intervall here
+        if self.mainwindow.ini:
+             self.logger.debug("Ini condition unset!")
+             self.mainwindow.lastscalarquery = time.time()
+             self.mainwindow.ini = False
+        else:
+             self.mainwindow.thisscalarquery = time.time() - self.mainwindow.lastscalarquery
+             self.mainwindow.lastscalarquery = time.time()
+             if self.scalars_result:
+                 self.scalars_monitor.update_plot(self.scalars_result)
+
+     
+        self.logger.debug("The differcene between two sent 'DS' commands is %4.2f seconds" %self.mainwindow.thisscalarquery)
+
 
         #for debugging: check the garbage collector
         self.logger.debug("%s objects traced by GC" %len(gc.get_objects()))
@@ -501,9 +619,12 @@ class SubWindow(QtGui.QWidget):
         self.logger.debug("%s objects were not reachalbe" %gc.collect().__repr__())
         self.logger.debug("%s objects traced by GC " %len(gc.get_objects()))
 
+
+         
+
         #make lifetime histogram
-        mu, sigma = 100, 15
-        x = mu + sigma*n.random.randn(10000)
+        #mu, sigma = 100, 15
+        #x = mu + sigma*n.random.randn(10000)
         #i = len(self.scalars_monitor.chan0)
         #self.lifetime_monitor.lifetime.append(x[i])
         #print "x[i] = ", x[i]
