@@ -4,18 +4,22 @@ from PyQt4 import QtCore
 # for exceptions
 import Queue
 
+# parts of the program
 from gui.LineEdit import LineEdit
 from gui.PeriodicCallDialog import PeriodicCallDialog
 from gui.ThresholdDialog import ThresholdDialog
 from gui.ConfigDialog import ConfigDialog
+from gui.OptionsDialog import OptionsDialog
 from gui.HelpWindow import HelpWindow
 from gui.live.scalarsmonitor import ScalarsMonitor
 from gui.live.lifetimemonitor import LifetimeMonitor
+from gui.live.pulsemonitor import PulseMonitor
+import PulseAnalyzer as pa
+
+
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
-from itertools import product
 
-import PulseAnalyzer as pa
 
 
 import os
@@ -32,40 +36,38 @@ tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
 
 #define some global variables 
-MUDECAYMODE = True
 CURRENTDAQSTATUS = dict()
 LASTQUERY = time.time()
-
-# frequency of the DAQ card
-freq = 25e6 # 25 MHz
-
 
 
 class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, win_parent = None):
 
-
-        
-
         # instanciate the mainwindow
         self.logger = logger
-        self.logger.info("Welcome to MainWindow!")
-
-        self.filename = filename             
-        self.timewindow = timewindow
+        self.options = MuonicOptions(filename,timewindow)
+        self.options.filename = filename             
+        self.options.timewindow = timewindow
         self.ini = True  # is it the first time all the functions are called?
-        
-        
+        self.mu_ini = True # is it the first time thet the mudecaymode is started?        
+
+        # some hardware info
+        #assuming the cpld clock runs with approx 41MHz
+        self.cpld_tick = 24  #nsec 
+
+
+        # keep the last decays
+        self.decay = []
+
         # last time, when the 'DS' command was sent
-	self.lastscalarquery = time.time()
+        self.lastscalarquery = time.time()
         self.thisscalarquery = time.time()
-        
-        
+              
         # the pulseextractor for direct analysis
         self.pulseextractor = pa.PulseExtractor() 
-        self.pulsebuffer =[]
-
+        self.pulses = ()
+        # initialize MainWindow gui
         QtGui.QMainWindow.__init__(self, win_parent)
         self.resize(reso_w, reso_h)
         self.setWindowTitle(_NAME)
@@ -81,12 +83,12 @@ class MainWindow(QtGui.QMainWindow):
         self.scalars_trigger_previous = 0
         self.scalars_time = 0
         
-        self.data_file = open(self.filename, 'w')
+        self.data_file = open(self.options.filename, 'w')
         self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | R0 | R1 | R2 | R3 | trigger | Delta_time \n')
 
         self.inqueue = inqueue
         self.outqueue = outqueue
-	# we have to ensure that the DAQcard does not sent
+        # we have to ensure that the DAQcard does not sent
         # any automatic status reports every x seconds
         self.outqueue.put('ST N!=1')
         self.outqueue.put('ST 0')
@@ -98,7 +100,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def create_widgets(self):       
        
-        self.subwindow = SubWindow(self, self.timewindow, self.logger)       
+        self.subwindow = SubWindow(self, self.options.timewindow, self.logger)       
         self.setCentralWidget(self.subwindow)
 
         # provide buttons to exit the application
@@ -119,8 +121,14 @@ class MainWindow(QtGui.QMainWindow):
         config.setStatusTip(tr('MainWindow','Configuer the Coincidences and channels'))
         self.connect(config, QtCore.SIGNAL('triggered()'), self.config_menu)
         
+        # the options menu
+        options = QtGui.QAction(QtGui.QIcon(''),'Options', self)
+        options.setStatusTip(tr('MainWindow','Set program options'))
+        self.connect(options, QtCore.SIGNAL('triggered()'), self.options_menu)
+
+
         # the clear button
-        clear = QtGui.QAction(QtGui.QIcon(''),'clear', self)
+        clear = QtGui.QAction(QtGui.QIcon(''),'Clear rate plot', self)
         clear.setStatusTip(tr('MainWindow','clear plots'))
        
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
@@ -137,6 +145,7 @@ class MainWindow(QtGui.QMainWindow):
         settings.addAction(thresholds)
         settings.addAction(config)
         settings.addAction(clear)
+        settings.addAction(options)
 
         help = menubar.addMenu(tr('MainWindow','&Help'))
         help.addAction(helpdaqcommands)
@@ -267,6 +276,17 @@ class MainWindow(QtGui.QMainWindow):
             self.logger.debug('coincidence threefold %s' %threefold)
             self.logger.debug('coincidence fourfold %s' %fourfold)
 
+    def options_menu(self):
+        options_window = OptionsDialog()
+        rv = options_window.exec_()
+        if rv == 1:
+            self.options.usecpld = options_window.CpldCheckbox.isChecked()
+            self.logger.info('Using CPLD clock for rates calculation: %s' %self.options.usecpld.__repr__())
+            self.options.softveto = options_window.VetoCheckbox.isChecked()
+            self.logger.info('Using Chan3 software veto %s' %self.options.softveto.__repr__())
+            
+
+
     def help_menu(self):
         help_window = HelpWindow()
         help_window.exec_()
@@ -363,22 +383,36 @@ class MainWindow(QtGui.QMainWindow):
                            self.logger.warning("ValueError, DATA was not written to %s" %self.data_file.__repr__())
                            pass                         
                 
-                elif MUDECAYMODE:
+                elif (self.options.mudecaymode or self.options.showpulses):
                     # we now assume that we are using chan0-2 for data taking anch chan3 as veto
-                    pulses = self.pulseextractor.extract(msg)
+                    self.pulses = self.pulseextractor.extract(msg)
+                    # print pulses # we do not really want to do that!
 
-                    # if we have a decayed muon, we will see in one 20mu window
-                    # two pulses
-                    if pulses != None:
-                        re0 = [time[0] for time in pulses[1]]
-                        re1 = [time[0] for time in pulses[2]]
-                        re2 = [time[0] for time in pulses[3]]
-                        fe0 = [time[1] for time in pulses[1]]
-                        fe1 = [time[1] for time in pulses[2]]
-                        fe2 = [time[1] for time in pulses[3]]
-                   
-                    print pulses
- 
+                    # This can made simpler,
+                    # if the DecayTrigger just looks for 
+                    # two adjacent triggers,
+                    # we do not neeed to
+                    # run the pulseextractor.
+                    # This needs some more programming, sort
+                    # of implementing TriggerExtractor...
+                    if self.options.mudecaymode:
+                        if self.pulses != None:
+                            if self.mu_ini:
+                                self.dtrigger = pa.DecayTrigger(self.pulses,self.options.softveto)
+                                self.mu_ini = False 
+                                            
+                            else:
+                                tmpdecay = self.dtrigger.trigger(self.pulses)                   
+                                if tmpdecay != None:
+                                    self.decay.append(tmpdecay/100.)
+                                    when = time.asctime()
+                                    self.logger.info('We have found a decaying muon with a decaytime of %f at %s' %(tmpdecay,when)) 
+                                    self.subwindow.muondecaycounter += 1
+                                    self.subwindow.lastdecaytime = when
+
+                                # cleanup
+                                del tmpdecay
+
             except Queue.Empty:
                 self.logger.debug("Queue empty!")
                 pass
@@ -404,10 +438,9 @@ class SubWindow(QtGui.QWidget):
 
         QtGui.QWidget.__init__(self)
         
-        self.timewindow = timewindow
-        self.logger = logger
-        self.logger.info("Timewindow is %4.2f" %self.timewindow)
         self.mainwindow = mainwindow
+        self.logger = logger
+        self.logger.info("Timewindow is %4.2f" %timewindow)
         self.setGeometry(0,0, reso_w,reso_h)
         self.setWindowTitle("Debreate")
         self.setWindowIcon(QtGui.QIcon("icon.png"))
@@ -416,6 +449,8 @@ class SubWindow(QtGui.QWidget):
         self.center()
         self.write_file = False
         self.scalars_result = False 
+        self.muondecaycounter = 0
+        self.lastdecaytime = 'None'
 
         # provide the items which should go into the tabs
         self.label = QtGui.QLabel(tr('MainWindow','Command'))
@@ -453,14 +488,17 @@ class SubWindow(QtGui.QWidget):
         tab1 = QtGui.QWidget()
         tab2 = QtGui.QWidget()
         tab3 = QtGui.QWidget()
+        tab4 = QtGui.QWidget()
 
         p1_vertical = QtGui.QVBoxLayout(tab1)
         p2_vertical = QtGui.QVBoxLayout(tab2)
         p3_vertical = QtGui.QVBoxLayout(tab3)
+        p4_vertical = QtGui.QVBoxLayout(tab4)
 
         tab_widget.addTab(tab1, "DAQ output")
-        tab_widget.addTab(tab2, "Rates")
-        tab_widget.addTab(tab3, "Lifetime")
+        tab_widget.addTab(tab2, "Muon Rates")
+        tab_widget.addTab(tab3, "Muon Lifetime")
+        tab_widget.addTab(tab4, "PulseAnalyzer")
         
         p1_vertical.addWidget(self.text_box)
         second_widget = QtGui.QWidget()
@@ -478,8 +516,9 @@ class SubWindow(QtGui.QWidget):
         
         self.setLayout(vbox)
        
-        self.scalars_monitor = ScalarsMonitor(self, self.timewindow, self.logger)
+        self.scalars_monitor = ScalarsMonitor(self, timewindow, self.logger)
         self.lifetime_monitor = LifetimeMonitor(self,self.logger)
+        self.pulse_monitor = PulseMonitor(self,self.logger)
 
         # instantiate the navigation toolbar
         ntb = NavigationToolbar(self.scalars_monitor, self)
@@ -487,8 +526,9 @@ class SubWindow(QtGui.QWidget):
         p2_vertical.addWidget(self.scalars_monitor)
         p2_vertical.addWidget(ntb)
 
-        ntb = NavigationToolbar(self.lifetime_monitor, self)
-        # pack these widgets into the vertical box
+        ntb2 = NavigationToolbar(self.lifetime_monitor, self)
+
+        # now the mudecay tab..
         # activate Muondecay mode with a checkbox
         self.activateMuondecay = QtGui.QCheckBox(self)
         self.activateMuondecay.setText(tr("Dialog", "Check for decayed Muons \n- Warning! this will define your coincidence/Veto settings!", None, QtGui.QApplication.UnicodeUTF8))
@@ -498,36 +538,51 @@ class SubWindow(QtGui.QWidget):
                               )
 
         self.displayMuons = QtGui.QLabel(self)
-        self.displayMuons.setText(tr("Dialog", "We have X decayed muons ", None, QtGui.QApplication.UnicodeUTF8))
         self.lastDecay = QtGui.QLabel(self)
-        self.lastDecay.setText(tr("Dialog", "Last detected decay at time X ", None, QtGui.QApplication.UnicodeUTF8))
+        self.displayMuons.setText(tr("Dialog", "We have %i decayed muons " %self.muondecaycounter, None, QtGui.QApplication.UnicodeUTF8))
+        self.lastDecay.setText(tr("Dialog", "Last detected decay at time %s " %self.lastdecaytime, None, QtGui.QApplication.UnicodeUTF8))
  
-	p3_vertical.addWidget(self.activateMuondecay)
+        p3_vertical.addWidget(self.activateMuondecay)
         p3_vertical.addWidget(self.displayMuons)
         p3_vertical.addWidget(self.lastDecay)
         p3_vertical.addWidget(self.lifetime_monitor)
-        p3_vertical.addWidget(ntb)
+        p3_vertical.addWidget(ntb2)
+
+
+
+        ntb3 = NavigationToolbar(self.pulse_monitor, self)
+
+        # the pulseanalyzer tab
+        self.activatePulseanalyzer = QtGui.QCheckBox(self)
+        self.activatePulseanalyzer.setText(tr("Dialog", "Show the last triggered pulses \n in the time interval", None, QtGui.QApplication.UnicodeUTF8))
+        QtCore.QObject.connect(self.activatePulseanalyzer,
+                              QtCore.SIGNAL("clicked()"),
+                              self.activatePulseanalyzerClicked
+                              )
+        p4_vertical.addWidget(self.activatePulseanalyzer)
+        p4_vertical.addWidget(self.pulse_monitor)
+        p4_vertical.addWidget(ntb3)
 
         # start a timer which does something every timewindow seconds
         self.timerEvent(None)
-        self.timer = self.startTimer(self.timewindow*1000)
+        self.timer = self.startTimer(timewindow*1000)
 
     def activateMuondecayClicked(self):
         """
         What should be done if we are looking for mu-decays?
-	"""
+        """
 
 
-        global MUDECAYMODE
 
-        if not MUDECAYMODE:
+        if not self.mainwindow.options.mudecaymode:
             if self.activateMuondecay.isChecked():
                 self.logger.warn("We now activate the Muondecay mode!\n All other Coincidence/Veto settings will be overriden!")
                 msg = "WC 00 EF"
                 self.mainwindow.outqueue.put(msg)
                 self.logger.info("We sent the following message to DAQ %s" %msg)
                 self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
-                MUDECAYMODE = True
+                self.mainwindow.options.mudecaymode = True
+                self.mu_ini = True
                 self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for ddecaying muons!'))
                 self.mainwindow.statusbar.addWidget(self.mu_label)
 
@@ -536,8 +591,18 @@ class SubWindow(QtGui.QWidget):
 
             self.logger.info('Muondecay mode now deactivated, returning to previous setting (if available)')
             self.mainwindow.statusbar.removeWidget(self.mu_label)
-	    MUDECAYMODE = False
+            self.mainwindow.options.mudecaymode = False
+            self.mu_ini = True
      
+    def activatePulseanalyzerClicked(self):
+
+        if self.activatePulseanalyzer.isChecked():
+            self.mainwindow.options.showpulses = True
+            self.logger.info("PulseAnalyzer active %s" %self.mainwindow.options.showpulses.__repr__())
+        else:
+            self.mainwindow.options.showpulses = False
+            self.logger.info("PulseAnalyzer active %s" %self.mainwindow.options.showpulses.__repr__())
+
 
     def center(self):
         screen = QtGui.QDesktopWidget().screenGeometry()
@@ -597,19 +662,53 @@ class SubWindow(QtGui.QWidget):
         # get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
 
+ 
+
         # we have to know, when we sent the command
         # we define an intervall here
-        if self.mainwindow.ini:
-             self.logger.debug("Ini condition unset!")
-             self.mainwindow.lastscalarquery = time.time()
-             self.mainwindow.ini = False
-        else:
-             self.mainwindow.thisscalarquery = time.time() - self.mainwindow.lastscalarquery
-             self.mainwindow.lastscalarquery = time.time()
-             if self.scalars_result:
-                 self.scalars_monitor.update_plot(self.scalars_result)
+        if not self.mainwindow.options.usecpld:
+            if self.mainwindow.ini:
+                 self.logger.debug("Ini condition unset!")
+                 self.mainwindow.lastscalarquery = time.time()
+                 self.mainwindow.ini = False
+            else:
+                 self.mainwindow.thisscalarquery = time.time() - self.mainwindow.lastscalarquery
+                 self.mainwindow.lastscalarquery = time.time()
+                 if self.scalars_result:
+                     self.scalars_monitor.update_plot(self.scalars_result)
 
-     
+        else:
+            if self.mainwindow.ini:
+                 while True:
+                     timestamp = self.mainwindow.inqueue.get(0)
+                     try:
+                         timestamp = int(timestamp[0],16)*self.mainwindow.cpld_tick
+                         break
+                     except ValueError:
+                         self.logger.debug("Cant convert to integer")
+                         continue
+                                              
+                 self.logger.debug("Ini condition unset!")
+                 self.mainwindow.lastscalarquery = timestamp
+                 self.mainwindow.ini = False
+
+            else:
+                 while True:
+                     timestamp = self.mainwindow.inqueue.get(0)
+                     try:
+                         timestamp = int(timestamp[0],16)*self.mainwindow.cpld_tick
+                         break
+                     except ValueError:
+                         self.logger.debug("Cant convert to integer")
+                         continue
+                 
+                 self.mainwindow.thisscalarquery = timestamp - self.mainwindow.lastscalarquery
+                 self.mainwindow.lastscalarquery = timestamp
+
+                 if self.scalars_result:
+                     self.scalars_monitor.update_plot(self.scalars_result)
+    
+ 
         self.logger.debug("The differcene between two sent 'DS' commands is %4.2f seconds" %self.mainwindow.thisscalarquery)
 
 
@@ -619,31 +718,51 @@ class SubWindow(QtGui.QWidget):
         self.logger.debug("%s objects were not reachalbe" %gc.collect().__repr__())
         self.logger.debug("%s objects traced by GC " %len(gc.get_objects()))
 
+        self.displayMuons.setText(tr("Dialog", "We have %i decayed muons " %self.muondecaycounter, None, QtGui.QApplication.UnicodeUTF8))
+        self.lastDecay.setText(tr("Dialog", "Last detected decay at time %s " %self.lastdecaytime, None, QtGui.QApplication.UnicodeUTF8))
 
-         
+        # the mu lifetime histogram 
+        if self.mainwindow.options.mudecaymode:
 
-        #make lifetime histogram
-        #mu, sigma = 100, 15
-        #x = mu + sigma*n.random.randn(10000)
-        #i = len(self.scalars_monitor.chan0)
-        #self.lifetime_monitor.lifetime.append(x[i])
-        #print "x[i] = ", x[i]
-        #print self.lifetime_monitor.lifetime
-        #self.lifetime_monitor.update_plot(self.lifetime_monitor.lifetime)
-        #self.lifetime_monitor.ax.clear()
-        #self.lifetime_monitor.lifetime_plot = self.lifetime_monitor.ax.hist(self.lifetime_monitor.lifetime, 20, facecolor='blue')
-        #self.lifetime_monitor.fig.canvas.draw()
+
+            #mu, sigma = 10, 5
+
+            # toy model, with gauss distribution
+            # (that we now this is a simulation :))
+            # import random
+            # x = random.gauss(mu,sigma)
         
+            if self.mainwindow.decay:    
+                self.logger.info("Adding decays %s" %self.mainwindow.decay)
+                self.lifetime_monitor.update_plot(self.mainwindow.decay)
+                # as different processes are in action,
+                # hopefully this is sufficent!
+                # (as the low decay rates expected, I think so:))
+                self.mainwindow.decay = []
 
-        
-        #self.scalars_monitor.update_plot()
 
-        # if we've done all the iterations
-        #if self.scalars_monitor.cnt == self.scalars_monitor.MAXITERS:
-        #    # stop the timer
-        #    self.killTimer(self.timer)
-        #else:
-        #    # else, we increment the counter
-        #    self.scalars_monitor.cnt += 1
 
-# vim: ai ts=4 sts=4 et sw=4
+        if self.mainwindow.options.showpulses:
+
+            if self.mainwindow.pulses != None:
+
+
+                self.pulse_monitor.update_plot(self.mainwindow.pulses)
+
+class MuonicOptions:
+    """
+    A simple struct which holds the different
+    options for the program
+    """
+
+
+    def __init__(self,filename,timewindow):
+        self.filename = filename
+        self.timewindow = timewindow
+        self.softveto = False
+        self.usecpld = False
+        self.mudecaymode = False
+        self.showpulses = False
+
+
+

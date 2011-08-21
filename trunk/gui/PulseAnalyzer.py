@@ -19,17 +19,12 @@ cpld_tick = 24  #nsec
 tmc_tick = 0.75 #nsec
 
 # get the pulses out of a daq line
-class PulseExtractor():
+# we have to be as fast as possible!
+
+class PulseExtractor:
 
     def __init__(self):
         
-
-        #self.line = line.split()
-        #self.triggerflag = int(line[0],16)
-        #  
-        #self.ini = False
-      
-        # check if there is a new trigger
         self.chan0re = []
         self.chan0fe = []
         self.chan1re = []
@@ -51,12 +46,6 @@ class PulseExtractor():
 
         self.trigger = 0
  
-        #if self.triggerflag > 80: # because 80 in hex is 128 in dec which means that the 7th bit is one
-        #    self.trigger = int(line[0],16)*cpld_tick
-        #    self.linetime = self.trigger
-        #    self.calculate_edges(line)
-
-	#    self.ini = True
            
     def calculate_edges(self,line):
         if (int(line[1],16) & BIT5):
@@ -76,6 +65,33 @@ class PulseExtractor():
         if (int(line[8],16) & BIT5):
             self.chan3fe.append((self.linetime - self.trigger) + (int(line[8],16) & BIT0_4)*tmc_tick)
 
+    def order_and_cleanpulses(self):
+        """
+        Remove pulses which have a 
+        leading edge later in time than a 
+        falling edge and do a bit of sorting
+        """
+
+
+        self.chan0 = zip(self.lastchan0re,self.lastchan0fe)
+        for i in self.chan0:
+            if not i[0] < i[1]:
+                self.chan0.remove(i)
+           
+        self.chan1 = zip(self.lastchan1re,self.lastchan1fe)
+        for i in self.chan1:
+            if not i[0] < i[1]:
+                self.chan1.remove(i)
+
+        self.chan2 = zip(self.lastchan2re,self.lastchan2fe)
+        for i in self.chan2:
+            if not i[0] < i[1]:
+                self.chan2.remove(i)
+
+        self.chan3 = zip(self.lastchan3re,self.lastchan3fe)
+        for i in self.chan3:
+            if not i[0] < i[1]:
+                self.chan3.remove(i)
 
     def extract(self,line):
         """Search for triggers in a set of lines"""
@@ -122,28 +138,94 @@ class PulseExtractor():
             self.order_and_cleanpulses()
 
             return (self.lasttriggertime,self.chan0,self.chan1,self.chan2,self.chan3)
-            #return (self.lasttriggertime,self.lastchan0re,self.lastchan0fe,self.lastchan1re,self.lastchan1fe,self.lastchan2re,self.lastchan2fe,self.lastchan3re,self.lastchan3fe)
 
-    def order_and_cleanpulses(self):
 
-        self.chan0 = zip(self.lastchan0re,self.lastchan0fe)
-        for i in self.chan0:
-            if not i[0] < i[1]:
-                self.chan0.remove(i)
+
+# trigger on a set of extracted pulses and look for decayed muons
+# this trigger builds from DAQ triggers....
+
+
+class DecayTrigger:
+    """
+    This trigger is designed to decide wether to adjacent triggers
+    occur within 20microseconds
+    """   
+
+
+    def __init__(self,triggerpulses,chan3softveto):
+        self.triggerwindow = 20000 # 20microseconds
+        self.lasttriggerpulses = triggerpulses
+        self.chan3softveto = chan3softveto
+
+    def trigger(self,thistriggerpulses):
+     
+           # decay time based only on cpld clock!
+           if self.chan3softveto:
+               if (not self.lasttriggerpulses[4]) & (not thistriggerpulses[4]):
+	           decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
+                   #print decaytime
+        	   if decaytime < self.triggerwindow:
+             		print 'We registered a decayed muon'
+                        self.lasttriggerpulses = thistriggerpulses
+        	        return decaytime
+
+                   else:
+			self.lasttriggerpulses = thistriggerpulses
+
+               else:
+                   self.lasttriggerpulses = thistriggerpulses
+
+
+           else:
+               decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
+               #print decaytime
+               if decaytime < self.triggerwindow:
+                   print 'We registered a decayed muon'
+                   self.lasttriggerpulses = thistriggerpulses
+                   return decaytime
+	
+
+               else:
+                   self.lasttriggerpulses = thistriggerpulses 
+
+           ###############################################
+           # what is below was tried to be more accurate,
+           # but seems to complicated
+           # anyone's ideas are very welcome
+           ###############################################
+
+
+           ## check if the triggertimes are within the triggerwindow
+
+           ## we have also to ensure that the trigger is not caused by
+           ## some coincident muon, so we demand that there is only
+           ## one pulse in the second trigger
+
+
+           ## the second condition checks if the lists are empty,
+           ## remember also that the first item of some pulse tuple
+           ## is always the cpld triggertime
+           ## so '==1' ensures that we have only pulses in one channel
+    
+
+           ##chanpulsecount = [thistriggerpulses.index(pulse) for pulse in thistriggerpulses[:1] if pulse]
+           ##secondtriggercondition = len(chanpulsecount) == 1 
+
+           ##if (self.lasttriggerpulses[0] - thistriggerpulses[9] < 20000) and secondtriggercondition:
+           ##    if thistriggerpulses[chanpulsecount[0]]: 
+           ##        print 'We have a decaying Muon!'
+
+
+
+    ##def lifetimecalculator(self,lastpulses,thispulses):
+      
+           ## if we have a trigger, we want to know exactly
+           ## how far the two pulses are apart
+
+
+
            
-        self.chan1 = zip(self.lastchan1re,self.lastchan1fe)
-        for i in self.chan1:
-            if not i[0] < i[1]:
-                self.chan1.remove(i)
-        self.chan2 = zip(self.lastchan2re,self.lastchan2fe)
-        for i in self.chan2:
-            if not i[0] < i[1]:
-                self.chan2.remove(i)
-        self.chan3 = zip(self.lastchan3re,self.lastchan3fe)
-        for i in self.chan3:
-            if not i[0] < i[1]:
-                self.chan3.remove(i)
-
+ 
 
 
 if __name__ == '__main__':

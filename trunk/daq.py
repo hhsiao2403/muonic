@@ -29,7 +29,7 @@ class ThreadedClient():
     endApplication could reside in the GUI part, but putting them here
     means that you have all the thread controls in a single place.
     """
-    def __init__(self, opts,logger):
+    def __init__(self, opts,logger,root):
 
         global MULTICORE
 
@@ -46,12 +46,14 @@ class ThreadedClient():
             self.inqueue = Queue.Queue()
 
         self.running = 1
-        
+        self.root = root
+
         # get option parser options
         self.logger = logger
         self.sim = opts.sim
         self.filename = opts.filename
         self.timewindow = float(opts.timewindow)
+        self.inputfile = opts.inputfile
 
         # Set up the GUI part
         self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.logger, self.timewindow) 
@@ -68,6 +70,11 @@ class ThreadedClient():
 
         if self.sim:
             self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.logger)
+        elif self.inputfile:
+            self.daq = FileDaqConnection(self.inqueue, self.outqueue,self.inputfile, self.logger)
+            # we have to use the timestamp from the file
+            self.gui.options.usecpld = True
+
         else:
             self.daq = DaqConnection(self.inqueue, self.outqueue, self.logger)
         
@@ -76,18 +83,22 @@ class ThreadedClient():
         if MULTICORE:
             self.readthread = mult.Process(target=self.daq.read,name="pREADER")
             if not self.sim:
-                self.writethread = mult.Process(target=self.daq.write,name="pWRITER")
+                if not self.inputfile:
+                    self.writethread = mult.Process(target=self.daq.write,name="pWRITER")
         else:
             self.readthread = threading.Thread(target=self.daq.read)
             if not self.sim:
                 self.writethread = threading.Thread(target=self.daq.write)
+                if not self.inputfile:
+                    self.writethread = threading.Thread(target=self.daq.write)
         
         # Set daemon flag so that the threads finish when the main app finishes
         self.readthread.daemon = True
         self.readthread.start()
         if not self.sim:
-            self.writethread.daemon = True
-            self.writethread.start()
+            if not self.inputfile:
+                self.writethread.daemon = True
+                self.writethread.start()
         
 
     def periodicCall(self):
@@ -97,14 +108,14 @@ class ThreadedClient():
         self.gui.processIncoming()
         if not self.running:
             self.daq.running = False
-            root.quit()
+            self.root.quit()
 
     def endApplication(self):
         self.running = False
  
 def main(opts,logger):
     root = QtGui.QApplication(sys.argv)
-    client = ThreadedClient(opts,logger)
+    client = ThreadedClient(opts,logger,root)
     root.exec_()
 
 if __name__ == '__main__':
@@ -122,7 +133,9 @@ if __name__ == '__main__':
     parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
     parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
     parser.add_option("-d", "--debug", dest="loglevel", action="store_const", const=10 , help="switch to loglevel debug", default=20)
+    parser.add_option("-i", "--inputfile", dest="inputfile", help="read data from FILE instead from DAQ card", metavar="INFILE", default=None)
     opts, args = parser.parse_args()
+
     if opts.filename is None:
         print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
     if os.path.exists(opts.filename):
@@ -157,7 +170,6 @@ if __name__ == '__main__':
         MULTICORE = False
 
 
-    #MULTICORE = False
     if not MULTICORE: 
         import threading
     else:
@@ -169,6 +181,7 @@ if __name__ == '__main__':
     
     from daq.DaqConnection import DaqConnection
     from daq.SimDaqConnection import SimDaqConnection
+    from daq.FileDaqConnection import FileDaqConnection
     from gui.MainWindow import MainWindow
 
     # make it so!
