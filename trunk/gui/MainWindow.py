@@ -60,6 +60,9 @@ class MainWindow(QtGui.QMainWindow):
         # keep the last decays
         self.decay = []
 
+	# a file which store the decay data
+	self.mu_file = None
+
         # last time, when the 'DS' command was sent
         self.lastscalarquery = time.time()
         self.thisscalarquery = time.time()
@@ -404,8 +407,8 @@ class MainWindow(QtGui.QMainWindow):
                             else:
                                 tmpdecay = self.dtrigger.trigger(self.pulses)                   
                                 if tmpdecay != None:
-                                    self.decay.append(tmpdecay/100.)
                                     when = time.asctime()
+                                    self.decay.append((tmpdecay/100.,when))
                                     self.logger.info('We have found a decaying muon with a decaytime of %f at %s' %(tmpdecay,when)) 
                                     self.subwindow.muondecaycounter += 1
                                     self.subwindow.lastdecaytime = when
@@ -583,9 +586,10 @@ class SubWindow(QtGui.QWidget):
                 self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
                 self.mainwindow.options.mudecaymode = True
                 self.mu_ini = True
-                self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for ddecaying muons!'))
+                self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for decaying muons!'))
                 self.mainwindow.statusbar.addWidget(self.mu_label)
-
+		self.logger.warning('Might possibly overwrite textfile with decays')
+		self.mainwindow.mu_file = open(self.mainwindow.options.decayfilename,'w')		
 
         else:
 
@@ -734,12 +738,18 @@ class SubWindow(QtGui.QWidget):
         
             if self.mainwindow.decay:    
                 self.logger.info("Adding decays %s" %self.mainwindow.decay)
-                self.lifetime_monitor.update_plot(self.mainwindow.decay)
+                self.lifetime_monitor.update_plot(self.mainwindow.decay[0])
                 # as different processes are in action,
                 # hopefully this is sufficent!
                 # (as the low decay rates expected, I think so:))
-                self.mainwindow.decay = []
+		for muondecay in self.mainwindow.decay:
+			self.mainwindow.mu_file.write('Decay ')
+			muondecay_time = muondecay[1].replace(' ','_')
+			self.mainwindow.mu_file.write(muondecay_time.__repr__() + ' ')
+			self.mainwindow.mu_file.write(muondecay[0].__repr__())
+			self.mainwindow.mu_file.write('\n')
 
+                self.mainwindow.decay = []
 
 
         if self.mainwindow.options.showpulses:
@@ -748,6 +758,7 @@ class SubWindow(QtGui.QWidget):
 
 
                 self.pulse_monitor.update_plot(self.mainwindow.pulses)
+
 
 class MuonicOptions:
     """
@@ -763,6 +774,5 @@ class MuonicOptions:
         self.usecpld = False
         self.mudecaymode = False
         self.showpulses = False
-
-
+	self.decayfilename = filename + '_decays'
 

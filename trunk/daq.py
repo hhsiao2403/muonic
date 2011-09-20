@@ -108,6 +108,7 @@ class ThreadedClient():
         self.gui.processIncoming()
         if not self.running:
             self.daq.running = False
+	    self.mu_file.close()
             self.root.quit()
 
     def endApplication(self):

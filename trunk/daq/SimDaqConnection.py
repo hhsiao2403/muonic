@@ -160,7 +160,7 @@ class SimDaqConnection(object):
             if self.port.inWaiting():
                 while self.port.inWaiting():
                     self.outqueue.put(self.port.readline().strip())
-		    self.logger.info('We are waiting')
+		    self.logger.debug('We are waiting')
                     if self.port.__return_info__:
                         self.logger.debug("returning info")
                         self.outqueue.put(self.port.push_info())

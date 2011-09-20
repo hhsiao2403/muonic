@@ -83,6 +83,7 @@ class LifetimeMonitor(FigureCanvas):
         # tmphist is compatible with the decaytime hist...
         tmphist = self.ax.hist(decaytimes, self.binning, fc='b', alpha=0.25)[0]
 
+
         for histbin in enumerate(tmphist):
             if histbin[1]:
                 self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
