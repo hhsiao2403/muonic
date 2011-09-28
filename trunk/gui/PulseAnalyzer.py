@@ -153,7 +153,7 @@ class DecayTrigger:
 
 
     def __init__(self,triggerpulses,chan3softveto):
-        self.triggerwindow = 20000 # 20microseconds
+        self.triggerwindow = 2000 # 20microseconds
         self.lasttriggerpulses = triggerpulses
         self.chan3softveto = chan3softveto
 
@@ -165,9 +165,10 @@ class DecayTrigger:
 	           decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
                    #print decaytime
         	   if decaytime < self.triggerwindow:
-             		print 'We registered a decayed muon'
-                        self.lasttriggerpulses = thistriggerpulses
-        	        return decaytime
+             	    print 'We registered a decayed muon'
+                    self.lasttriggerpulses = thistriggerpulses
+                    if not decaytime < 0:
+        	            return decaytime
 
                    else:
 			self.lasttriggerpulses = thistriggerpulses
@@ -182,7 +183,8 @@ class DecayTrigger:
                if decaytime < self.triggerwindow:
                    print 'We registered a decayed muon'
                    self.lasttriggerpulses = thistriggerpulses
-                   return decaytime
+                   if not decaytime < 0:
+                       return decaytime
 	
 
                else:

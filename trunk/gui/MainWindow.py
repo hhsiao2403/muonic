@@ -738,16 +738,19 @@ class SubWindow(QtGui.QWidget):
         
             if self.mainwindow.decay:    
                 self.logger.info("Adding decays %s" %self.mainwindow.decay)
+                # at the moment we are only using the first decay
                 self.lifetime_monitor.update_plot(self.mainwindow.decay[0])
                 # as different processes are in action,
                 # hopefully this is sufficent!
                 # (as the low decay rates expected, I think so:))
-		for muondecay in self.mainwindow.decay:
-			self.mainwindow.mu_file.write('Decay ')
-			muondecay_time = muondecay[1].replace(' ','_')
-			self.mainwindow.mu_file.write(muondecay_time.__repr__() + ' ')
-			self.mainwindow.mu_file.write(muondecay[0].__repr__())
-			self.mainwindow.mu_file.write('\n')
+
+                #for muondecay in self.mainwindow.decay:
+                muondecay = self.mainwindow.decay[0]
+                self.mainwindow.mu_file.write('Decay ')
+                muondecay_time = muondecay[1].replace(' ','_')
+                self.mainwindow.mu_file.write(muondecay_time.__repr__() + ' ')
+                self.mainwindow.mu_file.write(muondecay[0].__repr__())
+                self.mainwindow.mu_file.write('\n')
 
                 self.mainwindow.decay = []
 
@@ -774,5 +777,5 @@ class MuonicOptions:
         self.usecpld = False
         self.mudecaymode = False
         self.showpulses = False
-	self.decayfilename = filename + '_decays'
+        self.decayfilename = filename + '_decays'
 

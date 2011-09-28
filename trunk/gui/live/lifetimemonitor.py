@@ -53,7 +53,9 @@ class LifetimeMonitor(FigureCanvas):
         # generates first "empty" plots
 
         # make a fixed binning from 0 to 20 microseconds
-        self.binning = n.linspace(0,20,21)
+        # we choose a 0.5 ns binning
+        #self.binning = n.linspace(0,20,21)
+        self.binning = n.linspace(0,20,84)
         self.bincontent = self.ax.hist([], self.binning, fc='b', alpha=0.25)[0]
         self.hist_patches = self.ax.hist([], self.binning, fc='b', alpha=0.25)[2]
          
