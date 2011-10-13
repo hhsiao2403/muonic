@@ -9,6 +9,7 @@ class ThresholdDialog(QtGui.QDialog):
     def __init__(self, *args):
         QtGui.QDialog.__init__(self,*args)
         self.setWindowTitle("Threshold Settings")
+        self.resize(260, 260)     
         self.setModal(True)
         self.label0 = QtGui.QLabel()
         self.label0.setText(tr("Dialog", "Chan0"))

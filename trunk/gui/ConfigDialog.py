@@ -112,7 +112,7 @@ class ConfigDialog(QtGui.QDialog):
 
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QtGui.QApplication.translate("Dialog", "Dialog", None, QtGui.QApplication.UnicodeUTF8))
-        self.coincidenceSingles.setText(tr("Dialog", "Single (No C.)", None, QtGui.QApplication.UnicodeUTF8))
+        self.coincidenceSingles.setText(tr("Dialog", "Single", None, QtGui.QApplication.UnicodeUTF8))
         self.coincidenceTwofold.setText(tr("Dialog", "Twofold", None, QtGui.QApplication.UnicodeUTF8))
         self.coincidenceThreefold.setText(tr("Dialog", "Threefold", None, QtGui.QApplication.UnicodeUTF8))
         self.coincidenceFourfold.setText(tr("Dialog", "Fourfould", None, QtGui.QApplication.UnicodeUTF8))

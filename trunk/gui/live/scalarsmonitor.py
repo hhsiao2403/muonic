@@ -22,6 +22,8 @@ class ScalarsMonitor(FigureCanvas):
                 
         self.logger = logger
         self.timewindow = timewindow
+
+        self.do_not_show_trigger = False
         
         #max length of shown plot is 10 minutes!
         self.MAXLENGTH = 40
@@ -67,7 +69,8 @@ class ScalarsMonitor(FigureCanvas):
         self.l_chan1, = self.ax.plot([],self.chan1, c='m', label='ch1',lw=3)
         self.l_chan2, = self.ax.plot([],self.chan2, c='c',  label='ch2',lw=3)
         self.l_chan3, = self.ax.plot([],self.chan3, c='b', label='ch3',lw=3)
-        self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trg',lw=3)
+        if not self.do_not_show_trigger:
+            self.l_trigger, = self.ax.plot([],self.chan3, c='g', label='trg',lw=3)
         self.skip = 0
         self.first = True
         self.N0 = 0
@@ -148,13 +151,19 @@ class ScalarsMonitor(FigureCanvas):
             self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='ch1',lw=2)
             self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c', label='ch2',lw=2)
             self.l_chan3, = self.ax.plot(self.l_time,self.chan3, c='b', label='ch3',lw=2)
-            self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trg',lw=2)
+            if not self.do_not_show_trigger:
+                self.l_trigger, = self.ax.plot(self.l_time,self.trigger, c='g', label='trg',lw=2)
 
             try:
-                self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=0.5)
+                if self.do_not_show_trigger:
+                    self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=4, mode="expand", borderaxespad=0., handlelength=0.5)
+                else:
+                    self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=0.5)
+                
             except:
                 self.logger.info('An error with the legend occured!')
                 self.ax.legend(loc=2)
+
 
         else:
             self.skip += 1
@@ -201,7 +210,11 @@ class ScalarsMonitor(FigureCanvas):
 
         string1 = 'started: %s ' % self.now.strftime('%d.%m.%Y %H:%M:%S')
         string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean() )
+        if self.do_not_show_trigger:
+            string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz' %( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean() )
         string3 = 'N0 = %.8e \nN1 = %.8e \nN2 = %.8e \nN3 = %.8e \nNT = %.8e' % (self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0)
+        if self.do_not_show_trigger:
+            string3 = 'N0 = %.8e \nN1 = %.8e \nN2 = %.8e \nN3 = %.8e' % (self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0)
         string4 = '\ntime = %.8e s \ndaq time = %.8e s \nmax rate = %.4e Hz \nmin rate = %.4e Hz \ntime window = %.1f s' % ( dt1, self.time_window, ma2, mi2, self.timewindow )
                              
         self.ax.text(1.1, -0.1, string1+string4, transform=self.ax.transAxes) 

@@ -56,7 +56,7 @@ class LifetimeMonitor(FigureCanvas):
         # we choose a 0.5 ns binning
         #self.binning = n.linspace(0,20,21)
         self.binning = n.linspace(0,20,84)
-        self.bincontent = self.ax.hist([], self.binning, fc='b', alpha=0.25)[0]
+        self.bincontent   = self.ax.hist([], self.binning, fc='b', alpha=0.25)[0]
         self.hist_patches = self.ax.hist([], self.binning, fc='b', alpha=0.25)[2]
          
         # force a redraw of the Figure
@@ -78,18 +78,25 @@ class LifetimeMonitor(FigureCanvas):
         # two of them...
         # however, since we do not run into a memory leak
         # and we also be not dependent on dashi (but maybe
-        # sometime in the future?) we have to do it
+        # sometimes in the future?) we have to do it
         # by manipulating rectangles...
 
         # we want to find the non-empty bins
         # tmphist is compatible with the decaytime hist...
-        tmphist = self.ax.hist(decaytimes, self.binning, fc='b', alpha=0.25)[0]
 
+
+        print decaytimes
+        print decaytimes[0]
+        tmphist = self.ax.hist(decaytimes, self.binning, fc='b', alpha=0.25)[0]
+        print tmphist
 
         for histbin in enumerate(tmphist):
             if histbin[1]:
+                #self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
                 self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
-
+                print self.hist_patches[histbin[0]].get_height()
+                print self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
+                print self.hist_patches
             else:
                 pass
 

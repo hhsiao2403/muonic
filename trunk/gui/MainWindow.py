@@ -60,8 +60,8 @@ class MainWindow(QtGui.QMainWindow):
         # keep the last decays
         self.decay = []
 
-	# a file which store the decay data
-	self.mu_file = None
+        # a file which store the decay data
+        self.mu_file = None
 
         # last time, when the 'DS' command was sent
         self.lastscalarquery = time.time()
@@ -114,16 +114,16 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(exit, QtCore.SIGNAL('triggered()'), self.exit_program)
         self.connect(self, QtCore.SIGNAL('closeEmitApp()'), QtCore.SLOT('close()') )
 
-        # prepare the threshold menu
-        thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
-        thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
-        self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
-        
         # prepare the config menu
         config = QtGui.QAction(QtGui.QIcon(''),'Channel Configuration', self)
         config.setStatusTip(tr('MainWindow','Configuer the Coincidences and channels'))
         self.connect(config, QtCore.SIGNAL('triggered()'), self.config_menu)
-        
+       
+        # prepare the threshold menu
+        thresholds = QtGui.QAction(QtGui.QIcon(''),'Thresholds', self)
+        thresholds.setStatusTip(tr('MainWindow','Set trigger thresholds'))
+        self.connect(thresholds, QtCore.SIGNAL('triggered()'), self.threshold_menu)
+               
         # the options menu
         options = QtGui.QAction(QtGui.QIcon(''),'Options', self)
         options.setStatusTip(tr('MainWindow','Set program options'))
@@ -131,13 +131,13 @@ class MainWindow(QtGui.QMainWindow):
 
 
         # the clear button
-        clear = QtGui.QAction(QtGui.QIcon(''),'Clear rate plot', self)
-        clear.setStatusTip(tr('MainWindow','clear plots'))
+        #clear = QtGui.QAction(QtGui.QIcon(''),'Clear rate plot', self)
+        #clear.setStatusTip(tr('MainWindow','clear plots'))
        
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
         self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
         scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
-        self.connect(clear, QtCore.SIGNAL('triggered()'), self.clear_function)
+        #self.connect(clear, QtCore.SIGNAL('triggered()'), self.clear_function)
 
         # create the menubar and fill it with the submenus
        
@@ -145,9 +145,9 @@ class MainWindow(QtGui.QMainWindow):
         file = menubar.addMenu(tr('MainWindow','&File'))
         file.addAction(exit)
         settings = menubar.addMenu(tr('MainWindow', '&Settings'))
-        settings.addAction(thresholds)
         settings.addAction(config)
-        settings.addAction(clear)
+        settings.addAction(thresholds)
+        #settings.addAction(clear)
         settings.addAction(options)
 
         help = menubar.addMenu(tr('MainWindow','&Help'))
@@ -218,6 +218,11 @@ class MainWindow(QtGui.QMainWindow):
             chan3_active = config_window.activateChan3.isChecked() 
                         
             singles = config_window.coincidenceSingles.isChecked() 
+            if singles:
+                self.subwindow.scalars_monitor.do_not_show_trigger = True
+            else:
+                self.subwindow.scalars_monitor.do_not_show_trigger = False
+            
             twofold = config_window.coincidenceTwofold.isChecked() 
             threefold = config_window.coincidenceThreefold.isChecked() 
             fourfold = config_window.coincidenceFourfold.isChecked() 
@@ -451,6 +456,7 @@ class SubWindow(QtGui.QWidget):
         self.setMinimumSize(reso_w,reso_h)
         self.center()
         self.write_file = False
+        self.holdplot = False
         self.scalars_result = False 
         self.muondecaycounter = 0
         self.lastdecaytime = 'None'
@@ -523,11 +529,40 @@ class SubWindow(QtGui.QWidget):
         self.lifetime_monitor = LifetimeMonitor(self,self.logger)
         self.pulse_monitor = PulseMonitor(self,self.logger)
 
-        # instantiate the navigation toolbar
-        ntb = NavigationToolbar(self.scalars_monitor, self)
+        # buttons for restart/clear the plot     
+        self.start_button = QtGui.QPushButton(tr('MainWindow', 'Restart'))
+        self.stop_button = QtGui.QPushButton(tr('MainWindow', 'Stop'))
+
+
+
+        QtCore.QObject.connect(self.start_button,
+                              QtCore.SIGNAL("clicked()"),
+                              self.startClicked
+                              )
+
+        QtCore.QObject.connect(self.stop_button,
+                              QtCore.SIGNAL("clicked()"),
+                              self.stopClicked
+                              )
+
+
+        
+
         # pack theses widget into the vertical box
         p2_vertical.addWidget(self.scalars_monitor)
-        p2_vertical.addWidget(ntb)
+        #p2_vertical.addWidget(ntb)
+
+        # instantiate the navigation toolbar
+        p2_h_box = QtGui.QHBoxLayout()
+        ntb = NavigationToolbar(self.scalars_monitor, self)
+        p2_h_box.addWidget(ntb)
+        p2_h_box.addWidget(self.start_button)
+        p2_h_box.addWidget(self.stop_button)
+        p2_second_widget = QtGui.QWidget()
+        p2_second_widget.setLayout(p2_h_box)
+        p2_vertical.addWidget(p2_second_widget)
+
+
 
         ntb2 = NavigationToolbar(self.lifetime_monitor, self)
 
@@ -569,6 +604,18 @@ class SubWindow(QtGui.QWidget):
         # start a timer which does something every timewindow seconds
         self.timerEvent(None)
         self.timer = self.startTimer(timewindow*1000)
+
+
+    def startClicked(self): 
+        self.logger.debug("Clear was called")
+        self.holdplot = False
+        self.scalars_monitor.reset()
+        
+
+    def stopClicked(self):
+        self.holdplot = True
+
+
 
     def activateMuondecayClicked(self):
         """
@@ -661,6 +708,7 @@ class SubWindow(QtGui.QWidget):
             except AttributeError:
                 pass
 
+
     def timerEvent(self,ev):
         """Custom timerEvent code, called at timer event receive"""
         # get the scalar information from the card
@@ -679,7 +727,8 @@ class SubWindow(QtGui.QWidget):
                  self.mainwindow.thisscalarquery = time.time() - self.mainwindow.lastscalarquery
                  self.mainwindow.lastscalarquery = time.time()
                  if self.scalars_result:
-                     self.scalars_monitor.update_plot(self.scalars_result)
+                     if not self.holdplot:
+                         self.scalars_monitor.update_plot(self.scalars_result)
 
         else:
             if self.mainwindow.ini:
@@ -710,7 +759,8 @@ class SubWindow(QtGui.QWidget):
                  self.mainwindow.lastscalarquery = timestamp
 
                  if self.scalars_result:
-                     self.scalars_monitor.update_plot(self.scalars_result)
+                    if not self.holdplot:
+                        self.scalars_monitor.update_plot(self.scalars_result)
     
  
         self.logger.debug("The differcene between two sent 'DS' commands is %4.2f seconds" %self.mainwindow.thisscalarquery)
@@ -739,7 +789,12 @@ class SubWindow(QtGui.QWidget):
             if self.mainwindow.decay:    
                 self.logger.info("Adding decays %s" %self.mainwindow.decay)
                 # at the moment we are only using the first decay
-                self.lifetime_monitor.update_plot(self.mainwindow.decay[0])
+                print self.mainwindow.decay
+
+                decay_times =  [decay_time[0] for decay_time in self.mainwindow.decay]
+                print decay_times
+
+                self.lifetime_monitor.update_plot(decay_times)
                 # as different processes are in action,
                 # hopefully this is sufficent!
                 # (as the low decay rates expected, I think so:))
