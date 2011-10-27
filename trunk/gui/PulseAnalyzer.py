@@ -162,16 +162,19 @@ class DecayTrigger:
            # decay time based only on cpld clock!
            if self.chan3softveto:
                if (not self.lasttriggerpulses[4]) & (not thistriggerpulses[4]):
-	           decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
+	           # we simply subtract two trigger times!
+                   decaytime0 = thistriggerpulses[0] - self.lasttriggerpulses[0]
+	
                    #print decaytime
-        	   if decaytime < self.triggerwindow:
-             	    print 'We registered a decayed muon'
-                    self.lasttriggerpulses = thistriggerpulses
-                    if not decaytime < 0:
-        	            return decaytime
+                   if decaytime < self.triggerwindow:
+             	       print 'We registered a decayed muon'
+                       self.lasttriggerpulses = thistriggerpulses
+                       if not decaytime < 0:
+                            self.lasttriggerpulses = thistriggerpulses
+                            return decaytime
 
-                   else:
-			self.lasttriggerpulses = thistriggerpulses
+                       else:
+                           self.lasttriggerpulses = thistriggerpulses
 
                else:
                    self.lasttriggerpulses = thistriggerpulses

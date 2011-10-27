@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     if opts.filename is None:
         print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
-    if os.path.exists(opts.filename):
+    if os.path.exists(os.path.join(os.getcwd() + os.sep + 'data',opts.filename)):
         decision = raw_input("A file with the filename %s already exists. Do you really want to overwrite it (yes/no)? " % str(opts.filename) )
 
         if decision != 'yes':

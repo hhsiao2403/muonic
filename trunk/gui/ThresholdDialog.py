@@ -6,19 +6,19 @@ tr = QtCore.QCoreApplication.translate
 
 class ThresholdDialog(QtGui.QDialog):
 
-    def __init__(self, *args):
+    def __init__(self,thr0,thr1,thr2,thr3, *args):
         QtGui.QDialog.__init__(self,*args)
         self.setWindowTitle("Threshold Settings")
         self.resize(260, 260)     
         self.setModal(True)
         self.label0 = QtGui.QLabel()
-        self.label0.setText(tr("Dialog", "Chan0"))
+        self.label0.setText(tr("Dialog", "Chan0: %s" %thr0))
         self.label1 = QtGui.QLabel()
-        self.label1.setText(tr("Dialog", "Chan1"))
+        self.label1.setText(tr("Dialog", "Chan1: %s" %thr1))
         self.label2 = QtGui.QLabel()
-        self.label2.setText(tr("Dialog", "Chan2"))
+        self.label2.setText(tr("Dialog", "Chan2: %s" %thr2))
         self.label3 = QtGui.QLabel()
-        self.label3.setText(tr("Dialog", "Chan3"))
+        self.label3.setText(tr("Dialog", "Chan3: %s" %thr3))
 
         self.v_box = QtGui.QVBoxLayout()
         self.ch0_input = QtGui.QLineEdit()

@@ -129,11 +129,12 @@ class ScalarsMonitor(FigureCanvas):
             self.NT_0 = result[10]
             self.first = False
             
-        self.N0 += result[6]
-        self.N1 += result[7]
-        self.N2 += result[8]
-        self.N3 += result[9]
-        self.NT += result[10]
+        else:
+            self.N0 += result[6]
+            self.N1 += result[7]
+            self.N2 += result[8]
+            self.N3 += result[9]
+            self.NT += result[10]
 
         if len(self.chan0) >  self.MAXLENGTH:
             self.chan0.remove(self.chan0[0])
@@ -156,9 +157,9 @@ class ScalarsMonitor(FigureCanvas):
 
             try:
                 if self.do_not_show_trigger:
-                    self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=4, mode="expand", borderaxespad=0., handlelength=0.5)
+                    self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=4, mode="expand", borderaxespad=0., handlelength=2)
                 else:
-                    self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=0.5)
+                    self.ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=5, mode="expand", borderaxespad=0., handlelength=2)
                 
             except:
                 self.logger.info('An error with the legend occured!')
@@ -209,13 +210,25 @@ class ScalarsMonitor(FigureCanvas):
         
 
         string1 = 'started: %s ' % self.now.strftime('%d.%m.%Y %H:%M:%S')
-        string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean() )
-        if self.do_not_show_trigger:
-            string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz' %( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean() )
+        #string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( n.array(self.chan0).mean(), n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean(), n.array(self.trigger).mean() )
+        # we rather calculate the mean rate by dividing
+        # total scalars by total time
+	try:
+            string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( (self.N0 - self.N0_0)/self.time_window, (self.N1 - self.N1_0)/self.time_window , (self.N2 - self.N2_0)/self.time_window, (self.N3 - self.N3_0)/self.time_window, (self.NT - self.NT_0)/self.time_window )
+            if self.do_not_show_trigger:
+                #string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz' %( sefl.N1/self., n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean() )
+                string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( (self.N0 - self.N0_0)/self.time_window, (self.N1 - self.N1_0)/self.time_window , (self.N2 - self.N2_0)/self.time_window, (self.N3 - self.N3_0)/self.time_window )
+        except ZeroDivisionError:
+            self.logger.debug('Time was Zero!Passing..')
+            string2 = ''
+            pass
         string3 = 'N0 = %.8e \nN1 = %.8e \nN2 = %.8e \nN3 = %.8e \nNT = %.8e' % (self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0, self.NT - self.NT_0)
         if self.do_not_show_trigger:
             string3 = 'N0 = %.8e \nN1 = %.8e \nN2 = %.8e \nN3 = %.8e' % (self.N0 - self.N0_0, self.N1 - self.N1_0, self.N2 - self.N2_0 , self.N3 - self.N3_0)
-        string4 = '\ntime = %.8e s \ndaq time = %.8e s \nmax rate = %.4e Hz \nmin rate = %.4e Hz \ntime window = %.1f s' % ( dt1, self.time_window, ma2, mi2, self.timewindow )
+
+	# reduce information for better overview
+        #string4 = '\ntime = %.8e s \ndaq time = %.8e s \nmax rate = %.4e Hz \nmin rate = %.4e Hz \ntime window = %.1f s' % ( dt1, self.time_window, ma2, mi2, self.timewindow )
+        string4 = '\ndaq time = %.8e s \nmax rate = %.4e Hz' % (  self.time_window, ma2 )
                              
         self.ax.text(1.1, -0.1, string1+string4, transform=self.ax.transAxes) 
         self.ax.text(1.1, 0.35, string3, transform=self.ax.transAxes, color='blue') 

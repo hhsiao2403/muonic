@@ -47,8 +47,8 @@ class MainWindow(QtGui.QMainWindow):
         # instanciate the mainwindow
         self.logger = logger
         self.options = MuonicOptions(filename,timewindow)
-        self.options.filename = filename             
-        self.options.timewindow = timewindow
+        #self.options.filename = os.path.join(datapath,filename)             
+        #self.options.timewindow = timewindow
         self.ini = True  # is it the first time all the functions are called?
         self.mu_ini = True # is it the first time thet the mudecaymode is started?        
 
@@ -67,6 +67,13 @@ class MainWindow(QtGui.QMainWindow):
         self.lastscalarquery = time.time()
         self.thisscalarquery = time.time()
               
+        # the curren thresholds
+        self.threshold_ch0 = 'n.a.'
+        self.threshold_ch1 = 'n.a.'
+        self.threshold_ch2 = 'n.a.'
+        self.threshold_ch3 = 'n.a.'
+
+
         # the pulseextractor for direct analysis
         self.pulseextractor = pa.PulseExtractor() 
         self.pulses = ()
@@ -95,7 +102,7 @@ class MainWindow(QtGui.QMainWindow):
         # any automatic status reports every x seconds
         self.outqueue.put('ST N!=1')
         self.outqueue.put('ST 0')
-
+        self.outqueue.put('TL')
         self.endcommand = endcommand
 
         self.create_widgets()
@@ -177,7 +184,10 @@ class MainWindow(QtGui.QMainWindow):
     
     #the individual menus
     def threshold_menu(self):
-        threshold_window = ThresholdDialog()
+        # get the actual Thresholds...
+        self.outqueue.put('TL')
+
+        threshold_window = ThresholdDialog(self.threshold_ch0,self.threshold_ch1,self.threshold_ch2,self.threshold_ch3)
         rv = threshold_window.exec_()
         if rv == 1:
             # Here we should set the thresholds
@@ -328,6 +338,16 @@ class MainWindow(QtGui.QMainWindow):
                         self.subwindow.outputfile.write(str(msg)+'\n')
                     except ValueError:
 			self.logger.info('Trying to write on closed file, captured!')
+
+
+		# check for threshold information
+                if msg.startswith('TL') and len(msg) > 3:
+                    msg = msg.split('=')
+                    self.threshold_ch0 = msg[1][:-2]
+                    self.threshold_ch1 = msg[2][:-2]
+                    self.threshold_ch2 = msg[3][:-2]
+                    self.threshold_ch3 = msg[4]
+                    
 
                 # check for scalar information
                 if len(msg) >= 2 and msg[0]=='D' and msg[1] == 'S':                    
@@ -826,11 +846,13 @@ class MuonicOptions:
 
 
     def __init__(self,filename,timewindow):
-        self.filename = filename
+        # put the file in the data directory
+        datapath = os.getcwd() + os.sep + 'data' 
+        self.filename = os.path.join(datapath,filename)
         self.timewindow = timewindow
         self.softveto = False
         self.usecpld = False
         self.mudecaymode = False
         self.showpulses = False
-        self.decayfilename = filename + '_decays'
+        self.decayfilename = os.path.join(datapath,filename + '_decays')
 
