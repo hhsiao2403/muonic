@@ -217,7 +217,7 @@ class ScalarsMonitor(FigureCanvas):
             string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( (self.N0 - self.N0_0)/self.time_window, (self.N1 - self.N1_0)/self.time_window , (self.N2 - self.N2_0)/self.time_window, (self.N3 - self.N3_0)/self.time_window, (self.NT - self.NT_0)/self.time_window )
             if self.do_not_show_trigger:
                 #string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz' %( sefl.N1/self., n.array(self.chan1).mean(), n.array(self.chan2).mean(), n.array(self.chan3).mean() )
-                string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz \ntrigger = %.4e Hz' % ( (self.N0 - self.N0_0)/self.time_window, (self.N1 - self.N1_0)/self.time_window , (self.N2 - self.N2_0)/self.time_window, (self.N3 - self.N3_0)/self.time_window )
+                string2 = 'channel0 = %.4e Hz \nchannel1 = %.4e Hz \nchannel2 = %.4e Hz \nchannel3 = %.4e Hz' % ( (self.N0 - self.N0_0)/self.time_window, (self.N1 - self.N1_0)/self.time_window , (self.N2 - self.N2_0)/self.time_window, (self.N3 - self.N3_0)/self.time_window )
         except ZeroDivisionError:
             self.logger.debug('Time was Zero!Passing..')
             string2 = ''
