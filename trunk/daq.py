@@ -55,7 +55,7 @@ class ThreadedClient():
         #self.inputfile = opts.inputfile
 
         # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, opts.filename, logger, float(opts.timewindow), opts.writepulses) 
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, opts.filename, logger, float(opts.timewindow), opts.writepulses,opts.nostatus,opts.user) 
         self.gui.show()
 
         # A timer to periodically call periodicCall :-)
@@ -134,26 +134,39 @@ if __name__ == '__main__':
     from optparse import OptionParser
 
 
+    #usage = "%prog [options] -f <data output file> \nspecify the file type by a command line switch."
+    usage = "%prog [options] YOURINITIALS"
 
-    usage = "%prog [options] -f <data output file> \nspecify the file type by a command line switch."
     parser = OptionParser(usage=usage)
-    parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
+    #parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
     #parser.add_option("-d", "--debug", action="store_true", dest="debug", help="output for debugging", default=False)
     parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
     parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
     parser.add_option("-d", "--debug", dest="loglevel", action="store_const", const=10 , help="switch to loglevel debug", default=20)
     parser.add_option("-p", "--writepulses", dest="writepulses", help="write a file with extracted pulses", action="store_true", default=False)
+    parser.add_option("-n", "--nostatus", dest="nostatus", help="do not query the DAQ card for status messages", action="store_true", default=False)
+
     #parser.add_option("-i", "--inputfile", dest="inputfile", help="read data from FILE instead from DAQ card", metavar="INFILE", default=None)
+
     opts, args = parser.parse_args()
+    if (len(args) != 1) or (len(args[0]) != 2):
+            parser.error("Incorrect number of arguments, you have to specify just the initials of your name for the filenames \n initials must be two letters!")
 
-    if opts.filename is None:
-        print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
-    if os.path.exists(os.path.join(os.getcwd() + os.sep + 'data',opts.filename)):
-        decision = raw_input("A file with the filename %s already exists. Do you really want to overwrite it (yes/no)? " % str(opts.filename) )
+    # to be downward compatible, will go away
+    opts.filename = "dummy"
+    # small ugly hack, mixing args and options...
+    opts.user = args[0]
 
-        if decision != 'yes':
-            print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
-            sys.exit()
+    #if opts.filename is None:
+    #    print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
+    #if os.path.exists(os.path.join(os.getcwd() + os.sep + 'data',opts.filename)):
+    #    decision = raw_input("A file with the filename %s already exists. Do you really want to overwrite it (yes/no)? " % str(opts.filename) )
+
+    #    if decision != 'yes':
+    #        print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
+    #        sys.exit()
+
+
 
     import logging
 

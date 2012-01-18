@@ -46,11 +46,11 @@ LASTQUERY = time.time()
 
 class MainWindow(QtGui.QMainWindow):
     
-    def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, writepulses, win_parent = None):
+    def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, writepulses, nostatus,user, win_parent = None):
 
         # instanciate the mainwindow
         self.logger = logger
-        self.options = MuonicOptions(filename,timewindow,writepulses)
+        self.options = MuonicOptions(filename,timewindow,writepulses,nostatus,user)
         #self.options.filename = os.path.join(datapath,filename)             
         #self.options.timewindow = timewindow
         self.ini = True  # is it the first time all the functions are called?
@@ -185,7 +185,7 @@ class MainWindow(QtGui.QMainWindow):
             self.endcommand()
             self.emit(QtCore.SIGNAL('closeEmitApp()'))
         else:
-	    pass        
+            pass        
     
     #the individual menus
     def threshold_menu(self):
@@ -339,7 +339,14 @@ class MainWindow(QtGui.QMainWindow):
                 self.subwindow.text_box.appendPlainText(str(msg))
                 if self.subwindow.write_file:
                     try:
-                        self.subwindow.outputfile.write(str(msg)+'\n')
+                        if self.options.nostatus:
+                            fields = msg.rstrip("\n").split(" ")
+                            if ((len(fields) == 16) and (len(fields[0]) == 8)):
+                                self.subwindow.outputfile.write(str(msg)+'\n')
+                            else:
+                                self.logger.debug("Not writing line '%s' to file because it does not contain trigger data" %msg)
+                        else:
+                            self.subwindow.outputfile.write(str(msg)+'\n')
                     except ValueError:
 			self.logger.info('Trying to write on closed file, captured!')
 
@@ -718,18 +725,25 @@ class SubWindow(QtGui.QWidget):
         self.hello_edit.clear()
 
     def on_file_clicked(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self,
-                                tr('MainWindow','Open output file'),
-                                os.getenv('HOME'), tr('MainWindow','Text Files (*.txt);;All Files (*)'));
-        filename = str(filename)
-        if len(filename) > 0:
-            if filename.endswith('.gz'):
-                self.outputfile = gzip.open(filename,'w')
-            else:
-                self.outputfile = open(filename,'w')
-            self.write_file = True
-            self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%filename))
-            self.mainwindow.statusbar.addPermanentWidget(self.file_label)
+        
+        self.outputfile = open(self.mainwindow.options.rawfilename,"w")
+        self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%self.mainwindow.options.filename))
+        self.mainwindow.statusbar.addPermanentWidget(self.file_label)
+
+
+
+        #filename = QtGui.QFileDialog.getOpenFileName(self,
+        #                        tr('MainWindow','Open output file'),
+        #                        os.getenv('HOME'), tr('MainWindow','Text Files (*.txt);;All Files (*)'));
+        #filename = str(filename)
+        #if len(filename) > 0:
+        #    if filename.endswith('.gz'):
+        #        self.outputfile = gzip.open(filename,'w')
+        #    else:
+        #        self.outputfile = open(filename,'w')
+        #    self.write_file = True
+        #    self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%filename))
+        #    self.mainwindow.statusbar.addPermanentWidget(self.file_label)
 
 
     def on_periodic_clicked(self):
@@ -907,19 +921,40 @@ class MuonicOptions:
     A simple struct which holds the different
     options for the program
     """
+    #TODO: alter the constructor in such a way that the options from the command line
+    # can passed directly through!
 
+    def __init__(self,filename,timewindow,writepulses,nostatus,user):
 
-    def __init__(self,filename,timewindow,writepulses):
         # put the file in the data directory
+        # we chose a global format for naming the files -> decided on 18/01/2012
+        # we use GMT times
+        # " Zur einheitlichen Datenbezeichnung schlage ich folgendes Format vor:
+        # JJJJ-MM-TT_y_x_vn.dateiformat (JJJJ-Jahr; MM-Monat; TT-Speichertag bzw.
+        # Beendigung der Messung; y: G oder L ausw?hlen, G steht f?r **We add R for rate P for pulses and RW for RAW **
+        # Geschwindigkeitsmessung/L f?r Lebensdauermessung; x-Messzeit in Stunden;
+        # v-erster Buchstabe Vorname; n-erster Buchstabe Familienname)."
+        # TODO: consistancy....        
+ 
+        import time   
+        date = time.gmtime()
+
         datapath = os.getcwd() + os.sep + 'data' 
-        self.filename = os.path.join(datapath,filename)
+        self.filename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"R",user[0],user[1]) )
+
+        self.rawfilename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"RAW",user[0],user[1]) )
+        self.decayfilename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"L",user[0],user[1]) )
+        if writepulses:
+                self.pulsefilename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"P",user[0],user[1]) )
+
+        else:
+                self.pulsefilename = ''
+
+        # other options...
         self.timewindow = timewindow
+        self.nostatus = nostatus
         self.softveto = False
         self.usecpld = False
         self.mudecaymode = False
         self.showpulses = False
-        self.decayfilename = os.path.join(datapath,filename + '_decays')
-        if writepulses:
-                self.pulsefilename = os.path.join(datapath,filename + '_pulses')
-        else:
-                self.pulsefilename = ''
+
