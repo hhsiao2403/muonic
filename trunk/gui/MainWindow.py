@@ -14,8 +14,12 @@ from gui.HelpWindow import HelpWindow
 from gui.live.scalarsmonitor import ScalarsMonitor
 from gui.live.lifetimemonitor import LifetimeMonitor
 from gui.live.pulsemonitor import PulseMonitor
-import PulseAnalyzer as pa
 
+from analysis import fit
+
+
+import PulseAnalyzer as pa
+import get_time
 
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
@@ -42,11 +46,11 @@ LASTQUERY = time.time()
 
 class MainWindow(QtGui.QMainWindow):
     
-    def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, win_parent = None):
+    def __init__(self, inqueue, outqueue, endcommand, filename, logger, timewindow, writepulses, win_parent = None):
 
         # instanciate the mainwindow
         self.logger = logger
-        self.options = MuonicOptions(filename,timewindow)
+        self.options = MuonicOptions(filename,timewindow,writepulses)
         #self.options.filename = os.path.join(datapath,filename)             
         #self.options.timewindow = timewindow
         self.ini = True  # is it the first time all the functions are called?
@@ -54,8 +58,12 @@ class MainWindow(QtGui.QMainWindow):
 
         # some hardware info
         #assuming the cpld clock runs with approx 41MHz
-        self.cpld_tick = 24  #nsec 
+        self.cpld_tick = 24*0.000000001  #nsec 
 
+
+        # count scalars if meassuring with cpld clock
+        # this holds the scalars in the time interval
+        self.channel_counts = [0,0,0,0,0] #[trigger,ch0,ch1,ch2,ch3]
 
         # keep the last decays
         self.decay = []
@@ -66,6 +74,7 @@ class MainWindow(QtGui.QMainWindow):
         # last time, when the 'DS' command was sent
         self.lastscalarquery = time.time()
         self.thisscalarquery = time.time()
+        self.lastoneppscount = 0
               
         # the curren thresholds
         self.threshold_ch0 = 'n.a.'
@@ -75,8 +84,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
         # the pulseextractor for direct analysis
-        self.pulseextractor = pa.PulseExtractor() 
+        self.pulseextractor = pa.PulseExtractor(pulsefile=self.options.pulsefilename) 
         self.pulses = ()
+
+
         # initialize MainWindow gui
         QtGui.QMainWindow.__init__(self, win_parent)
         self.resize(reso_w, reso_h)
@@ -136,11 +147,6 @@ class MainWindow(QtGui.QMainWindow):
         options.setStatusTip(tr('MainWindow','Set program options'))
         self.connect(options, QtCore.SIGNAL('triggered()'), self.options_menu)
 
-
-        # the clear button
-        #clear = QtGui.QAction(QtGui.QIcon(''),'Clear rate plot', self)
-        #clear.setStatusTip(tr('MainWindow','clear plots'))
-       
         helpdaqcommands = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'DAQ Commands', self)
         self.connect(helpdaqcommands, QtCore.SIGNAL('triggered()'), self.help_menu)
         scalars = QtGui.QAction(QtGui.QIcon('icons/blah.png'),'Scalars', self)
@@ -154,7 +160,6 @@ class MainWindow(QtGui.QMainWindow):
         settings = menubar.addMenu(tr('MainWindow', '&Settings'))
         settings.addAction(config)
         settings.addAction(thresholds)
-        #settings.addAction(clear)
         settings.addAction(options)
 
         help = menubar.addMenu(tr('MainWindow','&Help'))
@@ -321,7 +326,6 @@ class MainWindow(QtGui.QMainWindow):
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
-        NEW: It also queries the DAQ with the 'DS' command
         """
         
         self.logger.debug("length of inqueue: %s" %self.inqueue.qsize())
@@ -393,9 +397,9 @@ class MainWindow(QtGui.QMainWindow):
                          # if the time window is too small
                          # this can cause an unphysical 
                          # high rate
-                        if time_window < 0.5:
-                            self.logger.info("time window to small, setting time_window = 0.5")
-                            time_window = 0.5
+                        #if time_window < 0.5:
+                        #    self.logger.info("time window to small, setting time_window = 0.5")
+                        #    time_window = 0.5
                          
                          #send the counted scalars to the subwindow
                         self.subwindow.scalars_result = (self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window, self.scalars_diff_trigger/time_window, time_window, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_trigger)
@@ -411,10 +415,19 @@ class MainWindow(QtGui.QMainWindow):
                            self.logger.warning("ValueError, DATA was not written to %s" %self.data_file.__repr__())
                            pass                         
                 
-                elif (self.options.mudecaymode or self.options.showpulses):
+                elif (self.options.mudecaymode or self.options.showpulses or self.options.pulsefilename or self.options.usecpld) :
                     # we now assume that we are using chan0-2 for data taking anch chan3 as veto
                     self.pulses = self.pulseextractor.extract(msg)
-                    # print pulses # we do not really want to do that!
+                    #print self.pulses # we do not really want to do that!
+                    
+                    if (self.options.usecpld and self.pulses != None):
+                        # we have to count the triggers in the time intervall
+                        self.channel_counts[0] += 1                         
+                        for channel,pulses in enumerate(self.pulses[1:]):
+                            if pulses:
+                                for pulse in pulses:
+                                    self.channel_counts[channel] += 1
+
 
                     # This can made simpler,
                     # if the DecayTrigger just looks for 
@@ -553,7 +566,13 @@ class SubWindow(QtGui.QWidget):
         self.start_button = QtGui.QPushButton(tr('MainWindow', 'Restart'))
         self.stop_button = QtGui.QPushButton(tr('MainWindow', 'Stop'))
 
-
+        # button for performing a mu lifetime fit
+        self.mufit_button = QtGui.QPushButton(tr('MainWindow', 'Fit!'))
+        
+        QtCore.QObject.connect(self.mufit_button,
+                              QtCore.SIGNAL("clicked()"),
+                              self.mufitClicked
+                              )
 
         QtCore.QObject.connect(self.start_button,
                               QtCore.SIGNAL("clicked()"),
@@ -604,7 +623,15 @@ class SubWindow(QtGui.QWidget):
         p3_vertical.addWidget(self.displayMuons)
         p3_vertical.addWidget(self.lastDecay)
         p3_vertical.addWidget(self.lifetime_monitor)
-        p3_vertical.addWidget(ntb2)
+
+        p3_h_box = QtGui.QHBoxLayout()
+        p3_h_box.addWidget(ntb2)
+        p3_h_box.addWidget(self.mufit_button)
+        p3_second_widget = QtGui.QWidget()
+        p3_second_widget.setLayout(p3_h_box)
+        p3_vertical.addWidget(p3_second_widget)
+
+        #3_vertical.addWidget(ntb2)
 
 
 
@@ -630,12 +657,15 @@ class SubWindow(QtGui.QWidget):
         self.logger.debug("Clear was called")
         self.holdplot = False
         self.scalars_monitor.reset()
+        self.scalars_monitor.update_plot((0,0,0,0,0, 5,0,0,0,0, 0))
         
 
     def stopClicked(self):
         self.holdplot = True
 
-
+    def mufitClicked(self):
+        fitresults = fit.main(bincontent=n.asarray(self.lifetime_monitor.heights))
+        self.lifetime_monitor.show_fit(fitresults[0],fitresults[1],fitresults[2],fitresults[3],fitresults[4],fitresults[5],fitresults[6],fitresults[7])
 
     def activateMuondecayClicked(self):
         """
@@ -732,20 +762,22 @@ class SubWindow(QtGui.QWidget):
     def timerEvent(self,ev):
         """Custom timerEvent code, called at timer event receive"""
         # get the scalar information from the card
-        self.mainwindow.outqueue.put('DS')
+        if not self.mainwindow.options.usecpld:
+            self.mainwindow.outqueue.put('DS')
 
  
 
         # we have to know, when we sent the command
+        now = time.time()
         # we define an intervall here
         if not self.mainwindow.options.usecpld:
             if self.mainwindow.ini:
                  self.logger.debug("Ini condition unset!")
-                 self.mainwindow.lastscalarquery = time.time()
+                 self.mainwindow.lastscalarquery = now
                  self.mainwindow.ini = False
             else:
-                 self.mainwindow.thisscalarquery = time.time() - self.mainwindow.lastscalarquery
-                 self.mainwindow.lastscalarquery = time.time()
+                 self.mainwindow.thisscalarquery = now - self.mainwindow.lastscalarquery
+                 self.mainwindow.lastscalarquery = now
                  if self.scalars_result:
                      if not self.holdplot:
                          self.scalars_monitor.update_plot(self.scalars_result)
@@ -753,9 +785,18 @@ class SubWindow(QtGui.QWidget):
         else:
             if self.mainwindow.ini:
                  while True:
-                     timestamp = self.mainwindow.inqueue.get(0)
                      try:
-                         timestamp = int(timestamp[0],16)*self.mainwindow.cpld_tick
+                         timestamp = self.mainwindow.inqueue.get(0)
+                     except Queue.Empty:
+                         conitnue
+                         pass
+
+                     timestamp = timestamp.split()
+                     try:
+                         #timestamp = int(timestamp[0],16)*self.mainwindow.cpld_tick
+                         
+                         onepps = int(timestamp[9],16)
+                         timestamp = get_time.get_time(timestamp,onepps)
                          break
                      except ValueError:
                          self.logger.debug("Cant convert to integer")
@@ -763,13 +804,27 @@ class SubWindow(QtGui.QWidget):
                                               
                  self.logger.debug("Ini condition unset!")
                  self.mainwindow.lastscalarquery = timestamp
+                 self.mainwindow.lastoneppscount = onepps
                  self.mainwindow.ini = False
 
             else:
                  while True:
-                     timestamp = self.mainwindow.inqueue.get(0)
                      try:
-                         timestamp = int(timestamp[0],16)*self.mainwindow.cpld_tick
+                         timestamp = self.mainwindow.inqueue.get(0)
+                     except Queue.Empty:
+                         continue
+                         pass
+
+
+                     timestamp = timestamp.split()
+                     self.logger.info('Got timestamp from inqueue %s' %timestamp.__repr__())
+                     try:
+                         self.logger.info('Time value from inque %i' %int(timestamp[0],16))
+                         #timestamp = int(timestamp[0],16)*self.mainwindow.cpld_tick
+                         onepps = int(timestamp[9],16)
+                         self.logger.info('Got onepps count %s' %onepps.__repr__())
+                         timestamp = get_time.get_time(timestamp,self.mainwindow.lastoneppscount)
+                         self.logger.info('Calculated a CPLD timestamp of %f' %timestamp)
                          break
                      except ValueError:
                          self.logger.debug("Cant convert to integer")
@@ -777,6 +832,15 @@ class SubWindow(QtGui.QWidget):
                  
                  self.mainwindow.thisscalarquery = timestamp - self.mainwindow.lastscalarquery
                  self.mainwindow.lastscalarquery = timestamp
+                 self.mainwindow.lastoneppscount = onepps
+
+                 tw = self.mainwindow.thisscalarquery # just for abbreviation
+                 self.logger.info('Here are the channel counts %s' %self.mainwindow.channel_counts.__repr__())         
+                 self.scalars_result = (self.mainwindow.channel_counts[1]/tw,self.mainwindow.channel_counts[2]/tw,self.mainwindow.channel_counts[3]/tw,self.mainwindow.channel_counts[4]/tw,self.mainwindow.channel_counts[0]/tw, tw, self.mainwindow.channel_counts[1],self.mainwindow.channel_counts[2],self.mainwindow.channel_counts[3],self.mainwindow.channel_counts[4], self.mainwindow.channel_counts[0])
+                 # reset the counters
+                 self.mainwindow.channel_counts = [0,0,0,0,0]
+
+                 self.logger.info('Using CPLD timestamp! Calculated an intervall of %s' %self.mainwindow.thisscalarquery.__repr__())
 
                  if self.scalars_result:
                     if not self.holdplot:
@@ -845,7 +909,7 @@ class MuonicOptions:
     """
 
 
-    def __init__(self,filename,timewindow):
+    def __init__(self,filename,timewindow,writepulses):
         # put the file in the data directory
         datapath = os.getcwd() + os.sep + 'data' 
         self.filename = os.path.join(datapath,filename)
@@ -855,4 +919,7 @@ class MuonicOptions:
         self.mudecaymode = False
         self.showpulses = False
         self.decayfilename = os.path.join(datapath,filename + '_decays')
-
+        if writepulses:
+                self.pulsefilename = os.path.join(datapath,filename + '_pulses')
+        else:
+                self.pulsefilename = ''

@@ -29,12 +29,11 @@ class ThreadedClient():
     endApplication could reside in the GUI part, but putting them here
     means that you have all the thread controls in a single place.
     """
-    def __init__(self, opts,logger,root):
+    def __init__(self,multicore,opts,logger,root):
 
-        global MULTICORE
 
         # Create the queue
-        if MULTICORE:
+        if multicore:
             # mult.Queue or mult.JoinableQueue?
             # self.outqueue = mult.JoinableQueue()
             # self.inqueue  = mult.JoinableQueue()
@@ -51,12 +50,12 @@ class ThreadedClient():
         # get option parser options
         self.logger = logger
         self.sim = opts.sim
-        self.filename = opts.filename
-        self.timewindow = float(opts.timewindow)
-        self.inputfile = opts.inputfile
+        #self.filename = opts.filename
+        #self.timewindow = float(opts.timewindow)
+        #self.inputfile = opts.inputfile
 
         # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, self.filename, self.logger, self.timewindow) 
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, opts.filename, logger, float(opts.timewindow), opts.writepulses) 
         self.gui.show()
 
         # A timer to periodically call periodicCall :-)
@@ -70,33 +69,33 @@ class ThreadedClient():
 
         if self.sim:
             self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.logger)
-        elif self.inputfile:
-            self.daq = FileDaqConnection(self.inqueue, self.outqueue,self.inputfile, self.logger)
-            # we have to use the timestamp from the file
-            self.gui.options.usecpld = True
+        #elif self.inputfile:
+        #    self.daq = FileDaqConnection(self.inqueue, self.outqueue,self.inputfile, self.logger)
+        #    # we have to use the timestamp from the file
+        #    self.gui.options.usecpld = True
 
         else:
             self.daq = DaqConnection(self.inqueue, self.outqueue, self.logger)
         
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-        if MULTICORE:
+        if multicore:
             self.readthread = mult.Process(target=self.daq.read,name="pREADER")
             if not self.sim:
-                if not self.inputfile:
+                #if not self.inputfile:
                     self.writethread = mult.Process(target=self.daq.write,name="pWRITER")
         else:
             self.readthread = threading.Thread(target=self.daq.read)
             if not self.sim:
                 self.writethread = threading.Thread(target=self.daq.write)
-                if not self.inputfile:
-                    self.writethread = threading.Thread(target=self.daq.write)
+                #if not self.inputfile:
+                    #self.writethread = threading.Thread(target=self.daq.write)
         
         # Set daemon flag so that the threads finish when the main app finishes
         self.readthread.daemon = True
         self.readthread.start()
         if not self.sim:
-            if not self.inputfile:
+            #if not self.inputfile:
                 self.writethread.daemon = True
                 self.writethread.start()
         
@@ -108,15 +107,24 @@ class ThreadedClient():
         self.gui.processIncoming()
         if not self.running:
             self.daq.running = False
-	    self.mu_file.close()
+            try:
+	        self.gui.mu_file.close()
+            except AttributeError:
+                pass
+
             self.root.quit()
 
     def endApplication(self):
+        try:
+	    self.gui.mu_file.close()
+        except AttributeError:
+            pass
         self.running = False
+        self.root.quit()       
  
 def main(opts,logger):
     root = QtGui.QApplication(sys.argv)
-    client = ThreadedClient(opts,logger,root)
+    client = ThreadedClient(multicore,opts,logger,root)
     root.exec_()
 
 if __name__ == '__main__':
@@ -134,7 +142,8 @@ if __name__ == '__main__':
     parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
     parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
     parser.add_option("-d", "--debug", dest="loglevel", action="store_const", const=10 , help="switch to loglevel debug", default=20)
-    parser.add_option("-i", "--inputfile", dest="inputfile", help="read data from FILE instead from DAQ card", metavar="INFILE", default=None)
+    parser.add_option("-p", "--writepulses", dest="writepulses", help="write a file with extracted pulses", action="store_true", default=False)
+    #parser.add_option("-i", "--inputfile", dest="inputfile", help="read data from FILE instead from DAQ card", metavar="INFILE", default=None)
     opts, args = parser.parse_args()
 
     if opts.filename is None:
@@ -163,15 +172,15 @@ if __name__ == '__main__':
     #test if more than one cpu is available
     try:
         import multiprocessing as mult
-        MULTICORE = mult.cpu_count() > 1
+        multicore = mult.cpu_count() > 1
         logger.info("%d cpus found!" %mult.cpu_count())
    
     except ImportError:
         logger.info("python-multiprocessing is not available, using python thrading instead")
-        MULTICORE = False
+        multicore = False
 
 
-    if not MULTICORE: 
+    if not multicore: 
         import threading
     else:
         logger.info("using python-multiprocessing expansion")

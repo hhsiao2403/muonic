@@ -53,7 +53,7 @@ class LifetimeMonitor(FigureCanvas):
         # generates first "empty" plots
 
         # make a fixed binning from 0 to 20 microseconds
-        # we choose a 0.5 ns binning
+        # we choose a 0.5 ms binning
         #self.binning = n.linspace(0,20,21)
         self.binning = n.linspace(0,20,84)
         self.bincontent   = self.ax.hist([], self.binning, fc='b', alpha=0.25)[0]
@@ -63,6 +63,8 @@ class LifetimeMonitor(FigureCanvas):
         self.fig.canvas.draw()
  
         self.setParent(parent)
+        self.heights = []
+
 
     def update_plot(self, decaytimes):
         """
@@ -73,10 +75,10 @@ class LifetimeMonitor(FigureCanvas):
         self.ax.clear()
 
         # we have to do some bad hacking here,
-        # because the pylab histogram is rather
+        # because the p histogram is rather
         # simple and it is not possible to add
         # two of them...
-        # however, since we do not run into a memory leak
+        # however, since we do not want to run into a memory leak
         # and we also be not dependent on dashi (but maybe
         # sometimes in the future?) we have to do it
         # by manipulating rectangles...
@@ -101,17 +103,20 @@ class LifetimeMonitor(FigureCanvas):
                 pass
 
         # we want to get the maximum for the ylims
-        heights = []
-        for patch in self.hist_patches:
-            heights.append(patch.get_height())
 
-        self.ax.set_ylim(ymax=max(heights)*1.1)
+        # self.heights contains the bincontent!
+        self.heights = []
+        for patch in self.hist_patches:
+            self.heights.append(patch.get_height())
+
+        print self.heights, 'lifetimemonitor heights'
+        self.ax.set_ylim(ymax=max(self.heights)*1.1)
         self.ax.set_ylim(ymin=0)
         self.ax.set_xlabel('time between pulses (microsec)')
         self.ax.set_ylabel('events')
         
         # always get rid of unused stuff
-        del heights
+        #del heights
         del tmphist
  
         # we now have to pass our new patches 
@@ -119,5 +124,14 @@ class LifetimeMonitor(FigureCanvas):
         self.ax.patches = self.hist_patches        
         self.fig.canvas.draw()
 
+    def show_fit(self,bin_centers,bincontent,fitx,decay,p,covar,chisquare,nbins):
 
-    
+        self.ax.clear()
+
+        self.ax.plot(bin_centers,bincontent,"b^",fitx,decay(p,fitx),"b-")
+        self.ax.set_ylim(0,max(bincontent)+100)
+        self.ax.set_xlabel("Decay time in microseconds")
+        self.ax.set_ylabel("Events in time bin")
+        self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) microsec,    chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))))
+        #p.savefig("fit.png")
+        self.fig.canvas.draw()

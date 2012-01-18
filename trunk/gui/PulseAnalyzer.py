@@ -21,9 +21,16 @@ tmc_tick = 0.75 #nsec
 # get the pulses out of a daq line
 # we have to be as fast as possible!
 
+from get_time import get_time
+
 class PulseExtractor:
 
-    def __init__(self):
+    def __init__(self,pulsefile=''):
+        """
+        if a pulsefile is given, all the extracte pulses
+        will be written into it
+        """
+
         
         self.chan0re = []
         self.chan0fe = []
@@ -45,8 +52,11 @@ class PulseExtractor:
         self.pulsedict = dict()
 
         self.trigger = 0
- 
-           
+        self.pulsefile = pulsefile
+        if pulsefile:
+            self.pulsefile = open(pulsefile,'w')           
+        self.ini = True
+
     def calculate_edges(self,line):
         if (int(line[1],16) & BIT5):
             self.chan0re.append((self.linetime - self.trigger) + (int(line[1],16) & BIT0_4)*tmc_tick) 
@@ -98,7 +108,15 @@ class PulseExtractor:
 
 
         line = line.split()
-        self.linetime = int(line[0],16)*cpld_tick
+
+        if self.ini:
+            self.lastonepps = int(line[9],16)
+            self.ini = False
+            print 'ini'
+            return None
+        #self.linetime = int(line[0],16)*cpld_tick
+        self.linetime = get_time(line,self.lastonepps)
+        self.lastonepps = int(line[9],16)
         self.triggerflag = int(line[1],16)     
 
 
@@ -108,8 +126,8 @@ class PulseExtractor:
             if self.trigger:
                 self.calculate_edges(line)
   
-        if self.triggerflag > 80:
-            # a new trigger! so we have to evaluate the last one and get the new pulses
+        if self.triggerflag >= 80:
+            # a new trigger!o we have to evaluate the last one and get the new pulses
             self.lasttriggertime = self.trigger
             self.lastchan0re = self.chan0re
             self.lastchan0fe = self.chan0fe
@@ -120,7 +138,8 @@ class PulseExtractor:
             self.lastchan3re = self.chan3re
             self.lastchan3fe = self.chan3fe
 
-            self.trigger = int(line[0],16)*cpld_tick
+            #self.trigger = int(line[0],16)*cpld_tick
+            self.trigger = get_time(line,self.lastonepps)
             self.linetime = self.trigger
 
             self.chan0re = []  
@@ -137,7 +156,16 @@ class PulseExtractor:
             self.calculate_edges(line)
             self.order_and_cleanpulses()
 
-            return (self.lasttriggertime,self.chan0,self.chan1,self.chan2,self.chan3)
+            extracted_pulses = (self.lasttriggertime,self.chan0,self.chan1,self.chan2,self.chan3) 
+            if self.pulsefile:
+                self.pulsefile.write(extracted_pulses.__repr__() + '\n')
+
+
+            return extracted_pulses
+ 
+
+    def close_file(self):
+        self.pulsefile.close()          
 
 
 
