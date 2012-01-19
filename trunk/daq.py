@@ -108,15 +108,16 @@ class ThreadedClient():
         if not self.running:
             self.daq.running = False
             try:
-	        self.gui.mu_file.close()
+                self.gui.mu_file.close()
             except AttributeError:
                 pass
 
             self.root.quit()
 
     def endApplication(self):
+        self.gui.subwindow.writefile = False
         try:
-	    self.gui.mu_file.close()
+            self.gui.mu_file.close()
         except AttributeError:
             pass
         self.running = False
@@ -135,7 +136,18 @@ if __name__ == '__main__':
 
 
     #usage = "%prog [options] -f <data output file> \nspecify the file type by a command line switch."
-    usage = "%prog [options] YOURINITIALS"
+    usage = """%prog [options] YOURINITIALS
+               This program is dedicated for the use with QNet DAQ cards
+               YOURINITIALS are two letters indicating your name
+               --> all files will be stored in ../data with the following naming scheme
+               YYYY-MM-DD_HH-MM-SS_X_Y_YOURINITIALS
+               where X is the datatype of the file:
+               R:   Rate plot
+               P:   Extracted pulses
+               RAW: Raw daq data
+               L:   Muon decay times
+               G:   Muon velocity measurement
+               and Y will be the total measurement time"""
 
     parser = OptionParser(usage=usage)
     #parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
@@ -144,7 +156,7 @@ if __name__ == '__main__':
     parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
     parser.add_option("-d", "--debug", dest="loglevel", action="store_const", const=10 , help="switch to loglevel debug", default=20)
     parser.add_option("-p", "--writepulses", dest="writepulses", help="write a file with extracted pulses", action="store_true", default=False)
-    parser.add_option("-n", "--nostatus", dest="nostatus", help="do not query the DAQ card for status messages", action="store_true", default=False)
+    parser.add_option("-n", "--nostatus", dest="nostatus", help="do not write DAQ status messages to RAW data files", action="store_true", default=False)
 
     #parser.add_option("-i", "--inputfile", dest="inputfile", help="read data from FILE instead from DAQ card", metavar="INFILE", default=None)
 

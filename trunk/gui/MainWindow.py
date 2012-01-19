@@ -17,16 +17,16 @@ from gui.live.pulsemonitor import PulseMonitor
 
 from analysis import fit
 
-
 import PulseAnalyzer as pa
 import get_time
 
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
-
+import datetime
 
 import os
+import shutil
 import numpy as n
 import time
 
@@ -56,6 +56,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ini = True  # is it the first time all the functions are called?
         self.mu_ini = True # is it the first time thet the mudecaymode is started?        
 
+
+
         # some hardware info
         #assuming the cpld clock runs with approx 41MHz
         self.cpld_tick = 24*0.000000001  #nsec 
@@ -76,7 +78,7 @@ class MainWindow(QtGui.QMainWindow):
         self.thisscalarquery = time.time()
         self.lastoneppscount = 0
               
-        # the curren thresholds
+        # the current thresholds
         self.threshold_ch0 = 'n.a.'
         self.threshold_ch1 = 'n.a.'
         self.threshold_ch2 = 'n.a.'
@@ -106,6 +108,9 @@ class MainWindow(QtGui.QMainWindow):
         
         self.data_file = open(self.options.filename, 'w')
         self.data_file.write('time | chan0 | chan1 | chan2 | chan3 | R0 | R1 | R2 | R3 | trigger | Delta_time \n')
+        
+        # always write the rate plot data
+        self.data_file_write = True
 
         self.inqueue = inqueue
         self.outqueue = outqueue
@@ -401,9 +406,9 @@ class MainWindow(QtGui.QMainWindow):
                         self.scalars_ch2_previous = self.scalars_ch2
                         self.scalars_ch3_previous = self.scalars_ch3
                         self.scalars_trigger_previous = self.scalars_trigger
-                         # if the time window is too small
-                         # this can cause an unphysical 
-                         # high rate
+                        # if the time window is too small
+                        # this can cause an unphysical 
+                        # high rate
                         #if time_window < 0.5:
                         #    self.logger.info("time window to small, setting time_window = 0.5")
                         #    time_window = 0.5
@@ -415,12 +420,12 @@ class MainWindow(QtGui.QMainWindow):
                         #write the rates to data file
                         # we have to catch IOErrors, can occur if program is 
                         # exited
-                        try:
-                            self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
-                            self.logger.debug("DATA was written to %s" %self.data_file.__repr__())
-                        except ValueError:
-                           self.logger.warning("ValueError, DATA was not written to %s" %self.data_file.__repr__())
-                           pass                         
+                        if self.data_file_write:
+                            try:
+                                self.data_file.write('%f %f %f %f %f %f %f %f %f %f %f \n' % (self.scalars_time, self.scalars_diff_ch0, self.scalars_diff_ch1, self.scalars_diff_ch2, self.scalars_diff_ch3, self.scalars_diff_ch0/time_window,self.scalars_diff_ch1/time_window,self.scalars_diff_ch2/time_window,self.scalars_diff_ch3/time_window,self.scalars_diff_trigger/time_window,time_window))
+                                self.logger.debug("Rate plot data was written to %s" %self.data_file.__repr__())
+                            except ValueError:
+                                self.logger.warning("ValueError, Rate plot data was not written to %s" %self.data_file.__repr__())
                 
                 elif (self.options.mudecaymode or self.options.showpulses or self.options.pulsefilename or self.options.usecpld) :
                     # we now assume that we are using chan0-2 for data taking anch chan3 as veto
@@ -470,9 +475,56 @@ class MainWindow(QtGui.QMainWindow):
         We just call the endcommand when the window is closed
         instead of presenting a button for that purpose.
         """
+
+        now = datetime.datetime.now()
+
+        # close the RAW file (if any)
         if self.subwindow.write_file:
+            self.subwindow.write_file = False
+            mtime = self.options.raw_mes_start - now
+            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            self.logger.info("The raw data was written for %f hours" % mtime)
+            newrawfilename = self.options.rawfilename.replace("HOURS",str(mtime))
+            shutil.move(self.options.rawfilename,newrawfilename)
             self.subwindow.outputfile.close()
+
+        if self.options.mudecaymode:
+
+            self.options.mudecaymode = False
+            self.mu_file.close()
+            mtime = self.options.dec_mes_start - now
+            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            self.logger.info("The muon decay measurement was active for %f hours" % mtime)
+            newmufilename = self.options.decayfilename.replace("HOURS",str(mtime))
+            shutil.move(self.options.decayfilename,newmufilename)
+
+        if self.options.pulsefilename:
+
+            old_pulsefilename = self.options.pulsefilename
+
+            # no pulses shall be extracted any more, 
+            # this means changing lots of switches
+            self.options.pulsefilename = False
+            self.options.mudecaymode = False
+            self.options.showpulses = False
+            self.options.usecpld    = False
+            self.pulseextractor.close_file()
+            mtime = self.options.pulse_mes_start - now
+            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            self.logger.info("The pulse extraction measurement was active for %f hours" % mtime)
+            newpulsefilename = old_pulsefilename.replace("HOURS",str(mtime))
+            shutil.move(old_pulsefilename,newpulsefilename)
+
+            
+
+        self.data_file_write = False
         self.data_file.close()
+        mtime = self.options.rate_mes_start - now
+        mtime = round(mtime.microseconds/(1000000.*3600),1)
+        self.logger.info("The rate measurement was active for %f hours" % mtime)
+        newratefilename = self.options.filename.replace("HOURS",str(mtime))
+        shutil.move(self.options.filename,newratefilename)
+        time.sleep(0.5)
         self.exit_program()
 
 
@@ -692,14 +744,20 @@ class SubWindow(QtGui.QWidget):
                 self.mu_ini = True
                 self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for decaying muons!'))
                 self.mainwindow.statusbar.addWidget(self.mu_label)
-		self.logger.warning('Might possibly overwrite textfile with decays')
-		self.mainwindow.mu_file = open(self.mainwindow.options.decayfilename,'w')		
+                self.logger.warning('Might possibly overwrite textfile with decays')
+                self.mainwindow.mu_file = open(self.mainwindow.options.decayfilename,'w')		
+                self.mainwindow.options.dec_mes_start = datetime.datetime.now()
 
         else:
 
             self.logger.info('Muondecay mode now deactivated, returning to previous setting (if available)')
             self.mainwindow.statusbar.removeWidget(self.mu_label)
             self.mainwindow.options.mudecaymode = False
+            mtime = self.mainwindow.options.dec_mes_start - datetime.datetime.now()
+            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            self.logger.info("The muon decay measurement was active for %f hours" % mtime)
+            newmufilename = self.mainwindow.options.decayfilename.replace("HOURS",str(mtime))
+            shutil.move(self.mainwindow.options.decayfilename,newmufilename)
             self.mu_ini = True
      
     def activatePulseanalyzerClicked(self):
@@ -728,7 +786,11 @@ class SubWindow(QtGui.QWidget):
         
         self.outputfile = open(self.mainwindow.options.rawfilename,"w")
         self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%self.mainwindow.options.filename))
+        self.write_file = True
+        self.mainwindow.options.raw_mes_start = datetime.datetime.now()
         self.mainwindow.statusbar.addPermanentWidget(self.file_label)
+
+
 
 
 
@@ -936,19 +998,22 @@ class MuonicOptions:
         # v-erster Buchstabe Vorname; n-erster Buchstabe Familienname)."
         # TODO: consistancy....        
  
-        import time   
         date = time.gmtime()
 
         datapath = os.getcwd() + os.sep + 'data' 
-        self.filename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"R",user[0],user[1]) )
-
-        self.rawfilename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"RAW",user[0],user[1]) )
-        self.decayfilename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"L",user[0],user[1]) )
+        self.filename = os.path.join(datapath,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,date.tm_hour,date.tm_min,date.tm_sec,"R",user[0],user[1]) )
+        # the time when the rate measurement is started
+        now = datetime.datetime.now()
+        self.rate_mes_start = now     
+        self.rawfilename = os.path.join(datapath,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,date.tm_hour,date.tm_min,date.tm_sec,"RAW",user[0],user[1]) )
+        self.raw_mes_start = False
+        self.decayfilename = os.path.join(datapath,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,date.tm_hour,date.tm_min,date.tm_sec,"L",user[0],user[1]) )
         if writepulses:
-                self.pulsefilename = os.path.join(datapath,"%i-%i-%i_%s_x_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,"P",user[0],user[1]) )
-
+                self.pulsefilename = os.path.join(datapath,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,date.tm_hour,date.tm_min,date.tm_sec,"P",user[0],user[1]) )
+                self.pulse_mes_start = now
         else:
                 self.pulsefilename = ''
+                self.pulse_mes_start = False
 
         # other options...
         self.timewindow = timewindow

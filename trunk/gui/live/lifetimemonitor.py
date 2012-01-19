@@ -118,20 +118,23 @@ class LifetimeMonitor(FigureCanvas):
         # always get rid of unused stuff
         #del heights
         del tmphist
+
+        # some beautification
+        self.ax.grid()
  
         # we now have to pass our new patches 
         # to the figure we created..            
-        self.ax.patches = self.hist_patches        
+        self.ax.patches = self.hist_patches      
         self.fig.canvas.draw()
 
     def show_fit(self,bin_centers,bincontent,fitx,decay,p,covar,chisquare,nbins):
 
-        self.ax.clear()
+        #self.ax.clear()
 
         self.ax.plot(bin_centers,bincontent,"b^",fitx,decay(p,fitx),"b-")
-        self.ax.set_ylim(0,max(bincontent)+100)
+        self.ax.set_ylim(0,max(bincontent)*1.2)
         self.ax.set_xlabel("Decay time in microseconds")
         self.ax.set_ylabel("Events in time bin")
-        self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) microsec,    chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))))
+        self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))),loc=1)
         #p.savefig("fit.png")
         self.fig.canvas.draw()
