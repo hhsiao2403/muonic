@@ -216,7 +216,7 @@ if __name__ == '__main__':
     
     from daq.DaqConnection import DaqConnection
     from daq.SimDaqConnection import SimDaqConnection
-    from daq.FileDaqConnection import FileDaqConnection
+    #from daq.FileDaqConnection import FileDaqConnection
     from gui.MainWindow import MainWindow
 
     # make it so!
