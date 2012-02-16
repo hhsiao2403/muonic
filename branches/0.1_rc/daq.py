@@ -29,14 +29,12 @@ class ThreadedClient():
     endApplication could reside in the GUI part, but putting them here
     means that you have all the thread controls in a single place.
     """
+
     def __init__(self,multicore,opts,logger,root):
 
 
         # Create the queue
         if multicore:
-            # mult.Queue or mult.JoinableQueue?
-            # self.outqueue = mult.JoinableQueue()
-            # self.inqueue  = mult.JoinableQueue()
             self.outqueue = mult.Queue()
             self.inqueue  = mult.Queue()
             
@@ -50,12 +48,9 @@ class ThreadedClient():
         # get option parser options
         self.logger = logger
         self.sim = opts.sim
-        #self.filename = opts.filename
-        #self.timewindow = float(opts.timewindow)
-        #self.inputfile = opts.inputfile
 
         # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, opts.filename, logger, float(opts.timewindow), opts.writepulses,opts.nostatus,opts.user) 
+        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, logger, opts) 
         self.gui.show()
 
         # A timer to periodically call periodicCall :-)
@@ -69,10 +64,6 @@ class ThreadedClient():
 
         if self.sim:
             self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.logger)
-        #elif self.inputfile:
-        #    self.daq = FileDaqConnection(self.inqueue, self.outqueue,self.inputfile, self.logger)
-        #    # we have to use the timestamp from the file
-        #    self.gui.options.usecpld = True
 
         else:
             self.daq = DaqConnection(self.inqueue, self.outqueue, self.logger)
@@ -82,22 +73,18 @@ class ThreadedClient():
         if multicore:
             self.readthread = mult.Process(target=self.daq.read,name="pREADER")
             if not self.sim:
-                #if not self.inputfile:
-                    self.writethread = mult.Process(target=self.daq.write,name="pWRITER")
+                self.writethread = mult.Process(target=self.daq.write,name="pWRITER")
         else:
             self.readthread = threading.Thread(target=self.daq.read)
             if not self.sim:
                 self.writethread = threading.Thread(target=self.daq.write)
-                #if not self.inputfile:
-                    #self.writethread = threading.Thread(target=self.daq.write)
         
         # Set daemon flag so that the threads finish when the main app finishes
         self.readthread.daemon = True
         self.readthread.start()
         if not self.sim:
-            #if not self.inputfile:
-                self.writethread.daemon = True
-                self.writethread.start()
+            self.writethread.daemon = True
+            self.writethread.start()
         
 
     def periodicCall(self):
@@ -109,6 +96,7 @@ class ThreadedClient():
             self.daq.running = False
             try:
                 self.gui.mu_file.close()
+
             except AttributeError:
                 pass
 
@@ -118,12 +106,15 @@ class ThreadedClient():
         self.gui.subwindow.writefile = False
         try:
             self.gui.mu_file.close()
+
         except AttributeError:
             pass
+
         self.running = False
         self.root.quit()       
  
 def main(opts,logger):
+
     root = QtGui.QApplication(sys.argv)
     client = ThreadedClient(multicore,opts,logger,root)
     root.exec_()
@@ -135,7 +126,6 @@ if __name__ == '__main__':
     from optparse import OptionParser
 
 
-    #usage = "%prog [options] -f <data output file> \nspecify the file type by a command line switch."
     usage = """%prog [options] YOURINITIALS
                This program is dedicated for the use with QNet DAQ cards
                YOURINITIALS are two letters indicating your name
@@ -150,34 +140,20 @@ if __name__ == '__main__':
                and Y will be the total measurement time"""
 
     parser = OptionParser(usage=usage)
-    #parser.add_option("-f", "--file", dest="filename", help="write data to FILE", metavar="FILE", default=None)
-    #parser.add_option("-d", "--debug", action="store_true", dest="debug", help="output for debugging", default=False)
+
     parser.add_option("-s", "--sim", action="store_true", dest="sim", help="use simulation mode for testing without hardware", default=False)
     parser.add_option("-t", "--timewindow", dest="timewindow", help="time window for the measurement in s (default 5 s)", default=5.0)
     parser.add_option("-d", "--debug", dest="loglevel", action="store_const", const=10 , help="switch to loglevel debug", default=20)
     parser.add_option("-p", "--writepulses", dest="writepulses", help="write a file with extracted pulses", action="store_true", default=False)
     parser.add_option("-n", "--nostatus", dest="nostatus", help="do not write DAQ status messages to RAW data files", action="store_true", default=False)
 
-    #parser.add_option("-i", "--inputfile", dest="inputfile", help="read data from FILE instead from DAQ card", metavar="INFILE", default=None)
 
     opts, args = parser.parse_args()
     if (len(args) != 1) or (len(args[0]) != 2):
             parser.error("Incorrect number of arguments, you have to specify just the initials of your name for the filenames \n initials must be two letters!")
 
-    # to be downward compatible, will go away
-    opts.filename = "dummy"
     # small ugly hack, mixing args and options...
     opts.user = args[0]
-
-    #if opts.filename is None:
-    #    print "No filename for saving the data was entered, please use e.g. \ndaq.py -f data.txt \nor call daq.py -h or daq.py --help for help"
-    #if os.path.exists(os.path.join(os.getcwd() + os.sep + 'data',opts.filename)):
-    #    decision = raw_input("A file with the filename %s already exists. Do you really want to overwrite it (yes/no)? " % str(opts.filename) )
-
-    #    if decision != 'yes':
-    #        print "Program is terminated because a file with the filename %s aready exits and you have chosen that it should not be overwritten. Please restart the program and choose another filename" % opts.filename
-    #        sys.exit()
-
 
 
     import logging
@@ -193,12 +169,13 @@ if __name__ == '__main__':
     #even if multiprocessing.Queue is used, Queue is needed 
     import Queue
    
-
     #test if more than one cpu is available
     try:
         import multiprocessing as mult
-        multicore = mult.cpu_count() > 1
-        logger.info("%d cpus found!" %mult.cpu_count())
+        n_of_cpus = mult.cpu_count()
+        multicore = n_of_cpus > 1
+        logger.info("%d cpus found!" %n_of_cpus)
+        del n_of_cpus
    
     except ImportError:
         logger.info("python-multiprocessing is not available, using python thrading instead")
@@ -216,7 +193,6 @@ if __name__ == '__main__':
     
     from daq.DaqConnection import DaqConnection
     from daq.SimDaqConnection import SimDaqConnection
-    from daq.FileDaqConnection import FileDaqConnection
     from gui.MainWindow import MainWindow
 
     # make it so!

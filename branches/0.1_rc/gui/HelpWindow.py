@@ -1,15 +1,12 @@
+#! /usr/bin/env python
+
 
 from PyQt4 import QtGui, QtCore
 from helptext import helper
 
-#class HelpWindow(QtGui.QWidget): 
-
-    #def __init__(self, parent=None): 
-        #QtGui.QWidget.__init__(self, parent) 
-        #self.font = QtGui.QFont("Helvetica", 16) 
-        #elf.pen = QtGui.QPen(QtGui.QColor(0,0,255))
 
 class HelpWindow(QtGui.QDialog): 
+
     def __init__(self, *args):
         _NAME = 'Help'
         QtGui.QDialog.__init__(self,*args)
@@ -31,11 +28,10 @@ class HelpWindow(QtGui.QDialog):
 
         self.show()
 
-    #def paintEvent(self, event): 
-        #painter = QtGui.QPainter(self) 
-        #painter.setPen(self.pen) 
-        #painter.setFont(self.font) 
-        #painter.drawText(self.rect(), QtCore.Qt.AlignCenter, "Help not available yet!")
+if __name__ == "__main__":
 
-
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    hwindow = HelpWindow()
+    sys.exit(app.exec_())
 

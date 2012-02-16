@@ -1,8 +1,12 @@
-import sys
+#! /usr/bin/env python
+
+"""
+Provides a simple DAQ card simulation, so that software can testet with it
+"""
+
 import time
 import Queue
 import numpy as n
-import gc
 from random import choice
 	
 class SimDaq():
@@ -31,29 +35,16 @@ class SimDaq():
         """
 	
         def format_to_8digits(hexstring):
-            if len(hexstring) < 8:
-                zeros_to_add = 8-len(hexstring)
-                for zero in xrange(zeros_to_add):
-                    hexstring = '0' + hexstring
-                return hexstring
-              
-            if len(hexstring) > 8:
-                return hexstring[-8:]
-            else:
-                pass
+            return hexstring.zfill(8)
+        
 
         # draw rates from a poisson distribution,
         scalars_ch0 = int(choice(n.random.poisson(12,100)))
         self.logger.debug("scalars_ch0 %f" %scalars_ch0)
-	gc.collect()
         scalars_ch1 = int(choice(n.random.poisson(10,100)))
-	gc.collect()
         scalars_ch2 = int(choice(n.random.poisson(8,100)))
-	gc.collect()
         scalars_ch3 = int(choice(n.random.poisson(11,100)))
-	gc.collect()
         scalars_trigger = scalars_ch0 + scalars_ch1 + scalars_ch2 + scalars_ch3
- 	gc.collect()
 
         self.__scalars_ch0__ += scalars_ch0
         self.__scalars_ch1__ += scalars_ch1
@@ -65,17 +56,15 @@ class SimDaq():
         self.__scalars_to_return__ = 'DS S0=' + format_to_8digits(hex(self.__scalars_ch0__)[2:]) + ' S1=' + format_to_8digits(hex(self.__scalars_ch1__)[2:]) + ' S2=' + format_to_8digits(hex(self.__scalars_ch2__)[2:]) + ' S3=' + format_to_8digits(hex(self.__scalars_ch3__)[2:]) + ' S4=' + format_to_8digits(hex(self.__scalars_trigger__)[2:])
         self.logger.debug("Scalars to return %s" %self.__scalars_to_return__)
 
- 
-
     def __reload__(self):
-        self.logger.debug("FILE RELOADED")
+        self.logger.debug("File reloaded")
         self.__daq__ = open(self.__simdaq_file__)
 
     def readline(self):
 
         self.logger.debug("return info %s" %self.__return_info__)
         if self.__return_info__:
-            self.logger.debug("SIMDAQ: info field: %s" %self.__info__) 
+            self.logger.debug("info field: %s" %self.__info__) 
             self.__return_info__ = False
             return self.__info__
 
@@ -97,7 +86,6 @@ class SimDaq():
         
         time.sleep(seconds)
         self.__physics__()
-        self.logger.debug("SIMULATION MODE!")
 
     def push_info(self):
         return self.__info__
@@ -116,7 +104,6 @@ class SimDaq():
     def inWaiting(self):
         if self.__inWaiting__:
             self.__wait__(0.3)
-            #self.__inWaiting__ = choice([True,False])
             return True
 
         else:
@@ -145,7 +132,6 @@ class SimDaqConnection(object):
         min_sleeptime = 0.01 # seconds
         max_sleeptime = 0.2 # seconds
         sleeptime = min_sleeptime #seconds
-        self.logger.info('')
         while self.running:
             
             self.logger.info("inqueue size is %d" %self.inqueue.qsize())
@@ -173,45 +159,3 @@ class SimDaqConnection(object):
             time.sleep(sleeptime)
 
 
-
-
-
-#    def read(self):
-#        """
-#        This is where we handle the asynchronous I/O. For example, it may be
-#        a 'select()'.
-#        One important thing to remember is that the thread has to yield
-#        control.
-#        """
-#        min_sleeptime = 0.01 # seconds
-#        max_sleeptime = 0.2 # seconds
-#        sleeptime = min_sleeptime #seconds
-#        while self.running:
-#            if self.port.inWaiting():
-#                while self.port.inWaiting():
-#                    self.outqueue.put(self.port.readline().strip())
-#                    if self.port.__return_info__:
-#                        self.logger.debug("returning info")
-#                        self.outqueue.put(self.port.push_info())
-#                    #self.outqueue.task_done()
-#                sleeptime = max(sleeptime/2, min_sleeptime)
-#            else:
-#                sleeptime = min(1.5 * sleeptime, max_sleeptime)
-#            time.sleep(sleeptime)
-#
-#
-#
-#
-#    def write(self):
-#        while self.running:
-#            self.logger.debug("inqueue size is %d" %self.inqueue.qsize())
-#            while self.inqueue.qsize():
-#                try:
-#                    self.port.write(str(self.inqueue.get(0))+"\r")
-#                    #self.inqueue.task_done()
-#                except Queue.Empty:
-#                    self.logger.debug("Queue empty!")
-#                    pass
-#            time.sleep(0.15)
-#
-## vim: ai ts=4 sts=4 et sw=4

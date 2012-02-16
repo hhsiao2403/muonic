@@ -11,9 +11,6 @@ BIT1 = 1 << 1 # Trigger interrupt pending
 BIT2 = 1 << 2 # GPS data possible corrupted
 BIT3 = 1 << 3 # Current or last 1PPS rate not within range
 
-cpld_freq = 25.0e6 # TODO: We have to make sure that this is the right frequency
-MINI_TICK = 1.0/(cpld_freq * 32)
-
 #assuming the cpld clock runs with approx 41MHz
 cpld_tick = 24  #nsec 
 tmc_tick = 0.75 #nsec
@@ -30,7 +27,6 @@ class PulseExtractor:
         if a pulsefile is given, all the extracte pulses
         will be written into it
         """
-
         
         self.chan0re = []
         self.chan0fe = []
