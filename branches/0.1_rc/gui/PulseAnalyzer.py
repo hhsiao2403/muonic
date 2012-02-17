@@ -108,8 +108,8 @@ class PulseExtractor:
         if self.ini:
             self.lastonepps = int(line[9],16)
             self.ini = False
-            print 'ini'
             return None
+
         #self.linetime = int(line[0],16)*cpld_tick
         self.linetime = get_time(line,self.lastonepps)
         self.lastonepps = int(line[9],16)

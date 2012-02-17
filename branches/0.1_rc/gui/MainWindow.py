@@ -457,8 +457,8 @@ class MainWindow(QtGui.QMainWindow):
         # close the RAW file (if any)
         if self.subwindow.write_file:
             self.subwindow.write_file = False
-            mtime = self.options.raw_mes_start - now
-            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            mtime = now - self.options.raw_mes_start
+            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
             self.logger.info("The raw data was written for %f hours" % mtime)
             newrawfilename = self.options.rawfilename.replace("HOURS",str(mtime))
             shutil.move(self.options.rawfilename,newrawfilename)
@@ -468,7 +468,7 @@ class MainWindow(QtGui.QMainWindow):
 
             self.options.mudecaymode = False
             mtime = self.options.dec_mes_start - now
-            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
             self.logger.info("The muon decay measurement was active for %f hours" % mtime)
             newmufilename = self.options.decayfilename.replace("HOURS",str(mtime))
             shutil.move(self.options.decayfilename,newmufilename)
@@ -483,8 +483,8 @@ class MainWindow(QtGui.QMainWindow):
             self.options.mudecaymode = False
             self.options.showpulses = False
             self.pulseextractor.close_file()
-            mtime = self.options.pulse_mes_start - now
-            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            mtime = now - self.options.pulse_mes_start
+            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
             self.logger.info("The pulse extraction measurement was active for %f hours" % mtime)
             newpulsefilename = old_pulsefilename.replace("HOURS",str(mtime))
             shutil.move(old_pulsefilename,newpulsefilename)
@@ -493,8 +493,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self.data_file_write = False
         self.data_file.close()
-        mtime = self.options.rate_mes_start - now
-        mtime = round(mtime.microseconds/(1000000.*3600),1)
+        mtime = now - self.options.rate_mes_start
+        mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
         self.logger.info("The rate measurement was active for %f hours" % mtime)
         newratefilename = self.options.filename.replace("HOURS",str(mtime))
         shutil.move(self.options.filename,newratefilename)
@@ -591,7 +591,7 @@ class SubWindow(QtGui.QWidget):
         
         self.setLayout(vbox)
        
-        self.scalars_monitor = ScalarsMonitor(self, timewindow, self.logger)
+        self.scalars_monitor = ScalarsMonitor(self, self.logger)
         self.lifetime_monitor = LifetimeMonitor(self,self.logger)
         self.pulse_monitor = PulseMonitor(self,self.logger)
 
@@ -682,10 +682,10 @@ class SubWindow(QtGui.QWidget):
         self.timer = self.startTimer(timewindow*1000)
 
     def startClicked(self): 
-        self.logger.debug("Clear was called")
+        self.logger.debug("Restart Button Clicked")
         self.holdplot = False
         self.scalars_monitor.reset()
-        self.scalars_monitor.update_plot((0,0,0,0,0, 5,0,0,0,0, 0))
+        #self.scalars_monitor.update_plot((0,0,0,0,0,5,0,0,0,0,0))
         
     def stopClicked(self):
         self.holdplot = True
@@ -720,7 +720,7 @@ class SubWindow(QtGui.QWidget):
             self.mainwindow.statusbar.removeWidget(self.mu_label)
             self.mainwindow.options.mudecaymode = False
             mtime = self.mainwindow.options.dec_mes_start - datetime.datetime.now()
-            mtime = round(mtime.microseconds/(1000000.*3600),1)
+            mtime = round(mtime.seconds/(3600.),2) + mtime.days *86400
             self.logger.info("The muon decay measurement was active for %f hours" % mtime)
             newmufilename = self.mainwindow.options.decayfilename.replace("HOURS",str(mtime))
             shutil.move(self.mainwindow.options.decayfilename,newmufilename)
@@ -816,10 +816,8 @@ class SubWindow(QtGui.QWidget):
                 self.logger.info("Adding decays %s" %self.mainwindow.decay)
 
                 # at the moment we are only using the first decay
-                print self.mainwindow.decay
 
                 decay_times =  [decay_time[0] for decay_time in self.mainwindow.decay]
-                print decay_times
 
                 self.lifetime_monitor.update_plot(decay_times)
 

@@ -21,10 +21,11 @@ import NavigationToolbar2QTAgg as NavigationToolbar
 
 class PulseMonitor(FigureCanvas):
     """Matplotlib Figure widget to display Pulses"""
+
+
     def __init__(self, parent, logger):   
                 
-        self.logger = logger
-        
+        self.logger = logger       
         
         # first image setup
         self.fig = Figure(facecolor='white')
