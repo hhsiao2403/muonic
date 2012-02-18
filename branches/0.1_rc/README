@@ -1,3 +1,28 @@
+
+# This file is part of muonic, a program to work with the QuarkDAQ cards
+# Copyright (C) 2009  Robert Franke (robert.franke@desy.de)
+#
+# muonic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# muonic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with muonic. If not, see <http://www.gnu.org/licenses/>.
+
+
+# The way of the communication between the serial port and the GUI is based on
+# the receipt presented at http://code.activestate.com/recipes/82965/
+# Created by Jacob Hallen, AB Strakt, Sweden. 2001-10-17
+# Adapted by Boudewijn Rempt, Netherlands. 2002-04-15
+# It is licenced under the Python licence, http://www.python.org/psf/license/
+
+
 Requirements
 ------------
 

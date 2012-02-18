@@ -47,8 +47,8 @@ class LifetimeMonitor(FigureCanvas):
 
         # make a fixed binning from 0 to 20 microseconds
         self.binning = n.linspace(0,20,84)
-        self.bincontent   = self.ax.hist([], self.binning, fc='b', alpha=0.25)[0]
-        self.hist_patches = self.ax.hist([], self.binning, fc='b', alpha=0.25)[2]
+        self.bincontent   = self.ax.hist(n.array([]), self.binning, fc='b', alpha=0.25)[0]
+        self.hist_patches = self.ax.hist(n.array([]), self.binning, fc='b', alpha=0.25)[2]
          
         # force a redraw of the Figure
         self.fig.canvas.draw()
@@ -118,7 +118,13 @@ class LifetimeMonitor(FigureCanvas):
         self.ax.set_ylim(0,max(bincontent)*1.2)
         self.ax.set_xlabel("Decay time in microseconds")
         self.ax.set_ylabel("Events in time bin")
-        self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))),loc=1)
+        try:
+            self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))),loc=1)
+        except TypeError:
+            self.logger.warn('Covariance Matrix is None, could not calculate fit error!')
+            self.ax.legend(("Data","Fit: (%4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],chisquare/(nbins-len(p)))),loc=1)
+            
+        
         self.fig.canvas.draw()
 
 
