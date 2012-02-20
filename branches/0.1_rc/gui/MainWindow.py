@@ -44,13 +44,9 @@ reso_h = 400
 tr = QtCore.QCoreApplication.translate
 _NAME = 'muonic'
 
-#define some global variables 
-LASTQUERY = time.time()
-
-
 class MainWindow(QtGui.QMainWindow):
     
-    def __init__(self, inqueue, outqueue, endcommand, logger, opts, win_parent = None):
+    def __init__(self, inqueue, outqueue, logger, opts, root, win_parent = None):
 
         # instanciate the mainwindow
         self.logger = logger
@@ -105,12 +101,26 @@ class MainWindow(QtGui.QMainWindow):
 
         self.inqueue = inqueue
         self.outqueue = outqueue
+
         # we have to ensure that the DAQcard does not sent
         # any automatic status reports every x seconds
         self.outqueue.put('ST N!=1')
         self.outqueue.put('ST 0')
         self.outqueue.put('TL')
-        self.endcommand = endcommand
+
+        # an anchor to the Application
+        self.root = root
+
+        # A timer to periodically call processIncoming and check what is in the queue
+        self.timer = QtCore.QTimer()
+        QtCore.QObject.connect(self.timer,
+                           QtCore.SIGNAL("timeout()"),
+                           self.processIncoming)
+ 
+        ## Start the timer -- this replaces the initial call to periodicCall
+        self.timer.start(1000)
+
+
 
         self.create_widgets()
 
@@ -160,24 +170,77 @@ class MainWindow(QtGui.QMainWindow):
 
         helpmenu = menubar.addMenu(tr('MainWindow','&Help'))
         helpmenu.addAction(helpdaqcommands)
+ 
+    def exit_program(self,ev):
+        """
+        The event which triggered exit_program has to be passed as ev
+        So that if the verification fails, exit_program can catch it!
+        """
 
+        # ask kindly if the user is really sure if she/he wants to exit
+        reply = QtGui.QMessageBox.question(self, 'Attention!',
+                'Do you really want to exit?', QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 
-    # exit the main program after verification
-    def verification(self, question_string):
-        reply = QtGui.QMessageBox.question(self, 'Message',
-                question_string, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
         if reply == QtGui.QMessageBox.Yes:
-            return True
-        else:
-            return False
-    
-    def exit_program(self):
-        if self.verification('Do you really want to exit?'):
-            self.logger.debug('Exit!')
-            self.endcommand()
+            now = datetime.datetime.now()
+
+            # close the RAW file (if any)
+            if self.subwindow.write_file:
+                self.subwindow.write_file = False
+                mtime = now - self.options.raw_mes_start
+                mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
+                self.logger.info("The raw data was written for %f hours" % mtime)
+                newrawfilename = self.options.rawfilename.replace("HOURS",str(mtime))
+                shutil.move(self.options.rawfilename,newrawfilename)
+                self.subwindow.outputfile.close()
+
+            if self.options.mudecaymode:
+
+                self.options.mudecaymode = False
+                mtime = self.options.dec_mes_start - now
+                mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
+                self.logger.info("The muon decay measurement was active for %f hours" % mtime)
+                newmufilename = self.options.decayfilename.replace("HOURS",str(mtime))
+                shutil.move(self.options.decayfilename,newmufilename)
+
+            if self.options.pulsefilename:
+
+                old_pulsefilename = self.options.pulsefilename
+
+                # no pulses shall be extracted any more, 
+                # this means changing lots of switches
+                self.options.pulsefilename = False
+                self.options.mudecaymode = False
+                self.options.showpulses = False
+                self.pulseextractor.close_file()
+                mtime = now - self.options.pulse_mes_start
+                mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
+                self.logger.info("The pulse extraction measurement was active for %f hours" % mtime)
+                newpulsefilename = old_pulsefilename.replace("HOURS",str(mtime))
+                shutil.move(old_pulsefilename,newpulsefilename)
+
+                
+
+            self.data_file_write = False
+            self.data_file.close()
+            mtime = now - self.options.rate_mes_start
+            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
+            self.logger.info("The rate measurement was active for %f hours" % mtime)
+            newratefilename = self.options.filename.replace("HOURS",str(mtime))
+            shutil.move(self.options.filename,newratefilename)
+            time.sleep(0.5)
+            self.subwindow.writefile = False
+            try:
+                self.mu_file.close()
+ 
+            except AttributeError:
+                pass
+
+            self.root.quit()           
             self.emit(QtCore.SIGNAL('closeEmitApp()'))
+
         else:
-            pass        
+            ev.ignore()
     
     #the individual menus
     def threshold_menu(self):
@@ -448,58 +511,13 @@ class MainWindow(QtGui.QMainWindow):
    
     def closeEvent(self, ev):
         """
-        We just call the endcommand when the window is closed
-        instead of presenting a button for that purpose.
+        Is triggered when the window is closed, we have to reimplement it
+        to provide our special needs for the case the program is ended.
         """
 
-        now = datetime.datetime.now()
+        self.logger.info('Attempting to close Window!')
 
-        # close the RAW file (if any)
-        if self.subwindow.write_file:
-            self.subwindow.write_file = False
-            mtime = now - self.options.raw_mes_start
-            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
-            self.logger.info("The raw data was written for %f hours" % mtime)
-            newrawfilename = self.options.rawfilename.replace("HOURS",str(mtime))
-            shutil.move(self.options.rawfilename,newrawfilename)
-            self.subwindow.outputfile.close()
-
-        if self.options.mudecaymode:
-
-            self.options.mudecaymode = False
-            mtime = self.options.dec_mes_start - now
-            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
-            self.logger.info("The muon decay measurement was active for %f hours" % mtime)
-            newmufilename = self.options.decayfilename.replace("HOURS",str(mtime))
-            shutil.move(self.options.decayfilename,newmufilename)
-
-        if self.options.pulsefilename:
-
-            old_pulsefilename = self.options.pulsefilename
-
-            # no pulses shall be extracted any more, 
-            # this means changing lots of switches
-            self.options.pulsefilename = False
-            self.options.mudecaymode = False
-            self.options.showpulses = False
-            self.pulseextractor.close_file()
-            mtime = now - self.options.pulse_mes_start
-            mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
-            self.logger.info("The pulse extraction measurement was active for %f hours" % mtime)
-            newpulsefilename = old_pulsefilename.replace("HOURS",str(mtime))
-            shutil.move(old_pulsefilename,newpulsefilename)
-
-            
-
-        self.data_file_write = False
-        self.data_file.close()
-        mtime = now - self.options.rate_mes_start
-        mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
-        self.logger.info("The rate measurement was active for %f hours" % mtime)
-        newratefilename = self.options.filename.replace("HOURS",str(mtime))
-        shutil.move(self.options.filename,newratefilename)
-        time.sleep(0.5)
-        self.exit_program()
+        self.exit_program(ev)
 
 
 class SubWindow(QtGui.QWidget):
@@ -781,6 +799,10 @@ class SubWindow(QtGui.QWidget):
                 self.mainwindow.statusbar.removeWidget(self.periodic_status_label)
             except AttributeError:
                 pass
+
+
+ 
+
 
 
     def timerEvent(self,ev):

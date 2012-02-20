@@ -28,6 +28,9 @@ def main(opts,logger):
 
     root = QtGui.QApplication(sys.argv)
     client = DAQProvider(opts,logger,root)
+    # Set up the GUI part
+    gui=MainWindow(client.outqueue, client.inqueue, logger, opts,root)
+    gui.show()
     root.exec_()
 
 

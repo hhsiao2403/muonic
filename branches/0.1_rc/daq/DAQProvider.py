@@ -1,12 +1,6 @@
 
 import multiprocessing as mult
 
-from gui.MainWindow import MainWindow
-
-# PyQt4 imports
-from PyQt4 import QtCore
-from PyQt4 import QtGui
-
 from SimDaqConnection import SimDaqConnection
 from DaqConnection import DaqConnection
 
@@ -31,18 +25,6 @@ class DAQProvider():
         self.logger = logger
         self.sim = opts.sim
 
-        # Set up the GUI part
-        self.gui=MainWindow(self.outqueue, self.inqueue, self.endApplication, logger, opts) 
-        self.gui.show()
-
-        # A timer to periodically call periodicCall :-)
-        self.timer = QtCore.QTimer()
-        QtCore.QObject.connect(self.timer,
-                           QtCore.SIGNAL("timeout()"),
-                           self.periodicCall)
-
-        # Start the timer -- this replaces the initial call to periodicCall
-        self.timer.start(1000)
 
         if self.sim:
             self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.logger)
@@ -63,30 +45,5 @@ class DAQProvider():
         
         
 
-    def periodicCall(self):
-        """
-        Check every 100 ms if there is something new in the queue.
-        """
-        self.gui.processIncoming()
-        if not self.running:
-            self.daq.running = False
-            try:
-                self.gui.mu_file.close()
-
-            except AttributeError:
-                pass
-
-            self.root.quit()
-
-    def endApplication(self):
-        self.gui.subwindow.writefile = False
-        try:
-            self.gui.mu_file.close()
-
-        except AttributeError:
-            pass
-
-        self.running = False
-        self.root.quit()       
  
 
