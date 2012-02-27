@@ -7,6 +7,7 @@ Provides a simple DAQ card simulation, so that software can testet with it
 import time
 import Queue
 import numpy as n
+
 from random import choice
 	
 class SimDaq():
@@ -14,7 +15,6 @@ class SimDaq():
     def __init__(self, logger):
         
         self.logger = logger
-        self.logger.debug("called")
         self.__pushed_lines__ = 0
         self.__lines_to_push__ = 10
         self.__simdaq_file__ = "simdaq.txt"
@@ -62,9 +62,8 @@ class SimDaq():
 
     def readline(self):
 
-        self.logger.debug("return info %s" %self.__return_info__)
         if self.__return_info__:
-            self.logger.debug("info field: %s" %self.__info__) 
+            self.logger.debug("info field: %s is returned!" %self.__info__) 
             self.__return_info__ = False
             return self.__info__
 
