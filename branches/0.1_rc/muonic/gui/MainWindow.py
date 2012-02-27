@@ -12,17 +12,17 @@ from PyQt4 import QtCore
 import Queue
 
 # muonic imports
-from gui.LineEdit import LineEdit
-from gui.PeriodicCallDialog import PeriodicCallDialog
-from gui.ThresholdDialog import ThresholdDialog
-from gui.ConfigDialog import ConfigDialog
-from gui.OptionsDialog import OptionsDialog
-from gui.HelpWindow import HelpWindow
-from gui.live.scalarsmonitor import ScalarsMonitor
-from gui.live.lifetimemonitor import LifetimeMonitor
-from gui.live.pulsemonitor import PulseMonitor
+from LineEdit import LineEdit
+from PeriodicCallDialog import PeriodicCallDialog
+from ThresholdDialog import ThresholdDialog
+from ConfigDialog import ConfigDialog
+from OptionsDialog import OptionsDialog
+from HelpWindow import HelpWindow
+from muonic.gui.live.scalarsmonitor import ScalarsMonitor
+from muonic.gui.live.lifetimemonitor import LifetimeMonitor
+from muonic.gui.live.pulsemonitor import PulseMonitor
 
-from analysis import fit
+from muonic.analysis import fit
 
 import PulseAnalyzer as pa
 import get_time
@@ -197,7 +197,7 @@ class MainWindow(QtGui.QMainWindow):
             if self.options.mudecaymode:
 
                 self.options.mudecaymode = False
-                mtime = self.options.dec_mes_start - now
+                mtime = now - self.options.dec_mes_start
                 mtime = round(mtime.seconds/(3600.),2) + mtime.days*86400
                 self.logger.info("The muon decay measurement was active for %f hours" % mtime)
                 newmufilename = self.options.decayfilename.replace("HOURS",str(mtime))
@@ -884,7 +884,10 @@ class MuonicOptions:
  
         date = time.gmtime()
 
-        datapath = os.getcwd() + os.sep + 'data' 
+        # this is hard-coded! There must be a better solution...
+        # if you change here, you have to change in setup.py!
+        datapath = os.getenv('HOME') + os.sep + 'muonic_data'
+ 
         self.filename = os.path.join(datapath,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(date.tm_year,date.tm_mon,date.tm_mday,date.tm_hour,date.tm_min,date.tm_sec,"R",user[0],user[1]) )
         # the time when the rate measurement is started
         now = datetime.datetime.now()

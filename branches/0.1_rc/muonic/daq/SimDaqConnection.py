@@ -7,6 +7,8 @@ Provides a simple DAQ card simulation, so that software can testet with it
 import time
 import Queue
 import numpy as n
+import os
+
 
 from random import choice
 	
@@ -17,7 +19,7 @@ class SimDaq():
         self.logger = logger
         self.__pushed_lines__ = 0
         self.__lines_to_push__ = 10
-        self.__simdaq_file__ = "simdaq.txt"
+        self.__simdaq_file__ = os.path.split(os.path.abspath(__file__))[0] + os.sep + "simdaq.txt"
         self.__daq__ = open(self.__simdaq_file__)
         self.__inWaiting__ = True 
         self.__return_info__ = False
