@@ -2,6 +2,7 @@
 
 import Queue
 import serial
+import os.path as pth
 
 from time import sleep
 
@@ -23,7 +24,8 @@ class DaqConnection(object):
     def get_port():
         connected = False
         while not connected:
-            dev = subprocess.Popen(['which_tty_daq'], stdout=subprocess.PIPE).communicate([0])
+            which_tty_daq = os.path.split(os.path.abspath(__file__))[0] + os.sep + "which_tty_daq"
+            dev = subprocess.Popen([which_tty_daq], stdout=subprocess.PIPE).communicate([0])
             dev = "/dev/" + dev
             dev = dev.rstrip('\n')
             self.logger.info("Daq connected to %s",dev)
