@@ -1,5 +1,11 @@
+#! /usr/bin/env python
+
+
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+
+tr = QtCore.QCoreApplication.translate
+
 
 class PeriodicCallDialog(QtGui.QDialog):
 
@@ -12,8 +18,14 @@ class PeriodicCallDialog(QtGui.QDialog):
         self.time_box.setMaximum(600)
         self.time_box.setMinimum(1)
         self.time_box.setSingleStep(1)
+        self.command_label = QtGui.QLabel()
+        self.command_label.setText(tr("Dialog", "Command"))
+        self.interval_label = QtGui.QLabel()
+        self.interval_label.setText(tr("Dialog", "Interval"))
         self.button_box = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+        self.v_box.addWidget(self.command_label)
         self.v_box.addWidget(self.textbox)
+        self.v_box.addWidget(self.interval_label)
         self.v_box.addWidget(self.time_box)
         self.v_box.addWidget(self.button_box)
         self.setLayout(self.v_box)
@@ -24,6 +36,25 @@ class PeriodicCallDialog(QtGui.QDialog):
         QtCore.QObject.connect(self.button_box,
                               QtCore.SIGNAL('rejected()'),
                               self.reject)
+        windowtitle = QtCore.QString("PeridicCall")
+ 
+ 
+        #pol = QtGui.QSizePolicy()
+        #pol.setHorizontalPolicy(pol.Expanding)
+ 
+        #self.setSizePolicy(pol)
+ 
+        self.setWindowTitle(windowtitle)
         self.show()
+
+if __name__ == "__main__":
+
+    # self test section
+
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    tdialog = PeriodicCallDialog()
+    sys.exit(app.exec_())
+
     
 # vim: ai ts=4 sts=4 et sw=4

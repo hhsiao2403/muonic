@@ -1,7 +1,12 @@
 #! /usr/bin/env python
 
 import sys
-freq = 25.0e6
+
+# what frequency is the correct one?
+# 41 or 25?
+# assuming 41..
+#freq = 25.0e6
+freq = 41.0e6
 
 def time_to_seconds(time, correction):
     '''
@@ -12,8 +17,8 @@ def time_to_seconds(time, correction):
     t = tfields[0]
     secs_since_day_start = int(t[0:2])*3600+int(t[2:4])*60+int    (t[4:6])
     evt_time = secs_since_day_start + int(tfields[1])/1000.0+int(correction)/1000.0
-    return round(evt_time)
-
+    #return round(evt_time)
+    return evt_time
 
 def get_time(fields,last_onepps_count):
     try:
@@ -27,6 +32,7 @@ def get_time(fields,last_onepps_count):
     correction = fields[15]
     
     line_time = time_to_seconds(time,correction)+(trigger_count - onepps_count)/freq
+
 #line_time = seconds + (trigger_count - onepps_coun    t)/freq     
     return line_time
 

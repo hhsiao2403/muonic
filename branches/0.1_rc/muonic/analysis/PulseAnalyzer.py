@@ -1,6 +1,10 @@
 #! /usr/env/bin python
 
-
+# for the pulses 
+# 8 bits give a hex number
+# but only the first 5 bits are used for the pulses time,
+# the fifth bit flags if a pulse is actually there
+# the seventh bit should be the triggerflag...
 BIT0_4 = 31
 BIT5 = 1 << 5
 BIT7 = 1 << 7
@@ -45,31 +49,46 @@ class PulseExtractor:
         self.lastchan3re = []
         self.lastchan3fe = []
         
-        self.pulsedict = dict()
-
         self.trigger = 0
+
         self.pulsefile = pulsefile
         if pulsefile:
             self.pulsefile = open(pulsefile,'w')           
-        self.ini = True
 
-    def calculate_edges(self,line):
-        if (int(line[1],16) & BIT5):
-            self.chan0re.append((self.linetime - self.trigger) + (int(line[1],16) & BIT0_4)*tmc_tick) 
-        if (int(line[2],16) & BIT5):
-            self.chan0fe.append((self.linetime - self.trigger) + (int(line[2],16) & BIT0_4)*tmc_tick)
-        if (int(line[3],16) & BIT5):
-            self.chan1re.append((self.linetime - self.trigger) + (int(line[3],16) & BIT0_4)*tmc_tick)
-        if (int(line[4],16) & BIT5):
-            self.chan1fe.append((self.linetime - self.trigger) + (int(line[4],16) & BIT0_4)*tmc_tick)
-        if (int(line[5],16) & BIT5):
-            self.chan2re.append((self.linetime - self.trigger) + (int(line[5],16) & BIT0_4)*tmc_tick)
-        if (int(line[6],16) & BIT5):
-            self.chan2fe.append((self.linetime - self.trigger) + (int(line[6],16) & BIT0_4)*tmc_tick)
-        if (int(line[7],16) & BIT5):
-            self.chan3re.append((self.linetime - self.trigger) + (int(line[7],16) & BIT0_4)*tmc_tick)
-        if (int(line[8],16) & BIT5):
-            self.chan3fe.append((self.linetime - self.trigger) + (int(line[8],16) & BIT0_4)*tmc_tick)
+        # ini will be False if we have seen the first 
+        # trigger
+        self.ini = True
+	self.lastonepps = 0.
+
+    def calculate_edges(self,line,thistrigger=False):
+
+
+        re0 = int(line[1],16)
+        fe0 = int(line[2],16)
+        re1 = int(line[3],16)
+        fe1 = int(line[4],16)
+        re2 = int(line[5],16)
+        fe2 = int(line[6],16)
+        re3 = int(line[7],16)
+        fe3 = int(line[8],16)
+        
+
+        if (re0 & BIT5):    
+            self.chan0re.append((self.linetime - self.trigger) + (re0 & BIT0_4)*tmc_tick)  
+        if (fe0 & BIT5):
+            self.chan0fe.append((self.linetime - self.trigger) + (fe0 & BIT0_4)*tmc_tick)
+        if (re1 & BIT5):
+            self.chan1re.append((self.linetime - self.trigger) + (re1 & BIT0_4)*tmc_tick)
+        if (fe1 & BIT5):
+            self.chan1fe.append((self.linetime - self.trigger) + (fe1 & BIT0_4)*tmc_tick)
+        if (re2 & BIT5):
+            self.chan2re.append((self.linetime - self.trigger) + (re2 & BIT0_4)*tmc_tick)
+        if (fe2 & BIT5):
+            self.chan2fe.append((self.linetime - self.trigger) + (fe2 & BIT0_4)*tmc_tick)
+        if (re3 & BIT5):
+            self.chan3re.append((self.linetime - self.trigger) + (re3 & BIT0_4)*tmc_tick)
+        if (fe3 & BIT5):
+            self.chan3fe.append((self.linetime - self.trigger) + (fe4 & BIT0_4)*tmc_tick)
 
     def order_and_cleanpulses(self):
         """
@@ -82,6 +101,7 @@ class PulseExtractor:
         self.chan0 = zip(self.lastchan0re,self.lastchan0fe)
         for i in self.chan0:
             if not i[0] < i[1]:
+                #print 'removed', i
                 self.chan0.remove(i)
            
         self.chan1 = zip(self.lastchan1re,self.lastchan1fe)
@@ -105,24 +125,20 @@ class PulseExtractor:
 
         line = line.split()
 
-        if self.ini:
-            self.lastonepps = int(line[9],16)
-            self.ini = False
-            return None
 
         #self.linetime = int(line[0],16)*cpld_tick
-        self.linetime = get_time(line,self.lastonepps)
+        # remember here that get_time returns seconds!
+        self.linetime = get_time(line,self.lastonepps)*1e9
         self.lastonepps = int(line[9],16)
-        self.triggerflag = int(line[1],16)     
+        self.triggerflag = int(line[1],16) & BIT7    
 
 
-        if (self.triggerflag < 80): 
-            # we do have a previous trigger and are now adding more pulses to the event
-
-            if self.trigger:
-                self.calculate_edges(line)
   
-        if self.triggerflag >= 80:
+        #if self.triggerflag >= 80:
+        if self.triggerflag:
+        
+            self.ini = False
+            
             # a new trigger!o we have to evaluate the last one and get the new pulses
             self.lasttriggertime = self.trigger
             self.lastchan0re = self.chan0re
@@ -134,9 +150,8 @@ class PulseExtractor:
             self.lastchan3re = self.chan3re
             self.lastchan3fe = self.chan3fe
 
-            #self.trigger = int(line[0],16)*cpld_tick
-            self.trigger = get_time(line,self.lastonepps)
-            self.linetime = self.trigger
+
+            self.trigger = self.linetime
 
             self.chan0re = []  
             self.chan0fe = []
@@ -145,11 +160,9 @@ class PulseExtractor:
             self.chan2re = []
             self.chan2fe = []
             self.chan3re = []
-            self.chan3fe = []
-           
+            self.chan3fe = []         
 
-            
-            self.calculate_edges(line)
+            self.calculate_edges(line,thistrigger=True)
             self.order_and_cleanpulses()
 
             extracted_pulses = (self.lasttriggertime,self.chan0,self.chan1,self.chan2,self.chan3) 
@@ -159,6 +172,18 @@ class PulseExtractor:
 
             return extracted_pulses
  
+        else:    
+            # we do have a previous trigger and are now adding more pulses to the event
+
+
+            if self.ini:
+                self.lastonepps = int(line[9],16)
+                return None
+
+
+            else:
+                self.calculate_edges(line)
+
 
     def close_file(self):
         self.pulsefile.close()          
@@ -261,7 +286,7 @@ if __name__ == '__main__':
 
     line = '6B00BC12 00 30 00 31 00 00 00 00 00000002 000000.000 000000 V 00 8 +0000'
     	
-    data = open('../simdaq.txt')
+    data = open('../daq/simdaq.txt')
     extractor = PulseExtractor()
     while True:
         try:
@@ -269,6 +294,7 @@ if __name__ == '__main__':
             #print extractor.chan1fe
         except ValueError:
             print 'VE'
+
 
 
 

@@ -20,7 +20,7 @@ from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
 
-class LifetimeMonitor(FigureCanvas):
+class LifetimeCanvas(FigureCanvas):
     """
     A simple histogram for the use with mu lifetime
     measurement

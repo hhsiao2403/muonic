@@ -19,7 +19,7 @@ import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
-class PulseMonitor(FigureCanvas):
+class PulseCanvas(FigureCanvas):
     """Matplotlib Figure widget to display Pulses"""
 
 

@@ -1,12 +1,9 @@
 #! /usr/bin/env python
 
-
-
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
 tr = QtCore.QCoreApplication.translate
-
 
 class ThresholdDialog(QtGui.QDialog):
 
@@ -57,12 +54,6 @@ class ThresholdDialog(QtGui.QDialog):
 
         windowtitle = QtCore.QString("Threshold Settings")
         
-
-        #pol = QtGui.QSizePolicy()
-        #pol.setHorizontalPolicy(pol.Expanding)
-
-        #self.setSizePolicy(pol)
-
         self.setWindowTitle(windowtitle)
         self.adjustSize()
         self.show()

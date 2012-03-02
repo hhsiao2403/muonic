@@ -254,4 +254,5 @@ def main(argv=None):
     analyze_files(argv)
 
 if __name__ == '__main__':
-    main()
+     import sys
+     main([sys.argv[1]])

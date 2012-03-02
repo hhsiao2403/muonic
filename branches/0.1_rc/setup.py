@@ -13,8 +13,8 @@ setup(name='muonic',
       scripts=['scripts/muonic'],
       #package_dir={'muonic' : 'muonic'},
       package_data={'' : ['docs/*','README'], 'muonic': ['daq/simdaq.txt','daq/which_tty_daq']}, 
-      include_package_data=True,
+      #include_package_data=True,
       data_files=[(os.getenv('HOME') + os.sep + 'muonic_data',[])]
       )
 
-
+# TODO: Set permissions correcty for newly created directory muonic_data

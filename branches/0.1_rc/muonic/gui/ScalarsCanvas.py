@@ -14,7 +14,7 @@ import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
-class ScalarsMonitor(FigureCanvas):
+class ScalarsCanvas(FigureCanvas):
     """Matplotlib Figure widget to Muon rates"""
     def __init__(self, parent, logger):   
                 
