@@ -21,7 +21,6 @@ for line in f.readlines():
         line = line.split()
         directions.append(float(line[3][2:-1]) - float(line[1][2:-1]))
     except:
-        print 'error:', line
         pass
 
 up = 0

@@ -284,9 +284,12 @@ class DecayTrigger:
 
 if __name__ == '__main__':
 
-    line = '6B00BC12 00 30 00 31 00 00 00 00 00000002 000000.000 000000 V 00 8 +0000'
+    #line = '6B00BC12 00 30 00 31 00 00 00 00 00000002 000000.000 000000 V 00 8 +0000'
     	
-    data = open('../daq/simdaq.txt')
+    import sys
+    
+    #data = open('../daq/simdaq.txt')
+    data = open(sys.argv[1])
     extractor = PulseExtractor()
     while True:
         try:

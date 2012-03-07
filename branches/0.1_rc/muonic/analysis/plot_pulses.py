@@ -19,7 +19,6 @@ for line in f.readlines():
     
     try:
         line = line.split()
-        print line
         fe0 = line[2].split(')')[0]
         fe1 = line[4].split(')')[0]
         re0 = line[1].split('(')[1][:-1]
@@ -27,7 +26,6 @@ for line in f.readlines():
         chan0.append(float(fe0) - float(re0))
         chan1.append(float(fe1) - float(re1))
     except:
-        print 'error',line
         pass
 
 print chan0, 'Pulsewidths chan0'
