@@ -1,38 +1,43 @@
-import sys
-import time
+#! /usr/bin/env python
+
 import Queue
 import serial
+import os.path as pth
+
+from time import sleep
 
 class DaqConnection(object):
 
     def __init__(self, inqueue, outqueue, logger):
 
-        try:
-            self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=0.5,xonxoff=True)
-        except serial.SerialException, e:
-            print e.message
-            sys.exit(1)
         self.inqueue = inqueue
         self.outqueue = outqueue
         self.running = 1
         self.logger = logger
 
+        try:
+            self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=0.5,xonxoff=True)
+        except serial.SerialException, e:
+            self.logger.fatal("SerialException thrown! Value:" + e.message.__repr__())
+            raise SystemError, e
+
     def get_port():
         connected = False
         while not connected:
-            dev = subprocess.Popen(['which_tty_daq'], stdout=subprocess.PIPE).communicate([0])
+            which_tty_daq = os.path.split(os.path.abspath(__file__))[0] + os.sep + "which_tty_daq"
+            dev = subprocess.Popen([which_tty_daq], stdout=subprocess.PIPE).communicate([0])
             dev = "/dev/" + dev
             dev = dev.rstrip('\n')
             self.logger.info("Daq connected to %s",dev)
             try:
                 port = serial.Serial(port=dev, baudrate=115200,
                                      bytesize=8,parity='N',stopbits=1,
-                                     timeout=1,xonxoff=True)
+                                     timeout=1,xonxoff=xonxoff)
                 connected = True
             except serial.SerialException, e:
                 logger.error(e)
                 logger.error("Waiting 10 seconds")
-                time.sleep(10)
+                sleep(10)
 
         self.logger.info("Successfully connected to serial port")
         return port
@@ -63,7 +68,7 @@ class DaqConnection(object):
                     sleeptime = max(sleeptime/2, min_sleeptime)
                 else:
                     sleeptime = min(1.5 * sleeptime, max_sleeptime)
-                time.sleep(sleeptime)
+                sleep(sleeptime)
 
             except IOError:
                 self.logger.error("IOError")
@@ -89,6 +94,7 @@ class DaqConnection(object):
                     self.port.write(str(self.inqueue.get(0))+"\r")
                 except Queue.Empty:
                     pass
-            time.sleep(0.1)
+            
+            sleep(0.1)
 
 # vim: ai ts=4 sts=4 et sw=4

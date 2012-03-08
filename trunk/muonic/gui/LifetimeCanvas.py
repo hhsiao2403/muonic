@@ -20,7 +20,7 @@ from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
 
 
-class LifetimeMonitor(FigureCanvas):
+class LifetimeCanvas(FigureCanvas):
     """
     A simple histogram for the use with mu lifetime
     measurement
@@ -41,23 +41,14 @@ class LifetimeMonitor(FigureCanvas):
 
 
         # set specific limits for X and Y axes
-        #self.ax.set_xlim(0, 1)
         self.ax.set_ylim(ymin=0)
-        #self.ax.grid()
-        #self.ax.set_title('Lifetime measurement')
         self.ax.set_xlabel('time between pulses (microsec)')
         self.ax.set_ylabel('events')
-        # and disable figure-wide autoscale
-        #self.ax.set_autoscale_on(False)
-        #self.ax.set_autoscale_on(True)
-        # generates first "empty" plots
 
         # make a fixed binning from 0 to 20 microseconds
-        # we choose a 0.5 ms binning
-        #self.binning = n.linspace(0,20,21)
         self.binning = n.linspace(0,20,84)
-        self.bincontent   = self.ax.hist([], self.binning, fc='b', alpha=0.25)[0]
-        self.hist_patches = self.ax.hist([], self.binning, fc='b', alpha=0.25)[2]
+        self.bincontent   = self.ax.hist(n.array([]), self.binning, fc='b', alpha=0.25)[0]
+        self.hist_patches = self.ax.hist(n.array([]), self.binning, fc='b', alpha=0.25)[2]
          
         # force a redraw of the Figure
         self.fig.canvas.draw()
@@ -87,18 +78,11 @@ class LifetimeMonitor(FigureCanvas):
         # tmphist is compatible with the decaytime hist...
 
 
-        print decaytimes
-        print decaytimes[0]
         tmphist = self.ax.hist(decaytimes, self.binning, fc='b', alpha=0.25)[0]
-        print tmphist
 
         for histbin in enumerate(tmphist):
             if histbin[1]:
-                #self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
                 self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
-                print self.hist_patches[histbin[0]].get_height()
-                print self.hist_patches[histbin[0]].set_height(self.hist_patches[histbin[0]].get_height() + histbin[1])
-                print self.hist_patches
             else:
                 pass
 
@@ -109,14 +93,13 @@ class LifetimeMonitor(FigureCanvas):
         for patch in self.hist_patches:
             self.heights.append(patch.get_height())
 
-        print self.heights, 'lifetimemonitor heights'
+        self.logger.debug('lifetimemonitor heights %s' %self.heights.__repr__())
         self.ax.set_ylim(ymax=max(self.heights)*1.1)
         self.ax.set_ylim(ymin=0)
         self.ax.set_xlabel('time between pulses (microsec)')
         self.ax.set_ylabel('events')
         
         # always get rid of unused stuff
-        #del heights
         del tmphist
 
         # some beautification
@@ -135,6 +118,14 @@ class LifetimeMonitor(FigureCanvas):
         self.ax.set_ylim(0,max(bincontent)*1.2)
         self.ax.set_xlabel("Decay time in microseconds")
         self.ax.set_ylabel("Events in time bin")
-        self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))),loc=1)
-        #p.savefig("fit.png")
+        try:
+            self.ax.legend(("Data","Fit: (%4.2f +- %4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],n.sqrt(covar[1][1]),chisquare/(nbins-len(p)))),loc=1)
+        except TypeError:
+            self.logger.warn('Covariance Matrix is None, could not calculate fit error!')
+            self.ax.legend(("Data","Fit: (%4.2f) $\mu$s \n chisq/ndf=%4.2f"%(p[1],chisquare/(nbins-len(p)))),loc=1)
+            
+        
         self.fig.canvas.draw()
+
+
+
