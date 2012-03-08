@@ -280,7 +280,7 @@ class TabWidget(QtGui.QWidget):
     def on_file_clicked(self):
         
         self.outputfile = open(self.mainwindow.options.rawfilename,"w")
-        self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%self.mainwindow.options.filename))
+        self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%self.mainwindow.options.rawfilename))
         self.write_file = True
         self.mainwindow.options.raw_mes_start = datetime.datetime.now()
         self.mainwindow.statusbar.addPermanentWidget(self.file_label)
@@ -331,7 +331,10 @@ class TabWidget(QtGui.QWidget):
         else:
              self.mainwindow.thisscalarquery = now - self.mainwindow.lastscalarquery
              self.mainwindow.lastscalarquery = now
-             if self.scalars_result:
+             # when initiaizing, the timewindow is large,
+             # omitting this by requesting values below
+             # an arbitrary of 10000
+             if self.scalars_result and self.scalars_result[5] < 10000:
                  if not self.holdplot:
                      self.scalars_monitor.update_plot(self.scalars_result)
 

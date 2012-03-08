@@ -24,7 +24,7 @@ from TabWidget import TabWidget
 #
 #from muonic.analysis import fit
 
-import PulseAnalyzer as pa
+import muonic.analysis.PulseAnalyzer as pa
 #import get_time
 
 #from matplotlib.backends.backend_qt4agg \
@@ -63,7 +63,7 @@ class MainWindow(QtGui.QMainWindow):
         self.decay = []
 
         # last time, when the 'DS' command was sent
-        self.lastscalarquery = time.time()
+        self.lastscalarquery = 0
         self.thisscalarquery = time.time()
         self.lastoneppscount = 0
               
@@ -423,7 +423,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.threshold_ch1 = msg[2][:-2]
                     self.threshold_ch2 = msg[3][:-2]
                     self.threshold_ch3 = msg[4]
-                    
+                    return  
 
                 # check for scalar information
                 if len(msg) >= 2 and msg[0]=='D' and msg[1] == 'S':                    
@@ -478,7 +478,11 @@ class MainWindow(QtGui.QMainWindow):
                                 self.logger.debug("Rate plot data was written to %s" %self.data_file.__repr__())
                             except ValueError:
                                 self.logger.warning("ValueError, Rate plot data was not written to %s" %self.data_file.__repr__())
-                
+
+                # check for other status messages          
+                elif len(msg) < 50:
+                    #it is most propably a status message (poor criterion)
+                    return
                 elif (self.options.mudecaymode or self.options.showpulses or self.options.pulsefilename) :
                     # we now assume that we are using chan0-2 for data taking anch chan3 as veto
                     self.pulses = self.pulseextractor.extract(msg)

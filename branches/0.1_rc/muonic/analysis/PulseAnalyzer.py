@@ -88,7 +88,7 @@ class PulseExtractor:
         if (re3 & BIT5):
             self.chan3re.append((self.linetime - self.trigger) + (re3 & BIT0_4)*tmc_tick)
         if (fe3 & BIT5):
-            self.chan3fe.append((self.linetime - self.trigger) + (fe4 & BIT0_4)*tmc_tick)
+            self.chan3fe.append((self.linetime - self.trigger) + (fe3 & BIT0_4)*tmc_tick)
 
     def order_and_cleanpulses(self):
         """
@@ -121,7 +121,6 @@ class PulseExtractor:
 
     def extract(self,line):
         """Search for triggers in a set of lines"""
-
 
         line = line.split()
 
@@ -216,7 +215,6 @@ class DecayTrigger:
 	
                    #print decaytime
                    if decaytime < self.triggerwindow:
-             	       print 'We registered a decayed muon'
                        self.lasttriggerpulses = thistriggerpulses
                        if not decaytime < 0:
                             self.lasttriggerpulses = thistriggerpulses

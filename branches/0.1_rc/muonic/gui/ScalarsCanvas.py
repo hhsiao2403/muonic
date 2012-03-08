@@ -66,7 +66,7 @@ class ScalarsCanvas(FigureCanvas):
         self.ax.set_ylim(0., 100.2)
         
         self.time_window = 0
-        self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[0], [0], [0], [0], [0], [0]
+        self.chan0, self.chan1, self.chan2, self.chan3, self.trigger, self.l_time =[], [], [], [], [], []
         self.l_chan0, = self.ax.plot(self.l_time,self.chan0, c='y', label='ch0',lw=3)
         self.l_chan1, = self.ax.plot(self.l_time,self.chan1, c='m', label='ch1',lw=3)
         self.l_chan2, = self.ax.plot(self.l_time,self.chan2, c='c',  label='ch2',lw=3)
