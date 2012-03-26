@@ -1,7 +1,5 @@
 #! /usr/env/bin python
 
-
-
 # for the pulses 
 # 8 bits give a hex number
 # but only the first 5 bits are used for the pulses time,
@@ -17,11 +15,9 @@ BIT1 = 1 << 1 # Trigger interrupt pending
 BIT2 = 1 << 2 # GPS data possible corrupted
 BIT3 = 1 << 3 # Current or last 1PPS rate not within range
 
-
 # ticksize of tmc internal clock
 # TODO: find out if tmc is coupled to cpld!
 tmc_tick = 0.75 #nsec
-
 
 
 class PulseExtractor:
@@ -62,7 +58,7 @@ class PulseExtractor:
         # ini will be False if we have seen the first 
         # trigger
         self.ini = True
-	self.lastonepps = 0.
+        self.lastonepps = 0.
         self.gps_evttime = 0.
 
 
@@ -148,9 +144,6 @@ class PulseExtractor:
         self.gps_evttime = evt_time
         return evt_time
     
-
-
-
     def get_time(self,trigger_count):
         
         line_time = self.gps_evttime + (trigger_count - self.lastonepps)/self.calculatedfrequency    
@@ -184,7 +177,7 @@ class PulseExtractor:
 
         # remember here that get_time returns seconds!
         # we need nanoseconds here, so that we can add the pulses le 
-        # and fe timet        
+        # and fe times        
 
         onepps        = int(line[9],16)
         trigger_count = int(line[0],16)
@@ -194,9 +187,7 @@ class PulseExtractor:
             self.passedonepps += 1 
 
         self.get_gps_time(line[10],line[15])
-        self.linetime = self.get_time(trigger_count)*1e9
-        
-
+        self.linetime = self.get_time(trigger_count)*1e9      
 
         self.triggerflag = int(line[1],16) & BIT7    
 
@@ -257,9 +248,7 @@ class PulseExtractor:
             #print self.chan2re
             #print self.chan2fe
             #print self.chan3re
-            #print self.chan3fe
-
-            
+            #print self.chan3fe           
 
 
             if self.pulsefile:
@@ -301,17 +290,33 @@ class PulseExtractor:
 # this trigger builds from DAQ triggers....
 
 
-class DecayTrigger:
+class DecayTriggerBase:
     """
-    This trigger is designed to decide wether to adjacent triggers
-    occur within 20microseconds
-    """   
-
+    Feel free to write your own muon decay trigger! It just needs to inherit from this 
+    Base class
+    """
 
     def __init__(self,triggerpulses,chan3softveto):
         self.triggerwindow = 2000 # 20microseconds
         self.lasttriggerpulses = triggerpulses
         self.chan3softveto = chan3softveto
+
+
+    def trigger(self,thistriggerpulses):
+        """
+        Implement this method with your own trigger logic!
+        """ 
+        raise NotImplementedError("This feature has to be implemented first!")
+ 
+
+
+
+class DecayTriggerSimple(DecayTriggerBase):
+    """
+    This trigger is designed to decide wether to adjacent triggers
+    occur within 20microseconds
+    """   
+
 
     def trigger(self,thistriggerpulses):
      
@@ -321,10 +326,9 @@ class DecayTrigger:
 	           # we simply subtract two trigger times!
                    decaytime0 = thistriggerpulses[0] - self.lasttriggerpulses[0]
 	
-                   #print decaytime
                    if decaytime < self.triggerwindow:
                        self.lasttriggerpulses = thistriggerpulses
-                       if not decaytime < 0:
+                       if decaytime > 0:
                             self.lasttriggerpulses = thistriggerpulses
                             return decaytime
 
@@ -337,9 +341,7 @@ class DecayTrigger:
 
            else:
                decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
-               #print decaytime
                if decaytime < self.triggerwindow:
-                   #print 'We registered a decayed muon'
                    self.lasttriggerpulses = thistriggerpulses
                    if not decaytime < 0:
                        return decaytime
@@ -348,39 +350,133 @@ class DecayTrigger:
                else:
                    self.lasttriggerpulses = thistriggerpulses 
 
-           ###############################################
-           # what is below was tried to be more accurate,
-           # but seems to complicated
-           # anyone's ideas are very welcome
-           ###############################################
+
+class DecayTriggerSingle(DecayTriggerBase):
+    """
+    No coincidence settings are chosen,
+    just looking for two pulses in 20 microsecs
+    The implementation is the same like DecayTriggerSimple,
+    but the coincidence settings must be chosen differently
+    """   
 
 
-           ## check if the triggertimes are within the triggerwindow
+    def trigger(self,thistriggerpulses):
+     
+           # decay time based only on cpld clock!
+           if self.chan3softveto:
+               if (not self.lasttriggerpulses[4]) & (not thistriggerpulses[4]):
+	           # we simply subtract two trigger times!
+                   decaytime0 = thistriggerpulses[0] - self.lasttriggerpulses[0]
+	
+                   if decaytime < self.triggerwindow:
+                       self.lasttriggerpulses = thistriggerpulses
+                       if decaytime > 0:
+                            self.lasttriggerpulses = thistriggerpulses
+                            return decaytime
 
-           ## we have also to ensure that the trigger is not caused by
-           ## some coincident muon, so we demand that there is only
-           ## one pulse in the second trigger
+                       else:
+                           self.lasttriggerpulses = thistriggerpulses
+
+               else:
+                   self.lasttriggerpulses = thistriggerpulses
 
 
-           ## the second condition checks if the lists are empty,
-           ## remember also that the first item of some pulse tuple
-           ## is always the cpld triggertime
-           ## so '==1' ensures that we have only pulses in one channel
-    
+           else:
+               decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
+               if decaytime < self.triggerwindow:
+                   self.lasttriggerpulses = thistriggerpulses
+                   if not decaytime < 0:
+                       return decaytime
+	
 
-           ##chanpulsecount = [thistriggerpulses.index(pulse) for pulse in thistriggerpulses[:1] if pulse]
-           ##secondtriggercondition = len(chanpulsecount) == 1 
+               else:
+                   self.lasttriggerpulses = thistriggerpulses 
 
-           ##if (self.lasttriggerpulses[0] - thistriggerpulses[9] < 20000) and secondtriggercondition:
-           ##    if thistriggerpulses[chanpulsecount[0]]: 
-           ##        print 'We have a decaying Muon!'
+class DecayTriggerThorough(DecayTriggerBase):
+    """
+    We demand a second pulse in the same channel where the muon got stuck
+    Pulses must not be farther away than the triggerwindow
+    """   
+
+
+    def trigger(self,thistriggerpulses):
+     
 
 
 
-    ##def lifetimecalculator(self,lastpulses,thispulses):
-      
-           ## if we have a trigger, we want to know exactly
-           ## how far the two pulses are apart
+
+           # decay time based only on cpld clock!
+           if self.chan3softveto:
+               if (not self.lasttriggerpulses[4]) & (not thistriggerpulses[4]):
+                   # get the channel with the stuck muon
+                   muonstuckpulse = self.lasttriggerpulses[0]
+                   muonstuckchannel = False
+                   for chan in enumerate(self.lasttriggerpulses[1:]):
+                        for pulse in chan[1]:
+                            if pulse[1] > muonstuckpulse:
+                                muonstuckpulse = pulse[1] + self.lasttriggerpulses[0]
+                                muonstuckchannel = chan[0]
+
+                   trigger = False
+                   if muonstuckchannel:
+                       for chan in enumerate(thistriggerpulses):
+                           if chan[0] == muonstuckchannel + 1:
+                               if chan[1]:
+                                   trigger = True
+
+                           else:
+                               if chan[1]:
+                                   trigger = False
+
+               if trigger:
+                   decaytime = thistriggerpulses[muonstuckchannel + 1] - self.lasttriggerpulses[muonstuckchannel + 1]
+                   if decaytime < self.triggerwindow:
+                       self.lasttriggerpulses = thistriggerpulses
+                       if decaytime > 0:
+                            self.lasttriggerpulses = thistriggerpulses
+                            return decaytime
+
+                       else:
+                           self.lasttriggerpulses = thistriggerpulses
+
+               else:
+                   self.lasttriggerpulses = thistriggerpulses
+
+           else:    
+              # get the channel with the stuck muon
+              muonstuckpulse = self.lasttriggerpulses[0]
+              muonstuckchannel = False
+              for chan in enumerate(self.lasttriggerpulses[1:]):
+                   for pulse in chan[1]:
+                       if pulse[1] > muonstuckpulse:
+                           muonstuckpulse = pulse[1] + self.lasttriggerpulses[0]
+                           muonstuckchannel = chan[0]
+
+              trigger = False
+              if muonstuckchannel:
+                  for chan in enumerate(thistriggerpulses):
+                      if chan[0] == muonstuckchannel + 1:
+                          if chan[1]:
+                              trigger = True
+
+                      else:
+                          if chan[1]:
+                              trigger = False
+
+              if trigger:
+                  decaytime = thistriggerpulses[muonstuckchannel + 1] - self.lasttriggerpulses[muonstuckchannel + 1]
+                  if decaytime < self.triggerwindow:
+                      self.lasttriggerpulses = thistriggerpulses
+                      if decaytime > 0:
+                          self.lasttriggerpulses = thistriggerpulses
+                          return decaytime
+
+                      else:
+                          self.lasttriggerpulses = thistriggerpulses
+
+              else:
+                  self.lasttriggerpulses = thistriggerpulses
+
 
 
 

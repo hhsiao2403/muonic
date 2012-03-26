@@ -135,7 +135,7 @@ class SimDaqConnection(object):
         sleeptime = min_sleeptime #seconds
         while self.running:
             
-            self.logger.info("inqueue size is %d" %self.inqueue.qsize())
+            self.logger.debug("inqueue size is %d" %self.inqueue.qsize())
             while self.inqueue.qsize():
                 try:
                     self.port.write(str(self.inqueue.get(0))+"\r")

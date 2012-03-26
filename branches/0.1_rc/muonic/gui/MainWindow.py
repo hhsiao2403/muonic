@@ -144,7 +144,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # prepare the config menu
         config = QtGui.QAction(QtGui.QIcon(''),'Channel Configuration', self)
-        config.setStatusTip(tr('MainWindow','Configuer the Coincidences and channels'))
+        config.setStatusTip(tr('MainWindow','Configure the Coincidences and channels'))
         self.connect(config, QtCore.SIGNAL('triggered()'), self.config_menu)
        
         # prepare the threshold menu
@@ -377,7 +377,7 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def help_menu(self):
-        help_window = HelpWindow()
+        help_window = HelpDialog()
         help_window.exec_()
 
     def clear_function(self):
@@ -424,6 +424,9 @@ class MainWindow(QtGui.QMainWindow):
                     self.threshold_ch2 = msg[3][:-2]
                     self.threshold_ch3 = msg[4]
                     return  
+
+                if msg.startswith('ST'):
+                    return
 
                 # check for scalar information
                 if len(msg) >= 2 and msg[0]=='D' and msg[1] == 'S':                    
@@ -506,7 +509,13 @@ class MainWindow(QtGui.QMainWindow):
                     if self.options.mudecaymode:
                         if self.pulses != None:
                             if self.mu_ini:
-                                self.dtrigger = pa.DecayTrigger(self.pulses,self.options.softveto)
+                                if self.options.decaytrigger == "simple":
+                                    self.dtrigger = pa.DecayTriggerSimple(self.pulses,self.options.softveto)
+                                if self.options.decaytrigger == "single":
+                                    self.dtrigger = pa.DecayTriggerSingle(self.pulses,self.options.softveto)
+                                if self.options.decaytrigger == "thorough":
+                                    self.dtrigger = pa.DecayTriggerThorough(self.pulses,self.options.softveto)
+              
                                 self.mu_ini = False 
                                             
                             else:
@@ -584,4 +593,4 @@ class MuonicOptions:
         self.softveto = False
         self.mudecaymode = False
         self.showpulses = False
-
+        self.decaytrigger = False

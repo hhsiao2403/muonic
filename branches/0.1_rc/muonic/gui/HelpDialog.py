@@ -28,7 +28,7 @@ class HelpDialog(QtGui.QDialog):
 
         self.show()
 
-    def helptext():
+    def helptext(self):
     
         return """QNET2_Vx Help Page
     ------------------------------------------------------------

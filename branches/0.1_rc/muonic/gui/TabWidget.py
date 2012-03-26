@@ -4,6 +4,8 @@ from PyQt4 import QtCore
 
 from LineEdit import LineEdit
 from PeriodicCallDialog import PeriodicCallDialog
+from ChooseDecayTriggerDialog import ChooseDecayTriggerDialog
+
 
 from ScalarsCanvas import ScalarsCanvas
 from LifetimeCanvas import LifetimeCanvas
@@ -12,7 +14,6 @@ from PulseCanvas import PulseCanvas
 from muonic.analysis import fit
 
 import muonic.analysis.PulseAnalyzer as pa
-import muonic.analysis.get_time as get_time
 
 from matplotlib.backends.backend_qt4agg \
 import NavigationToolbar2QTAgg as NavigationToolbar
@@ -229,10 +230,30 @@ class TabWidget(QtGui.QWidget):
         if not self.mainwindow.options.mudecaymode:
             if self.activateMuondecay.isChecked():
                 self.logger.warn("We now activate the Muondecay mode!\n All other Coincidence/Veto settings will be overriden!")
-                msg = "WC 00 EF"
+
+                choose_trigger_dialog = ChooseDecayTriggerDialog()
+                rv = choose_trigger_dialog.exec_()
+                if rv == 1:
+                    decaytrigger_simple = choose_trigger_dialog.DecayTriggerSimple.isChecked()
+                    decaytrigger_single = choose_trigger_dialog.DecayTriggerSingle.isChecked()
+                    decaytrigger_thorough = choose_trigger_dialog.DecayTriggerThorough.isChecked()
+                 
+                for item in [(decaytrigger_simple,"simple"),(decaytrigger_single,"single"),(decaytrigger_thorough,"thorough")]:
+                    self.logger.debug("Choose trigger dialog yields %s %s" %(item[0].__repr__(),item[1]))
+                    if item[0]:
+                        self.mainwindow.options.decaytrigger = item[1]
+
+
+                if decaytrigger_simple:
+                    msg = "WC 00 EF"
+                    self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
+
+                else:
+                    msg = "WC 00 0F"
+                    self.logger.warn("No coincidence chosen, no veto chosen!")
+
                 self.mainwindow.outqueue.put(msg)
                 self.logger.info("We sent the following message to DAQ %s" %msg)
-                self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
                 self.mainwindow.options.mudecaymode = True
                 self.mu_ini = True
                 self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for decaying muons!'))
@@ -296,17 +317,17 @@ class TabWidget(QtGui.QWidget):
                 for c in commands:
                     self.mainwindow.outqueue.put(c)
             self.periodic_put = periodic_put
-            self.timer = QtCore.QTimer()
+            self.periodic_call_timer = QtCore.QTimer()
             QtCore.QObject.connect(self.timer,
                                QtCore.SIGNAL("timeout()"),
                                self.periodic_put)
             self.periodic_put()
-            self.timer.start(period)
+            self.periodic_call_timer.start(period)
             self.periodic_status_label = QtGui.QLabel(tr('MainWindow','%s every %s sec'%(command,period/1000)))
             self.mainwindow.statusbar.addPermanentWidget(self.periodic_status_label)
         else:
             try:
-                self.timer.stop()
+                self.periodic_call_timer.stop()
                 self.mainwindow.statusbar.removeWidget(self.periodic_status_label)
             except AttributeError:
                 pass
