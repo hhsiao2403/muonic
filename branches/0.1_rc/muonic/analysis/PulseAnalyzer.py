@@ -297,7 +297,8 @@ class DecayTriggerBase:
     """
 
     def __init__(self,triggerpulses,chan3softveto):
-        self.triggerwindow = 2000 # 20microseconds
+        #self.triggerwindow = 2000 # 20microseconds
+        self.triggerwindow =  20000 # 20 microseconds 
         self.lasttriggerpulses = triggerpulses
         self.chan3softveto = chan3softveto
 
@@ -413,8 +414,9 @@ class DecayTriggerThorough(DecayTriggerBase):
                    muonstuckchannel = False
                    for chan in enumerate(self.lasttriggerpulses[1:]):
                         for pulse in chan[1]:
-                            if pulse[1] > muonstuckpulse:
-                                muonstuckpulse = pulse[1] + self.lasttriggerpulses[0]
+                            nanosecpulse = pulse[1]
+                            if nanosecpulse + self.lasttriggerpulses[0] > muonstuckpulse:
+                                muonstuckpulse = nanosecpulse + self.lasttriggerpulses[0]
                                 muonstuckchannel = chan[0]
 
                    trigger = False
@@ -429,7 +431,7 @@ class DecayTriggerThorough(DecayTriggerBase):
                                    trigger = False
 
                if trigger:
-                   decaytime = thistriggerpulses[muonstuckchannel + 1] - self.lasttriggerpulses[muonstuckchannel + 1]
+                   decaytime = (thistriggerpulses[0] + thistriggerpulses[muonstuckchannel + 1][0][0]) - (self.lasttriggerpulses[0] + self.lasttriggerpulses[muonstuckchannel + 1][0][0])
                    if decaytime < self.triggerwindow:
                        self.lasttriggerpulses = thistriggerpulses
                        if decaytime > 0:
@@ -448,9 +450,11 @@ class DecayTriggerThorough(DecayTriggerBase):
               muonstuckchannel = False
               for chan in enumerate(self.lasttriggerpulses[1:]):
                    for pulse in chan[1]:
-                       if pulse[1] > muonstuckpulse:
-                           muonstuckpulse = pulse[1] + self.lasttriggerpulses[0]
+                       nanosecpulse = pulse[1]
+                       if nanosecpulse + self.lasttriggerpulses[0] > muonstuckpulse:
+                           muonstuckpulse = nanosecpulse + self.lasttriggerpulses[0]
                            muonstuckchannel = chan[0]
+
 
               trigger = False
               if muonstuckchannel:
@@ -462,10 +466,9 @@ class DecayTriggerThorough(DecayTriggerBase):
                       else:
                           if chan[1]:
                               trigger = False
-
               if trigger:
-                  decaytime = thistriggerpulses[muonstuckchannel + 1] - self.lasttriggerpulses[muonstuckchannel + 1]
-                  if decaytime < self.triggerwindow:
+                   decaytime = (thistriggerpulses[0] + thistriggerpulses[muonstuckchannel + 1][0][0]) - (self.lasttriggerpulses[0] + self.lasttriggerpulses[muonstuckchannel + 1][0][0])
+                   if decaytime < self.triggerwindow:
                       self.lasttriggerpulses = thistriggerpulses
                       if decaytime > 0:
                           self.lasttriggerpulses = thistriggerpulses
@@ -505,5 +508,6 @@ if __name__ == '__main__':
             #print 'some error', line
 
             pass 
+
 
 

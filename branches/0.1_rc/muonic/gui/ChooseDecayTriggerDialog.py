@@ -26,7 +26,7 @@ class ChooseDecayTriggerDialog(QtGui.QDialog):
         self.DecayTriggerSingle.setText(tr("Choose decay trigger", "Just look for two pulses in 20 micsec, no Veto/Coincidence criterion applied", None, QtGui.QApplication.UnicodeUTF8))
         self.DecayTriggerThorough = QtGui.QRadioButton(self)
         self.DecayTriggerThorough.setGeometry(QtCore.QRect(20, 30, 341, 61))
-        self.DecayTriggerThorough.setText(tr("Choose decay trigger", "A thorough trigger: The second pulse must be in the same channel like the first pulse, window is again 20 micsec, no Veto/Coincidence criterion applied", None, QtGui.QApplication.UnicodeUTF8))
+        self.DecayTriggerThorough.setText(tr("Choose decay trigger", "A thorough trigger: The second pulse must be in the same channel\n like the first pulse, window is again 20 micsec, no Veto/Coincidence criterion applied", None, QtGui.QApplication.UnicodeUTF8))
 
         self.v_box = QtGui.QVBoxLayout()
         self.v_box.addWidget(self.DecayTriggerSimple)
@@ -48,4 +48,5 @@ if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     odialog = ChooseDecayTriggerDialog()
     sys.exit(app.exec_())
+
 
