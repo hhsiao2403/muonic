@@ -16,12 +16,13 @@ class DaqConnection(object):
         self.logger = logger
 
         try:
-            self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=0.5,xonxoff=True)
+            self.port = self.get_port()
+            #self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=0.5,xonxoff=True)
         except serial.SerialException, e:
             self.logger.fatal("SerialException thrown! Value:" + e.message.__repr__())
             raise SystemError, e
 
-    def get_port():
+    def get_port(self):
         connected = False
         while not connected:
             which_tty_daq = os.path.split(os.path.abspath(__file__))[0] + os.sep + "which_tty_daq"
@@ -32,7 +33,7 @@ class DaqConnection(object):
             try:
                 port = serial.Serial(port=dev, baudrate=115200,
                                      bytesize=8,parity='N',stopbits=1,
-                                     timeout=1,xonxoff=xonxoff)
+                                     timeout=0.5,xonxoff=True)
                 connected = True
             except serial.SerialException, e:
                 logger.error(e)
