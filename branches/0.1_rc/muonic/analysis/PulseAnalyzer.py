@@ -16,8 +16,9 @@ BIT2 = 1 << 2 # GPS data possible corrupted
 BIT3 = 1 << 3 # Current or last 1PPS rate not within range
 
 # ticksize of tmc internal clock
+# documentation says 0.75, measurement says 1.25
 # TODO: find out if tmc is coupled to cpld!
-tmc_tick = 0.75 #nsec
+tmc_tick = 1.25 #nsec
 
 
 class PulseExtractor:
@@ -51,6 +52,11 @@ class PulseExtractor:
         
         self.lasttriggertime = 0
 
+        # store the actual value of
+        # the trigger counter
+        # to correct trigger counter rollover
+        self.lasttriggercount = 0 
+
         self.pulsefile = pulsefile
         if pulsefile:
             self.pulsefile = open(pulsefile,'w')           
@@ -65,14 +71,18 @@ class PulseExtractor:
         # variables for DAQ frequency calculation
         self.lastfrequencypolltime = 0
         self.lastfrequencypolltriggers = 0
+        # TODO find a generic way to account
+        # for the fact that the default
+        # cna be either 25 or 41 MHz
         self.calculatedfrequency = 41.0e6
         self.defaultfrequency = 41.0e6
         self.pollcount = 0
         self.lastoneppspoll = 0
         self.passedonepps = 0
 
-    def calculate_edges(self,line,thistrigger=False):
+        self.debug_freq = open('frequency.txt','w')
 
+    def calculate_edges(self,line,thistrigger=False):
 
         re0 = int(line[1],16)
         fe0 = int(line[2],16)
@@ -100,9 +110,6 @@ class PulseExtractor:
             self.chan3re.append((self.linetime - self.lasttriggertime) + (re3 & BIT0_4)*tmc_tick)
         if (fe3 & BIT5):
             self.chan3fe.append((self.linetime - self.lasttriggertime) + (fe3 & BIT0_4)*tmc_tick)
-
-
-
 
     def order_and_cleanpulses(self):
         """
@@ -137,15 +144,20 @@ class PulseExtractor:
         Convert hhmmss,xxx string int seconds since day start
         '''
 
+        # since evt times can be rather large
+        # we want to return longs here
         tfields = time.split(".")
         t = tfields[0]
-        secs_since_day_start = int(t[0:2])*3600+int(t[2:4])*60+int(t[4:6])
+        secs_since_day_start = long(t[0:2])*3600+int(t[2:4])*60+int(t[4:6])
         evt_time = secs_since_day_start + int(tfields[1])/1000.0+int(correction)/1000.0
         self.gps_evttime = evt_time
         return evt_time
     
     def get_time(self,trigger_count):
-        
+        """
+        Get the actual absolute time 
+        of the event
+        """
         line_time = self.gps_evttime + (trigger_count - self.lastonepps)/self.calculatedfrequency    
         return line_time
 
@@ -158,12 +170,17 @@ class PulseExtractor:
             self.calculatedfrequency = self.defaultfrequency
             return
 
-        frequency = (onepps - self.lastoneppspoll)/self.passedonepps
-        self.calculatedfrequency = float(frequency)
-        self.lastoneppspoll = onepps
-        if not frequency:
-            self.calculatedfrequency = self.defaultfrequency
+        if onepps < self.lastoneppspoll:
+            # onepps counter rollover
+            self.calculatedfrequency = (float(0xFFFFFFFF +onepps) - self.lastoneppspoll)/self.passedonepps
 
+
+        self.calculatedfrequency = (float(onepps) - self.lastoneppspoll)/self.passedonepps
+        self.lastoneppspoll = onepps
+
+        if not self.calculatedfrequency:
+            self.calculatedfrequency = self.defaultfrequency
+        self.debug_freq.write(str(self.calculatedfrequency) + '\n')
 
     def extract(self,line):
         """Search for triggers in a set of lines"""
@@ -179,8 +196,15 @@ class PulseExtractor:
         # we need nanoseconds here, so that we can add the pulses le 
         # and fe times        
 
+        #TODO: correct for delayed onepps switch
+        #TODO: correct for trigger ouunt rollover
         onepps        = int(line[9],16)
         trigger_count = int(line[0],16)
+
+        # correct for triggercount rollover
+        if trigger_count < self.lasttriggercount:
+            trigger_count += 0xFFFFFFFF # counter offset
+
 
         if onepps != self.lastonepps:
             self.lastonepps = onepps
@@ -194,11 +218,12 @@ class PulseExtractor:
         # poll every x lines for the frequency
 
         self.pollcount += 1
-        if not self.pollcount%50:
+        if not self.pollcount%100:
             self.get_daq_frequency(onepps)
             self.pollcount = 0
             self.passedonepps = 0
-  
+
+ 
         if self.triggerflag:
         
             self.ini = False
