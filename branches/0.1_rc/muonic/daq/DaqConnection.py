@@ -41,8 +41,8 @@ class DaqConnection(object):
                                      timeout=0.5,xonxoff=True)
                 connected = True
             except serial.SerialException, e:
-                logger.error(e)
-                logger.error("Waiting 10 seconds")
+                self.logger.error(e)
+                self.logger.error("Waiting 10 seconds")
                 sleep(10)
 
         self.logger.info("Successfully connected to serial port")
