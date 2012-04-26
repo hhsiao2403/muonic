@@ -231,26 +231,30 @@ class TabWidget(QtGui.QWidget):
             if self.activateMuondecay.isChecked():
                 self.logger.warn("We now activate the Muondecay mode!\n All other Coincidence/Veto settings will be overriden!")
 
-                choose_trigger_dialog = ChooseDecayTriggerDialog()
-                rv = choose_trigger_dialog.exec_()
-                if rv == 1:
-                    decaytrigger_simple = choose_trigger_dialog.DecayTriggerSimple.isChecked()
-                    decaytrigger_single = choose_trigger_dialog.DecayTriggerSingle.isChecked()
-                    decaytrigger_thorough = choose_trigger_dialog.DecayTriggerThorough.isChecked()
-                 
-                for item in [(decaytrigger_simple,"simple"),(decaytrigger_single,"single"),(decaytrigger_thorough,"thorough")]:
-                    self.logger.debug("Choose trigger dialog yields %s %s" %(item[0].__repr__(),item[1]))
-                    if item[0]:
-                        self.mainwindow.options.decaytrigger = item[1]
+
+                #choose_trigger_dialog = ChooseDecayTriggerDialog()
+                #rv = choose_trigger_dialog.exec_()
+                #if rv == 1:
+                #    decaytrigger_simple = choose_trigger_dialog.DecayTriggerSimple.isChecked()
+                #    decaytrigger_single = choose_trigger_dialog.DecayTriggerSingle.isChecked()
+                #    decaytrigger_thorough = choose_trigger_dialog.DecayTriggerThorough.isChecked()
+                # 
+                #for item in [(decaytrigger_simple,"simple"),(decaytrigger_single,"single"),(decaytrigger_thorough,"thorough")]:
+                #    self.logger.debug("Choose trigger dialog yields %s %s" %(item[0].__repr__(),item[1]))
+                #    if item[0]:
+                #        self.mainwindow.options.decaytrigger = item[1]
 
 
-                if decaytrigger_simple:
-                    msg = "WC 00 EF"
-                    self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
+                #if decaytrigger_simple:
+                #    msg = "WC 00 EF"
+                #    self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
 
-                else:
-                    msg = "WC 00 0F"
-                    self.logger.warn("No coincidence chosen, no veto chosen!")
+                #else:
+                #    msg = "WC 00 0F"
+                #    self.logger.warn("No coincidence chosen, no veto chosen!")
+                self.mainwindow.options.decaytrigger = 'thorough'
+                msg = "WC 00 0F"
+                self.logger.warn("No coincidence chosen, no veto chosen!")
 
                 self.mainwindow.outqueue.put(msg)
                 self.logger.info("We sent the following message to DAQ %s" %msg)
