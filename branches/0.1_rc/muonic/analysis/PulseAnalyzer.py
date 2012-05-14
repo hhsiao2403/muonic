@@ -21,6 +21,8 @@ BIT3 = 1 << 3 # Current or last 1PPS rate not within range
 tmc_tick = 1.25 #nsec
 
 
+import numpy
+
 class PulseExtractor:
     """
     get the pulses out of a daq line
@@ -84,14 +86,14 @@ class PulseExtractor:
 
     def calculate_edges(self,line,thistrigger=False):
 
-        re0 = numpy.int64(line[1])
-        fe0 = numpy.int64(line[2])
-        re1 = numpy.int64(line[3])
-        fe1 = numpy.int64(line[4])
-        re2 = numpy.int64(line[5])
-        fe2 = numpy.int64(line[6])
-        re3 = numpy.int64(line[7])
-        fe3 = numpy.int64(line[8])
+        re0 = numpy.int64(line[1],16)
+        fe0 = numpy.int64(line[2],16)
+        re1 = numpy.int64(line[3],16)
+        fe1 = numpy.int64(line[4],16)
+        re2 = numpy.int64(line[5],16)
+        fe2 = numpy.int64(line[6],16)
+        re3 = numpy.int64(line[7],16)
+        fe3 = numpy.int64(line[8],16)
         
 
         if (re0 & BIT5):    
@@ -199,7 +201,7 @@ class PulseExtractor:
         #TODO: correct for delayed onepps switch
         #TODO: correct for trigger ouunt rollover
         onepps        = numpy.int64(line[9])
-        trigger_count = numpy.int64(line[0])
+        trigger_count = numpy.int64(line[0],16)
 
         # correct for triggercount rollover
         if trigger_count < numpy.int64(self.lasttriggercount):
@@ -213,7 +215,7 @@ class PulseExtractor:
         self.get_gps_time(line[10],line[15])
         self.linetime = numpy.float64(self.get_time(trigger_count)*1e9)
 
-        self.triggerflag = numpy.int64(line[1]) & BIT7    
+        self.triggerflag = numpy.int64(line[1],16) & BIT7    
 
         # poll every x lines for the frequency
 
@@ -324,7 +326,7 @@ class DecayTriggerBase:
     def __init__(self,triggerpulses,chan3softveto):
         #self.triggerwindow = 2000 # 20microseconds
         self.triggerwindow =  numpy.int64(20000) # 20 microseconds 
-        self.lasttriggerpulses = numpy.int64(triggerpulses)
+        self.lasttriggerpulses = triggerpulses
         self.chan3softveto = chan3softveto
 
 
