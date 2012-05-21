@@ -604,7 +604,7 @@ class DecayTriggerThorough(DecayTriggerBase):
             if epulse2 and mupulse2 and mupulse1:
                 decaytime = etime - mutime
 
-            if epulse1 and mupulse1 and (not mupulse1):
+            if epulse1 and mupulse1 and (not mupulse2):
                 decaytime = etime - mutime
 
             else:
