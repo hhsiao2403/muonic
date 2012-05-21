@@ -26,8 +26,6 @@ for line in f.readlines():
         iniini = False
         continue
 
-        
-
     try:
         if ini:
             last_line = line.split()
@@ -64,7 +62,7 @@ p.ylim(ymax=1.2*max(hist0[0]))
 p.bar(baredges0,hist0[0],width=pulsebins[1]-pulsebins[0],color='b',label='triggers')
 p.grid()
 p.legend()
-p.xlabel('Triggerdistance in ns')
+p.xlabel('Triggerdistance')
 p.ylabel('Events')
 p.show()
 

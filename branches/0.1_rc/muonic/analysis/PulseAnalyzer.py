@@ -3,7 +3,7 @@
 # for the pulses 
 # 8 bits give a hex number
 # but only the first 5 bits are used for the pulses time,
-# the fifth bit flags if a pulse is actually there
+# the fifth bit flags if the pulse is considered valid
 # the seventh bit should be the triggerflag...
 BIT0_4 = 31
 BIT5 = 1 << 5
@@ -19,9 +19,10 @@ BIT3 = 1 << 3 # Current or last 1PPS rate not within range
 # documentation says 0.75, measurement says 1.25
 # TODO: find out if tmc is coupled to cpld!
 tmc_tick = 1.25 #nsec
+MAX_TRIGGERWINDOW = 60.0 #nsec
 
 
-import numpy
+#import numpy
 
 class PulseExtractor:
     """
@@ -52,12 +53,12 @@ class PulseExtractor:
         self.lastchan3re = []
         self.lastchan3fe = []
         
-        self.lasttriggertime = numpy.float64(0)
+        self.lasttriggertime = 0
 
         # store the actual value of
         # the trigger counter
         # to correct trigger counter rollover
-        self.lasttriggercount = numpy.int64(0)
+        self.lasttriggercount = 0
 
         self.pulsefile = pulsefile
         if pulsefile:
@@ -68,7 +69,7 @@ class PulseExtractor:
         self.ini = True
         self.lastonepps = 0.
         self.gps_evttime = 0.
-
+	self.linetime    = 0.
 
         # variables for DAQ frequency calculation
         self.lastfrequencypolltime = 0
@@ -76,42 +77,50 @@ class PulseExtractor:
         # TODO find a generic way to account
         # for the fact that the default
         # cna be either 25 or 41 MHz
-        self.calculatedfrequency = numpy.int64(41.0e6)
-        self.defaultfrequency = numpy.int64(41.0e6)
-        self.pollcount = numpy.int64(0)
-        self.lastoneppspoll = numpy.int64(0)
-        self.passedonepps = numpy.int64(0)
-
+        self.calculatedfrequency = 25.0e6
+        self.defaultfrequency    = 25.0e6
+        self.pollcount           = 0
+        self.lastoneppspoll      = 0
+        self.passedonepps        = 0 
+        #self.lasttime            = 0
+	self.lastlinetime        = 0
+        self.prevlast_onepps     = 0
+        self.lastlinegpstime     = 0
+        #self.rel_linetime        = 0 
+        #self.lastrellinetime    = 0
         self.debug_freq = open('frequency.txt','w')
+        self.debug_freq.write('#  sec (le (nsec), fe(nsec)) chan0 chan1 chan2 chan3 \n')
+	self.trigger_count       = 0
 
-    def calculate_edges(self,line,thistrigger=False):
+    def calculate_edges(self,line,counter_diff=0):
 
-        re0 = numpy.int64(line[1],16)
-        fe0 = numpy.int64(line[2],16)
-        re1 = numpy.int64(line[3],16)
-        fe1 = numpy.int64(line[4],16)
-        re2 = numpy.int64(line[5],16)
-        fe2 = numpy.int64(line[6],16)
-        re3 = numpy.int64(line[7],16)
-        fe3 = numpy.int64(line[8],16)
+        re0 = int(line[1],16)
+        fe0 = int(line[2],16)
+        re1 = int(line[3],16)
+        fe1 = int(line[4],16)
+        re2 = int(line[5],16)
+        fe2 = int(line[6],16)
+        re3 = int(line[7],16)
+        fe3 = int(line[8],16)
         
-
         if (re0 & BIT5):    
-            self.chan0re.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((re0 & BIT0_4))*tmc_tick)  
+            self.chan0re.append(counter_diff + (re0 & BIT0_4)*tmc_tick)  
         if (fe0 & BIT5):
-            self.chan0fe.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((fe0 & BIT0_4))*tmc_tick)
+            self.chan0fe.append(counter_diff + (fe0 & BIT0_4)*tmc_tick)
         if (re1 & BIT5):
-            self.chan1re.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((re1 & BIT0_4))*tmc_tick)
+            self.chan1re.append(counter_diff + (re1 & BIT0_4)*tmc_tick)
+	    #print 're1', counter_diff,(re1 & BIT0_4)*tmc_tick
         if (fe1 & BIT5):
-            self.chan1fe.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((fe1 & BIT0_4))*tmc_tick)
+            self.chan1fe.append(counter_diff +(fe1 & BIT0_4)*tmc_tick)
+	    #print 'fe1', counter_diff,(fe1 & BIT0_4)*tmc_tick
         if (re2 & BIT5):
-            self.chan2re.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((re2 & BIT0_4))*tmc_tick)
+            self.chan2re.append(counter_diff +(re2 & BIT0_4)*tmc_tick)
         if (fe2 & BIT5):
-            self.chan2fe.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((fe2 & BIT0_4))*tmc_tick)
+            self.chan2fe.append(counter_diff +(fe2 & BIT0_4)*tmc_tick)
         if (re3 & BIT5):
-            self.chan3re.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((re3 & BIT0_4))*tmc_tick)
+            self.chan3re.append(counter_diff +(re3 & BIT0_4)*tmc_tick)
         if (fe3 & BIT5):
-            self.chan3fe.append(numpy.float64((self.linetime - self.lasttriggertime)) + numpy.int64((fe3 & BIT0_4))*tmc_tick)
+            self.chan3fe.append(counter_diff +(fe3 & BIT0_4)*tmc_tick)
 
     def order_and_cleanpulses(self):
         """
@@ -119,27 +128,34 @@ class PulseExtractor:
         leading edge later in time than a 
         falling edge and do a bit of sorting
         Remove also single leading or falling edges
+        NEW: We add virtual falling edges!
         """
 
         self.chan0 = zip(self.lastchan0re,self.lastchan0fe)
-        for i in self.chan0:
+        for index,i in enumerate(self.chan0):
             if not i[0] < i[1]:
-                self.chan0.remove(i)
-           
-        self.chan1 = zip(self.lastchan1re,self.lastchan1fe)
-        for i in self.chan1:
-            if not i[0] < i[1]:
-                self.chan1.remove(i)
+                #self.chan0.remove(i)
+                self.chan0[index] = (i[0],MAX_TRIGGERWINDOW)
 
-        self.chan2 = zip(self.lastchan2re,self.lastchan2fe)
-        for i in self.chan2:
+        self.chan1 = zip(self.lastchan1re,self.lastchan1fe)
+        for index,i in enumerate(self.chan1):
             if not i[0] < i[1]:
-                self.chan2.remove(i)
+                #self.chan1.remove(i)
+		#print i[0],i[1],'removing'
+                # adding virtual falling edge
+                self.chan1[index] = (i[0],MAX_TRIGGERWINDOW)
+		#print self.chan1[index],'fixed'
+        self.chan2 = zip(self.lastchan2re,self.lastchan2fe)
+        for index,i in enumerate(self.chan2):
+            if not i[0] < i[1]:
+                #self.chan2.remove(i)
+                self.chan2[index] = (i[0],MAX_TRIGGERWINDOW)
 
         self.chan3 = zip(self.lastchan3re,self.lastchan3fe)
-        for i in self.chan3:
+        for index,i in enumerate(self.chan3):
             if not i[0] < i[1]:
-                self.chan3.remove(i)
+                #self.chan3.remove(i)
+                self.chan3[index] = (i[0],MAX_TRIGGERWINDOW)
 
     def get_gps_time(self,time, correction):
         '''
@@ -150,17 +166,38 @@ class PulseExtractor:
         # we want to return longs here
         tfields = time.split(".")
         t = tfields[0]
-        secs_since_day_start = numpy.int64(t[0:2])*3600+numpy.int64(t[2:4])*60+numpy.int64(t[4:6])
-        evt_time = numpy.float64(secs_since_day_start + numpy.int64(tfields[1])/1000.0+numpy.int64(correction)/1000.0)
+        secs_since_day_start = int(t[0:2])*3600+int(t[2:4])*60+int(t[4:6])
+        evt_time = float(secs_since_day_start + int(tfields[1])/1000.0+int(correction)/1000.0)
         self.gps_evttime = evt_time
+        # evt time is in milliseconds!
         return evt_time
-    
-    def get_time(self,trigger_count):
+   
+    def get_rel_time(self,trigger_count,thisonepps):
+
+        line_time = (trigger_count - thisonepps)/self.calculatedfrequency
+        return line_time
+ 
+    def get_time(self,trigger_count,prevlast=False):
         """
         Get the actual absolute time 
-        of the event
+        of the event in seconds
         """
-        line_time = self.gps_evttime + numpy.float64((trigger_count - self.lastonepps)/self.calculatedfrequency)
+        #print '-----------'
+        #print trigger_count,'triggercount'
+        #print self.gps_evttime, 'gps'
+        #print self.lastonepps, 'lastonepps'
+        debug_diff = trigger_count -self.lastonepps
+        #print debug_diff,'diff'
+	#print self.calculatedfrequency,'freq'
+        #print debug_diff/self.calculatedfrequency,'diff/freq'
+        
+        if prevlast:
+            line_time = self.gps_evttime + float((trigger_count - self.prevlast_onepps)/self.calculatedfrequency)
+        else:
+            line_time = self.gps_evttime + float((trigger_count - self.lastonepps)/self.calculatedfrequency)
+        # line time is in microseconds
+        #print line_time,'line_time'
+        #print '-----------'
         return line_time
 
     def get_daq_frequency(self,onepps):
@@ -168,20 +205,26 @@ class PulseExtractor:
         time: in seconds
         triggers: in counts
         """
+        #print 'abouttocalculatefrequency'
+        #print onepps
+        #print self.lastonepps
+        #print self.passedonepps
+
         if not self.passedonepps:
-            self.calculatedfrequency = numpy.float64(self.defaultfrequency)
+            #print 'nopassedonepps'
+            self.calculatedfrequency = self.defaultfrequency
+            self.lastoneppspoll = onepps
             return
 
-        if onepps < self.lastoneppspoll:
-            # onepps counter rollover
-            self.calculatedfrequency = numpy.float64((numpy.float64(0xFFFFFFFF +onepps) - self.lastoneppspoll)/self.passedonepps)
+        else:
+            self.calculatedfrequency = (onepps - self.lastoneppspoll)/float(self.passedonepps)
+            #print self.calculatedfrequency
 
+        self.lastoneppspoll = onepps
 
-        self.calculatedfrequency = numpy.float64((numpy.float64(onepps) - self.lastoneppspoll)/self.passedonepps)
-        self.lastoneppspoll = numpy.float64(onepps)
-
-        if not self.calculatedfrequency:
-            self.calculatedfrequency = numpy.float64(self.defaultfrequency)
+        if  self.calculatedfrequency <= 0:
+            #print 'failedusingdefault'
+            self.calculatedfrequency = self.defaultfrequency
         self.debug_freq.write(str(self.calculatedfrequency) + '\n')
 
     def extract(self,line):
@@ -200,34 +243,48 @@ class PulseExtractor:
 
         #TODO: correct for delayed onepps switch
         #TODO: correct for trigger ouunt rollover
-        onepps        = numpy.int64(line[9])
-        trigger_count = numpy.int64(line[0],16)
-
+        onepps        = int(line[9],16)
+        trigger_count = int(line[0],16)
         # correct for triggercount rollover
-        if trigger_count < numpy.int64(self.lasttriggercount):
-            trigger_count += numpy.int64(0xFFFFFFFF) # counter offset
+        if trigger_count < self.lasttriggercount:
+            trigger_count += int(0xFFFFFFFF) # counter offset
 
 
+	self.trigger_count = trigger_count
+	#print trigger_count- self.lasttriggercount, 'extract triggercount diff'
+
+      
+	switched_onepps = False
         if onepps != self.lastonepps:
-            self.lastonepps = numpy.int64(onepps)
-            self.passedonepps += numpy.int64(1)
+            self.passedonepps += 1
+            # poll every x lines for the frequency
 
-        self.get_gps_time(line[10],line[15])
-        self.linetime = numpy.float64(self.get_time(trigger_count)*1e9)
+            self.pollcount += 1
+            switched_onepps = True
+            if not self.pollcount%5:
+                self.get_daq_frequency(onepps)
+                self.pollcount = 0
+                self.passedonepps = 0
 
-        self.triggerflag = numpy.int64(line[1],16) & BIT7    
+        self.prevlast_onepps = self.lastonepps
+        self.lastonepps = onepps
+        linegpstime = self.get_gps_time(line[10],line[15])
+        
+        if linegpstime == self.lastlinegpstime and switched_onepps:
+            #print 'delayed onepps'
+            self.linetime = self.get_time(trigger_count,prevlast=True)
 
-        # poll every x lines for the frequency
+        else:
+            self.linetime = self.get_time(trigger_count)
 
-        self.pollcount += numpy.int64(1)
-        if not self.pollcount%100:
-            self.get_daq_frequency(onepps)
-            self.pollcount = 0
-            self.passedonepps = 0
+        #print self.linetime, ' extract: self.linetime'
+        self.triggerflag = int(line[1],16) & BIT7    
 
+	self.lastlinegpstime = linegpstime
+        #self.rel_linetime  = self.get_rel_time(trigger_count,onepps)
  
         if self.triggerflag:
-        
+            #print 'trigger',line 
             self.ini = False
             
             # a new trigger!o we have to evaluate the last one and get the new pulses
@@ -265,7 +322,7 @@ class PulseExtractor:
             self.chan3re = []
             self.chan3fe = []         
 
-            self.calculate_edges(line,thistrigger=True)
+            self.calculate_edges(line)
 
             # UNCOMMENT FOR DEBUG
             #print self.chan0re
@@ -281,19 +338,31 @@ class PulseExtractor:
             if self.pulsefile:
                 self.pulsefile.write(extracted_pulses.__repr__() + '\n')
 
+	    self.lastlinetime = self.linetime       
+            #self.lastrellinetime = self.rel_linetime
+            self.lasttriggercount = trigger_count 
 
             return extracted_pulses
  
         else:    
             # we do have a previous trigger and are now adding more pulses to the event
-
+            #print 'notrigger',line
 
             if self.ini:
-                self.lastonepps = numpy.int64(line[9])
+                self.lastonepps = int(line[9],16)
 
 
             else:
-                self.calculate_edges(line)
+                counter_diff = 0
+                counter_diff = (self.trigger_count - self.lasttriggercount)
+                #print counter_diff, counter_diff > int(0xffffffff)
+                if counter_diff > int(0xffffffff):
+	            counter_diff -= int(0xffffffff)
+
+                counter_diff = counter_diff/self.calculatedfrequency
+                #print counter_diff,counter_diff*1e9,' edges diff'
+		
+                self.calculate_edges(line,counter_diff=counter_diff*1e9)
                 # UNCOMMENT FOR DEGUB
                 #print 'Adding more pulses' 
                 #print self.chan0re
@@ -304,8 +373,10 @@ class PulseExtractor:
                 #print self.chan2fe
                 #print self.chan3re
                 #print self.chan3fe
-               
-
+        
+	self.lastlinetime = self.linetime       
+        #self.lastrellinetime = self.rel_linetime
+        self.lasttriggercount = trigger_count 
 
 
     def close_file(self):
@@ -325,7 +396,7 @@ class DecayTriggerBase:
 
     def __init__(self,triggerpulses,chan3softveto):
         #self.triggerwindow = 2000 # 20microseconds
-        self.triggerwindow =  numpy.int64(20000) # 20 microseconds 
+        self.triggerwindow =  20000 # 20 microseconds 
         self.lasttriggerpulses = triggerpulses
         self.chan3softveto = chan3softveto
 
@@ -394,33 +465,33 @@ class DecayTriggerSingle(DecayTriggerBase):
            if self.chan3softveto:
                if (not self.lasttriggerpulses[4]) & (not thistriggerpulses[4]):
 	           # we simply subtract two trigger times!
-                   decaytime0 = numpy.int64(thistriggerpulses[0] - self.lasttriggerpulses[0])
+                   decaytime0 = thistriggerpulses[0] - self.lasttriggerpulses[0]
 	
                    if decaytime < self.triggerwindow:
-                       self.lasttriggerpulses = numpy.int64(thistriggerpulses)
+                       self.lasttriggerpulses = thistriggerpulses
                        if decaytime > 0:
                             self.lasttriggerpulses = thistriggerpulses
-                            return numpy.int64(decaytime)
+                            return decaytime
 
                        else:
-                           self.lasttriggerpulses = numpy.int64(thistriggerpulses)
+                           self.lasttriggerpulses = thistriggerpulses
 
                else:
-                   self.lasttriggerpulses = numpy.int64(thistriggerpulses)
+                   self.lasttriggerpulses = thistriggerpulses
 
 
            else:
-               decaytime = numpy.int64(thistriggerpulses[0] - self.lasttriggerpulses[0])
+               decaytime = thistriggerpulses[0] - self.lasttriggerpulses[0]
                if decaytime < self.triggerwindow:
-                   self.lasttriggerpulses = numpy.int64(thistriggerpulses)
+                   self.lasttriggerpulses = thistriggerpulses
                    if not decaytime < 0:
-                       return numpy.int64(decaytime)
+                       return decaytime
 	
 
                else:
-                   self.lasttriggerpulses = numpy.int64(thistriggerpulses)
+                   self.lasttriggerpulses = thistriggerpulses
 
-class DecayTriggerThorough(DecayTriggerBase):
+class DecayTriggerThoroughDeprecated(DecayTriggerBase):
     """
     We demand a second pulse in the same channel where the muon got stuck
     Pulses must not be farther away than the triggerwindow
@@ -429,10 +500,6 @@ class DecayTriggerThorough(DecayTriggerBase):
 
     def trigger(self,thistriggerpulses):
      
-
-
-
-
            # decay time based only on cpld clock!
            if self.chan3softveto:
                if (not self.lasttriggerpulses[4]) & (not thistriggerpulses[4]):
@@ -441,9 +508,9 @@ class DecayTriggerThorough(DecayTriggerBase):
                    muonstuckchannel = False
                    for chan in enumerate(self.lasttriggerpulses[1:]):
                         for pulse in chan[1]:
-                            nanosecpulse = numpy.int64(pulse[1])
-                            if nanosecpulse + numpy.int64(self.lasttriggerpulses[0]) > muonstuckpulse:
-                                muonstuckpulse = nanosecpulse + numpy.int64(self.lasttriggerpulses[0])
+                            nanosecpulse = pulse[1]
+                            if nanosecpulse + self.lasttriggerpulses[0] > muonstuckpulse:
+                                muonstuckpulse = nanosecpulse + self.lasttriggerpulses[0]
                                 muonstuckchannel = chan[0]
 
                    trigger = False
@@ -458,7 +525,7 @@ class DecayTriggerThorough(DecayTriggerBase):
                                    trigger = False
 
                if trigger:
-                   decaytime = numpy.int64((thistriggerpulses[0] + thistriggerpulses[muonstuckchannel + 1][0][0]) - (self.lasttriggerpulses[0] + self.lasttriggerpulses[muonstuckchannel + 1][0][0]))
+                   decaytime = (thistriggerpulses[0] + thistriggerpulses[muonstuckchannel + 1][0][0]) - (self.lasttriggerpulses[0] + self.lasttriggerpulses[muonstuckchannel + 1][0][0])
                    if decaytime < self.triggerwindow:
                        self.lasttriggerpulses = thistriggerpulses
                        if decaytime > 0:
@@ -479,7 +546,7 @@ class DecayTriggerThorough(DecayTriggerBase):
                    for pulse in chan[1]:
                        nanosecpulse = pulse[1]
                        if nanosecpulse + self.lasttriggerpulses[0] > muonstuckpulse:
-                           muonstuckpulse = numpy.int64(nanosecpulse + self.lasttriggerpulses[0])
+                           muonstuckpulse = nanosecpulse + self.lasttriggerpulses[0]
                            muonstuckchannel = chan[0]
 
 
@@ -494,7 +561,7 @@ class DecayTriggerThorough(DecayTriggerBase):
                           if chan[1]:
                               trigger = False
               if trigger:
-                   decaytime = numpy.int64((thistriggerpulses[0] + thistriggerpulses[muonstuckchannel + 1][0][0]) - (self.lasttriggerpulses[0] + self.lasttriggerpulses[muonstuckchannel + 1][0][0]))
+                   decaytime = (thistriggerpulses[0] + thistriggerpulses[muonstuckchannel + 1][0][0]) - (self.lasttriggerpulses[0] + self.lasttriggerpulses[muonstuckchannel + 1][0][0])
                    if decaytime < self.triggerwindow:
                       self.lasttriggerpulses = thistriggerpulses
                       if decaytime > 0:
@@ -508,9 +575,50 @@ class DecayTriggerThorough(DecayTriggerBase):
                   self.lasttriggerpulses = thistriggerpulses
 
 
+class DecayTriggerThorough(DecayTriggerBase):
+    """
+    We demand a second pulse in the same channel where the muon got stuck
+    Pulses must not be farther away than the triggerwindow
+    """   
 
 
-           
+    def trigger(self,thistriggerpulses):
+        """
+        Hardcoded use of chan 1,2,3!!
+        """ 
+       
+        mupulse1 = bool(self.lasttriggerpulses[2]) 
+        mupulse2 = bool(self.lasttriggerpulses[3])
+        mupulse3 = bool(self.lasttriggerpulses[4])
+        mutime   = self.lasttriggerpulses[0]
+
+        epulse1  = bool(thistriggerpulses[2])
+        epulse2  = bool(thistriggerpulses[3])
+        epulse3  = bool(thistriggerpulses[4])
+        etime    = thistriggerpulses[0]
+
+        decaytime = 0
+        # the electron might decay in chan1 or chan2
+        if (not epulse3) and (not mupulse3):
+
+            if epulse2 and mupulse2 and mupulse1:
+                decaytime = etime - mutime
+
+            if epulse1 and mupulse1 and (not mupulse1):
+                decaytime = etime - mutime
+
+            else:
+                decaytime = 0
+	
+            if decaytime > 0:
+                return decaytime
+
+        else:
+            return None
+		
+
+        
+ 
  
 
 
