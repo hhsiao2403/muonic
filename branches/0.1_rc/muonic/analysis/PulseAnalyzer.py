@@ -396,7 +396,8 @@ class DecayTriggerBase:
 
     def __init__(self,triggerpulses,chan3softveto):
         #self.triggerwindow = 2000 # 20microseconds
-        self.triggerwindow =  20000 # 20 microseconds 
+        #self.triggerwindow =  20000 # 20 microseconds 
+        self.triggerwindow = 20e-6
         self.lasttriggerpulses = triggerpulses
         self.chan3softveto = chan3softveto
 
@@ -604,16 +605,18 @@ class DecayTriggerThorough(DecayTriggerBase):
             if epulse2 and mupulse2 and mupulse1:
                 decaytime = etime - mutime
 
-            if epulse1 and mupulse1 and (not mupulse2):
+            elif epulse1 and mupulse1 and (not mupulse2):
                 decaytime = etime - mutime
 
             else:
                 decaytime = 0
 	
-            if decaytime > 0:
+            if (decaytime > 0) and (decaytime < self.triggerwindow):
+                self.lasttrigerpulses = thistriggerpulses
                 return decaytime
 
         else:
+            self.lasttriggerpulses = thistriggerpulses
             return None
 		
 

@@ -23,13 +23,15 @@ def main(bincontent=None):
     if bincontent == None:
     
         nbins = 10
-        xmin = 1.19
+        xmin = 1.0
         xmax = 20.0
     
 
         times = [float(l) for l in open(sys.argv[1]).readlines() if xmin<float(l)<xmax]
         print len(times),"decay times"
-    
+
+	#nbins = optimalbins.optbinsize(times,1,80)    
+	#print nbins, 'Optimalbins selects nbins'    
        
 
         #nbins = optimalbins.optbinsize(times,1,30)
@@ -64,6 +66,7 @@ def main(bincontent=None):
         pylab.xlabel("Decay time in microseconds")
         pylab.ylabel("Events in time bin")
         pylab.legend(("Data","Fit: (%4.2f +- %4.2f) microsec,chisq/ndf=%4.2f"%(p[1],numpy.sqrt(covar[1][1]),chisquare/(nbins-len(p)))))
+	pylab.grid()
         pylab.savefig("fit.png")
         
         # vim: ai ts=4 sts=4 et sw=4
