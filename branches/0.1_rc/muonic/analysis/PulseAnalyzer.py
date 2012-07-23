@@ -19,8 +19,8 @@ BIT3 = 1 << 3 # Current or last 1PPS rate not within range
 # documentation says 0.75, measurement says 1.25
 # TODO: find out if tmc is coupled to cpld!
 tmc_tick = 1.25 #nsec
-MAX_TRIGGERWINDOW = 60.0 #nsec
-
+#MAX_TRIGGERWINDOW = 60.0 #nsec
+MAX_TRIGGERWINDOW = 9960.0 #nsec for mudecay!
 
 #import numpy
 
@@ -576,7 +576,7 @@ class DecayTriggerThoroughDeprecated(DecayTriggerBase):
                   self.lasttriggerpulses = thistriggerpulses
 
 
-class DecayTriggerThorough(DecayTriggerBase):
+class DecayTriggerThoroughDeprecated2(DecayTriggerBase):
     """
     We demand a second pulse in the same channel where the muon got stuck
     Pulses must not be farther away than the triggerwindow
@@ -619,6 +619,55 @@ class DecayTriggerThorough(DecayTriggerBase):
             self.lasttriggerpulses = thistriggerpulses
             return None
 		
+
+class DecayTriggerThorough(DecayTriggerBase):
+    """
+    We demand a second pulse in the same channel where the muon got stuck
+    Should operate for a 10mu sec triggerwindow
+    """   
+
+
+    def trigger(self,thistriggerpulses):
+        """
+        Hardcoded use of chan 1,2,3!!
+        """ 
+        self.triggerwindow = 10000 # 10 musec set at DAQ -> in ns since
+                                   # TMC info is in nsec
+        ttp = thistriggerpulses       
+
+        pulses1 = len(ttp[2]) 
+        pulses2 = len(ttp[3])
+        pulses3 = len(ttp[4])
+        time   = ttp[0]
+
+        decaytime = 0
+
+        # require at least two pulses in either channel 1 or 2
+        # and no hits in the veto channel3
+	if (pulses1 + pulses2 < 3) or pulses3:
+             return None
+
+        # check if the muon entered the first channel and
+        # decayed there
+        if (pulses1 > 1) and (not pulses2):
+            # RE2 - LE1
+            decaytime = ttp[2][-1][1] - ttp[2][0][0]
+        
+        # or it might have entered the second channel
+        # then we do not want to have more than one
+        # hti in the first    
+        if (pulses2 > 1) and (pulses1 == 1):
+            # RE2 - LE1
+            decaytime = ttp[3][-1][1] - ttp[3][0][0]
+	    print decaytime, decaytime < self.triggerwindow
+            print self.triggerwindow
+             
+
+        # perform sanity checks
+        if (decaytime > 0) and (decaytime < self.triggerwindow):
+            return decaytime
+
+
 
         
  
