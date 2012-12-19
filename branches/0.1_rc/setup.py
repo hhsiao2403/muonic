@@ -18,7 +18,7 @@ setup(name='muonic',
       platforms=["Ubuntu 10.10"],
       keywords=["QNET","QuarkNET","Fermilab","DESY"],
       packages=['muonic','muonic.analysis','muonic.gui','muonic.daq'],
-      scripts=['scripts/muonic'],
+      scripts=['bin/muonic','bin/which_tty_daq'],
       package_data={'' : ['docs/*','README'], 'muonic': ['daq/simdaq.txt','daq/which_tty_daq']}, 
       data_files=[(datapath,[])]
       )

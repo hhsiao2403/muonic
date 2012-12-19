@@ -1,11 +1,13 @@
+"""
+Manage the different (physics) widgets
+"""
+
 # Qt4 imports
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
 from LineEdit import LineEdit
 from PeriodicCallDialog import PeriodicCallDialog
-from ChooseDecayTriggerDialog import ChooseDecayTriggerDialog
-
 
 from ScalarsCanvas import ScalarsCanvas
 from LifetimeCanvas import LifetimeCanvas
@@ -47,11 +49,11 @@ class TabWidget(QtGui.QWidget):
         self.resize(self.mainwindow.reso_w,self.mainwindow.reso_h)
         self.setMinimumSize(self.mainwindow.reso_w,self.mainwindow.reso_h)
         self.center()
-        self.write_file = False
-        self.holdplot = False
-        self.scalars_result = False 
+        self.write_file       = False
+        self.holdplot         = False
+        self.scalars_result   = False 
         self.muondecaycounter = 0
-        self.lastdecaytime = 'None'
+        self.lastdecaytime    = 'None'
 
         # provide the items which should go into the tabs
         self.label = QtGui.QLabel(tr('MainWindow','Command'))
@@ -83,7 +85,6 @@ class TabWidget(QtGui.QWidget):
         # only 500 lines history
         self.text_box.document().setMaximumBlockCount(500)
 
-
         #create the several tabs 
         tab_widget = QtGui.QTabWidget()
         tab1 = QtGui.QWidget()
@@ -102,24 +103,24 @@ class TabWidget(QtGui.QWidget):
         tab_widget.addTab(tab4, "PulseAnalyzer")
         
         p1_vertical.addWidget(self.text_box)
-        second_widget = QtGui.QWidget()
+        daq_widget = QtGui.QWidget()
         h_box = QtGui.QHBoxLayout()
         h_box.addWidget(self.label)
         h_box.addWidget(self.hello_edit)
         h_box.addWidget(self.hello_button)
         h_box.addWidget(self.file_button)
         h_box.addWidget(self.periodic_button)
-        second_widget.setLayout(h_box)
-        p1_vertical.addWidget(second_widget)
+        daq_widget.setLayout(h_box)
+        p1_vertical.addWidget(daq_widget)
         
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(tab_widget)
         
         self.setLayout(vbox)
        
-        self.scalars_monitor = ScalarsCanvas(self, self.logger)
+        self.scalars_monitor  = ScalarsCanvas(self, self.logger)
         self.lifetime_monitor = LifetimeCanvas(self,self.logger)
-        self.pulse_monitor = PulseCanvas(self,self.logger)
+        self.pulse_monitor    = PulseCanvas(self,self.logger)
 
         # buttons for restart/clear the plot     
         self.start_button = QtGui.QPushButton(tr('MainWindow', 'Restart'))
@@ -143,12 +144,8 @@ class TabWidget(QtGui.QWidget):
                               self.stopClicked
                               )
 
-
-        
-
         # pack theses widget into the vertical box
         p2_vertical.addWidget(self.scalars_monitor)
-        #p2_vertical.addWidget(ntb)
 
         # instantiate the navigation toolbar
         p2_h_box = QtGui.QHBoxLayout()
@@ -160,11 +157,9 @@ class TabWidget(QtGui.QWidget):
         p2_second_widget.setLayout(p2_h_box)
         p2_vertical.addWidget(p2_second_widget)
 
-
-
         ntb2 = NavigationToolbar(self.lifetime_monitor, self)
 
-        # now the mudecay tab..
+        # mudecay tab..
         # activate Muondecay mode with a checkbox
         self.activateMuondecay = QtGui.QCheckBox(self)
         self.activateMuondecay.setText(tr("Dialog", "Check for decayed Muons \n- Warning! this will define your coincidence/Veto settings!", None, QtGui.QApplication.UnicodeUTF8))
@@ -203,20 +198,32 @@ class TabWidget(QtGui.QWidget):
         p4_vertical.addWidget(self.pulse_monitor)
         p4_vertical.addWidget(ntb3)
 
+        # define the begin of the timeintervall 
+        # for the rate calculation
+        now = time.time()
+        self.mainwindow.lastscalarquery = now
         # start a timer which does something every timewindow seconds
         self.timerEvent(None)
         self.timer = self.startTimer(timewindow*1000)
 
-    def startClicked(self): 
+    def startClicked(self):
+        """
+        restart the rate measurement
+        """ 
         self.logger.debug("Restart Button Clicked")
         self.holdplot = False
         self.scalars_monitor.reset()
-        #self.scalars_monitor.update_plot((0,0,0,0,0,5,0,0,0,0,0))
         
     def stopClicked(self):
+        """
+        hold the rate measurement plot till buttion is pushed again
+        """
         self.holdplot = True
 
     def mufitClicked(self):
+        """
+        fit the muon decay histogram
+        """
         fitresults = fit.main(bincontent=n.asarray(self.lifetime_monitor.heights))
         self.lifetime_monitor.show_fit(fitresults[0],fitresults[1],fitresults[2],fitresults[3],fitresults[4],fitresults[5],fitresults[6],fitresults[7])
 
@@ -231,35 +238,11 @@ class TabWidget(QtGui.QWidget):
             if self.activateMuondecay.isChecked():
                 self.logger.warn("We now activate the Muondecay mode!\n All other Coincidence/Veto settings will be overriden!")
 
-
-                #choose_trigger_dialog = ChooseDecayTriggerDialog()
-                #rv = choose_trigger_dialog.exec_()
-                #if rv == 1:
-                #    decaytrigger_simple = choose_trigger_dialog.DecayTriggerSimple.isChecked()
-                #    decaytrigger_single = choose_trigger_dialog.DecayTriggerSingle.isChecked()
-                #    decaytrigger_thorough = choose_trigger_dialog.DecayTriggerThorough.isChecked()
-                # 
-                #for item in [(decaytrigger_simple,"simple"),(decaytrigger_single,"single"),(decaytrigger_thorough,"thorough")]:
-                #    self.logger.debug("Choose trigger dialog yields %s %s" %(item[0].__repr__(),item[1]))
-                #    if item[0]:
-                #        self.mainwindow.options.decaytrigger = item[1]
-
-
-                #if decaytrigger_simple:
-                #    msg = "WC 00 EF"
-                #    self.logger.warn("Chan 3 is set to Veto, threefold coincidence chosen!")
-
-                #else:
-                #    msg = "WC 00 0F"
-                #    self.logger.warn("No coincidence chosen, no veto chosen!")
-                self.mainwindow.options.decaytrigger = 'thorough'
-                msg = "WC 00 0F"
-                self.logger.warn("No coincidence chosen, no veto chosen!")
-
-                self.mainwindow.outqueue.put(msg)
-                self.logger.info("We sent the following message to DAQ %s" %msg)
+                self.logger.warning("Changing gate width and enabeling pulses") 
+                self.mainwindow.outqueue.put("CE") 
+                self.mainwindow.outqueue.put("WC 03 04")
+                                 
                 self.mainwindow.options.mudecaymode = True
-                self.mu_ini = True
                 self.mu_label = QtGui.QLabel(tr('MainWindow','We are looking for decaying muons!'))
                 self.mainwindow.statusbar.addWidget(self.mu_label)
                 self.logger.warning('Might possibly overwrite textfile with decays')
@@ -267,8 +250,6 @@ class TabWidget(QtGui.QWidget):
                 self.mainwindow.options.dec_mes_start = now
 
         else:
-
-            
 
             self.logger.info('Muondecay mode now deactivated, returning to previous setting (if available)')
             self.mainwindow.statusbar.removeWidget(self.mu_label)
@@ -278,9 +259,11 @@ class TabWidget(QtGui.QWidget):
             self.logger.info("The muon decay measurement was active for %f hours" % mtime)
             newmufilename = self.mainwindow.options.decayfilename.replace("HOURS",str(mtime))
             shutil.move(self.mainwindow.options.decayfilename,newmufilename)
-            self.mu_ini = True
      
     def activatePulseanalyzerClicked(self):
+        """
+        set-up the pulseanalyzer widget
+        """
 
         if self.activatePulseanalyzer.isChecked():
             self.mainwindow.options.showpulses = True
@@ -296,6 +279,9 @@ class TabWidget(QtGui.QWidget):
         self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
 
     def on_hello_clicked(self):
+        """
+        send a message to the daq
+        """
         text = str(self.hello_edit.displayText())
         if len(text) > 0:
             self.mainwindow.outqueue.put(str(self.hello_edit.displayText()))
@@ -303,7 +289,9 @@ class TabWidget(QtGui.QWidget):
         self.hello_edit.clear()
 
     def on_file_clicked(self):
-        
+        """
+        save the raw daq data to a automatically named file
+        """       
         self.outputfile = open(self.mainwindow.options.rawfilename,"w")
         self.file_label = QtGui.QLabel(tr('MainWindow','Writing to %s'%self.mainwindow.options.rawfilename))
         self.write_file = True
@@ -311,6 +299,10 @@ class TabWidget(QtGui.QWidget):
         self.mainwindow.statusbar.addPermanentWidget(self.file_label)
 
     def on_periodic_clicked(self):
+        """
+        issue a command periodically
+        """
+
         periodic_window = PeriodicCallDialog()
         rv = periodic_window.exec_()
         if rv == 1:
@@ -336,34 +328,24 @@ class TabWidget(QtGui.QWidget):
             except AttributeError:
                 pass
 
-
- 
-
-
-
     def timerEvent(self,ev):
-        """Custom timerEvent code, called at timer event receive"""
+        """
+        Update the widgets
+        """
         # get the scalar information from the card
         self.mainwindow.outqueue.put('DS')
 
         # we have to know, when we sent the command
         now = time.time()
-        # we define an intervall here
-        if self.mainwindow.ini:
-             self.logger.debug("Ini condition unset!")
-             self.mainwindow.lastscalarquery = now
-             self.mainwindow.ini = False
-        else:
-             self.mainwindow.thisscalarquery = now - self.mainwindow.lastscalarquery
-             self.mainwindow.lastscalarquery = now
-             # when initiaizing, the timewindow is large,
-             # omitting this by requesting values below
-             # an arbitrary of 10000
-             if self.scalars_result and self.scalars_result[5] < 10000:
-                 if not self.holdplot:
-                     self.scalars_monitor.update_plot(self.scalars_result)
+        self.mainwindow.thisscalarquery = now - self.mainwindow.lastscalarquery
+        self.mainwindow.lastscalarquery = now
+        # when initiaizing, the timewindow is large,
+        # omitting this by requesting values below
+        # an arbitrary of 10000
+        if self.scalars_result and self.scalars_result[5] < 10000:
+            if not self.holdplot:
+                self.scalars_monitor.update_plot(self.scalars_result)
 
-    
         self.logger.debug("The differcene between two sent 'DS' commands is %4.2f seconds" %self.mainwindow.thisscalarquery)
 
         self.displayMuons.setText(tr("Dialog", "We have %i decayed muons " %self.muondecaycounter, None, QtGui.QApplication.UnicodeUTF8))
@@ -394,9 +376,6 @@ class TabWidget(QtGui.QWidget):
                 self.mainwindow.mu_file.write('\n')
                 self.mainwindow.decay = []
 
-
         if self.mainwindow.options.showpulses:
-
-            if self.mainwindow.pulses != None:
-                self.pulse_monitor.update_plot(self.mainwindow.pulses)
+            self.pulse_monitor.update_plot(self.mainwindow.pulses_to_show)
 

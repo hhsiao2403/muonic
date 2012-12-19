@@ -87,8 +87,8 @@ class LifetimeCanvas(FigureCanvas):
                 pass
 
         # we want to get the maximum for the ylims
-
         # self.heights contains the bincontent!
+
         self.heights = []
         for patch in self.hist_patches:
             self.heights.append(patch.get_height())

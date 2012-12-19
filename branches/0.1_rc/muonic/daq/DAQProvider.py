@@ -14,7 +14,6 @@ class DAQProvider():
 
     def __init__(self,opts,logger,root):
 
-
         self.outqueue = mult.Queue()
         self.inqueue  = mult.Queue()
             
@@ -24,7 +23,6 @@ class DAQProvider():
         # get option parser options
         self.logger = logger
         self.sim = opts.sim
-
 
         if self.sim:
             self.daq = SimDaqConnection(self.inqueue, self.outqueue, self.logger)

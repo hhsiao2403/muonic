@@ -38,25 +38,24 @@ A: muonic is a python application to read out FERMILAB DAQ cards.
    muonic provides the ability to store RAW data, it displays a simple rate plot for
    all channels and performs a simple muon-lifetime analysis.
 
-Q: Why to use muonic?
-A: As muonic is pure python, it should be relatively easy to understand the code and 
-   join the project.
-   It is also easy to maintain and is currently maintained by PHD students
-   of DESY in Zeuthen, GERMANY nad they might provide some support...
+Q: Is there any documentation for the project?
+A: Beside this readme file, there is also a sphinx-powered documentation which 
+   should reside in ../docs.
+   To compile it just use the MakeFile
 
 Q: Where do I find muonic and further information?
 A: Project home: http://code.google.com/p/muonic/
 
 Q: I found a BUG! Where do I send a bug report?
 A: Unfortunately, there is no mailinglist at the moment for discussions and bug reports
-   For urgent issues, you can sent them to achim.stoessl@gmail.com
+   For urgent issues, you can sent them to achim.stoessl@desy.de
 
 Q: May I redistribute muonic?
 A: YES! See the GPL for details, but do not forget, that the authors are not responsible for
-   any damaga done to any computer!
+   any damaga done to any hard- or software
 
 Q: What to I need to run muonic?
-A: As it is pure python, you do need Python and also several packages:
+A: As it python, you do need Python and also several packages:
    PyQt4, PySerial, NumPy, SciPy, and Matplotlib
 
 Q: How do I install muonic?
@@ -73,8 +72,6 @@ A: Just type 'muonic --help' in your terminal, muonic will explain how to procee
 Q: I stored some data - where is it?
 A: All data is saved in your home directory in the folder muonic_data
 
-Q: I have some good ideas for muonic
-A: Join us! Just write an email to the authors:)
 
 
 

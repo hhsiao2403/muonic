@@ -6,9 +6,6 @@ import os
 import subprocess 
 
 import os.path as pth
-
-
-
 from time import sleep
 
 class DaqConnection(object):
@@ -22,19 +19,30 @@ class DaqConnection(object):
 
         try:
             self.port = self.get_port()
-            #self.port = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, bytesize=8,parity='N',stopbits=1,timeout=0.5,xonxoff=True)
         except serial.SerialException, e:
             self.logger.fatal("SerialException thrown! Value:" + e.message.__repr__())
             raise SystemError, e
 
     def get_port(self):
+        """
+        check out which device (/dev/tty) is used for DAQ communication
+        """
         connected = False
         while not connected:
-            which_tty_daq = os.path.split(os.path.abspath(__file__))[0] + os.sep + "which_tty_daq"
-            dev = subprocess.Popen([which_tty_daq], stdout=subprocess.PIPE).communicate()[0]
+            #which_tty_daq = os.path.split(os.path.abspath(__file__))[0] + os.sep + "which_tty_daq"
+
+            try:
+                dev = subprocess.Popen(["which_tty_daq"], stdout=subprocess.PIPE).communicate()[0]
+            except OSError: # using package script
+                which_tty_daq = os.path.abspath('./bin/which_tty_daq')
+                if not os.path.exists(which_tty_daq):
+                    raise OSError("Can not find binary which_tty_daq")
+                dev = subprocess.Popen([which_tty_daq], stdout=subprocess.PIPE).communicate()[0]
+
             dev = "/dev/" + dev
             dev = dev.rstrip('\n')
-            self.logger.info("Daq connected to %s",dev)
+            self.logger.info("Daq found at %s",dev)
+            self.logger.info("trying to connect...")
             try:
                 port = serial.Serial(port=dev, baudrate=115200,
                                      bytesize=8,parity='N',stopbits=1,
@@ -42,8 +50,8 @@ class DaqConnection(object):
                 connected = True
             except serial.SerialException, e:
                 self.logger.error(e)
-                self.logger.error("Waiting 10 seconds")
-                sleep(10)
+                self.logger.error("Waiting 5 seconds")
+                sleep(5)
 
         self.logger.info("Successfully connected to serial port")
         return port
@@ -52,10 +60,7 @@ class DaqConnection(object):
 
     def read(self):
         """
-        This is where we handle the asynchronous I/O. For example, it may be
-        a 'select()'.
-        One important thing to remember is that the thread has to yield
-        control.
+        Get data from the DAQ. Read it from the provided Queue.
         """
         min_sleeptime = 0.01 # seconds
         max_sleeptime = 0.2 # seconds
@@ -94,6 +99,10 @@ class DaqConnection(object):
 
 
     def write(self):
+        """
+        Put messages from the inqueue which is filled by the DAQ
+        """
+
         while self.running:
             while self.inqueue.qsize():
                 try:

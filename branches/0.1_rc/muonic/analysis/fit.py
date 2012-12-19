@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """
 Script for performing a fit to a histogramm of recorded 
 time differences for the use with QNet
@@ -10,7 +8,7 @@ import scipy.optimize as optimize
 import numpy
 import pylab
 import sys
-import optimalbins
+#import optimalbins
 
 def main(bincontent=None):
 

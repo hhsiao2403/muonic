@@ -1,7 +1,5 @@
-#! /usr/bin/env python
-
 """
-Provides a simple DAQ card simulation, so that software can testet with it
+Provides a simple DAQ card simulation, so that software can be tested
 """
 
 import time
@@ -17,23 +15,23 @@ class SimDaq():
     def __init__(self, logger):
         
         self.logger = logger
-        self.__pushed_lines__ = 0
-        self.__lines_to_push__ = 10
-        self.__simdaq_file__ = os.path.split(os.path.abspath(__file__))[0] + os.sep + "simdaq.txt"
-        self.__daq__ = open(self.__simdaq_file__)
-        self.__inWaiting__ = True 
-        self.__return_info__ = False
-        self.__info__ = ""
-        self.__scalars_ch0__ = 0
-        self.__scalars_ch1__ = 0
-        self.__scalars_ch2__ = 0
-        self.__scalars_ch3__ = 0
-        self.__scalars_trigger__ = 0
-        self.__scalars_to_return__ = ''
+        self._pushed_lines = 0
+        self._lines_to_push = 10
+        self._simdaq_file = os.path.split(os.path.abspath(__file__))[0] + os.sep + "simdaq.txt"
+        self._daq = open(self._simdaq_file)
+        self._inWaiting = True 
+        self._return_info = False
+        self._scalars_ch0 = 0
+        self._scalars_ch1 = 0
+        self._scalars_ch2 = 0
+        self._scalars_ch3 = 0
+        self._scalars_trigger = 0
+        self._scalars_to_return = ''
 
-    def __physics__(self):
+    def _physics(self):
         """
         This routine will increase the scalars variables using predefined rates
+        Rates are drawn from Poisson distributions
         """
 	
         def format_to_8digits(hexstring):
@@ -41,78 +39,61 @@ class SimDaq():
         
 
         # draw rates from a poisson distribution,
-        scalars_ch0 = int(choice(n.random.poisson(12,100)))
-        self.logger.debug("scalars_ch0 %f" %scalars_ch0)
-        scalars_ch1 = int(choice(n.random.poisson(10,100)))
-        scalars_ch2 = int(choice(n.random.poisson(8,100)))
-        scalars_ch3 = int(choice(n.random.poisson(11,100)))
-        scalars_trigger = scalars_ch0 + scalars_ch1 + scalars_ch2 + scalars_ch3
+        self._scalars_ch0 += int(choice(n.random.poisson(12,100)))
+        self._scalars_ch1 += int(choice(n.random.poisson(10,100)))
+        self._scalars_ch2 += int(choice(n.random.poisson(8,100)))
+        self._scalars_ch3 += int(choice(n.random.poisson(11,100)))
+        self._scalars_trigger += int(choice(n.random.poisson(2,100)))
 
-        self.__scalars_ch0__ += scalars_ch0
-        self.__scalars_ch1__ += scalars_ch1
-        self.__scalars_ch2__ += scalars_ch2
-        self.__scalars_ch3__ += scalars_ch3
-        self.__scalars_trigger__ += scalars_trigger
-
-
-        self.__scalars_to_return__ = 'DS S0=' + format_to_8digits(hex(self.__scalars_ch0__)[2:]) + ' S1=' + format_to_8digits(hex(self.__scalars_ch1__)[2:]) + ' S2=' + format_to_8digits(hex(self.__scalars_ch2__)[2:]) + ' S3=' + format_to_8digits(hex(self.__scalars_ch3__)[2:]) + ' S4=' + format_to_8digits(hex(self.__scalars_trigger__)[2:])
-        self.logger.debug("Scalars to return %s" %self.__scalars_to_return__)
-
-    def __reload__(self):
-        self.logger.debug("File reloaded")
-        self.__daq__ = open(self.__simdaq_file__)
+        self._scalars_to_return = 'DS S0=' + format_to_8digits(hex(self._scalars_ch0)[2:]) + ' S1=' + format_to_8digits(hex(self._scalars_ch1)[2:]) + ' S2=' + format_to_8digits(hex(self._scalars_ch2)[2:]) + ' S3=' + format_to_8digits(hex(self._scalars_ch3)[2:]) + ' S4=' + format_to_8digits(hex(self._scalars_trigger)[2:])
+        self.logger.debug("Scalars to return %s" %self._scalars_to_return)
 
     def readline(self):
+        """
+        read dummy pulses from the simdaq file till
+        the configured value is reached
+        """
 
-        if self.__return_info__:
-            self.logger.debug("info field: %s is returned!" %self.__info__) 
-            self.__return_info__ = False
-            return self.__info__
+        if self._return_info:
+            self._return_info = False
+            return self._scalars_to_return
 
-        self.__pushed_lines__ += 1
-        if self.__pushed_lines__ < self.__lines_to_push__:
-            line = self.__daq__.readline()
+        self._pushed_lines += 1
+        if self._pushed_lines < self._lines_to_push:
+            line = self._daq.readline()
             if not line:
-                self.__reload__()
-                line = self.__daq__.readline()
+                self._daq = open(self._simdaq_file)
+                self.logger.debug("File reloaded")
+                line = self._daq.readline()
 
             return line
         else:
-            self.__pushed_lines__ = 0
-            self.__inWaiting__ = False
-            return self.__daq__.readline()
+            self._pushed_lines = 0
+            self._inWaiting = False
+            return self._daq.readline()
             
 
-    def __wait__(self,seconds):
-        
-        time.sleep(seconds)
-        self.__physics__()
-
-    def push_info(self):
-        return self.__info__
-
-
     def write(self,command):
+        """
+        Trigger a simulated daq response with command
+        """
+        self.logger.debug("got the following command %s" %command.__repr__())
         if "DS" in command:
-            self.__info__ = self.__scalars_to_return__
-            self.__return_info__ = True
-            self.logger.debug("got DS command, setting return info to %s" %self.__return_info__) 
-            return self.__info__
-        else:
-            self.logger.debug("called")
-            pass
+            self._return_info = True
 
     def inWaiting(self):
-        if self.__inWaiting__:
-            self.__wait__(0.3)
+        """
+        simulate a busy DAQ
+        """
+        if self._inWaiting:
+            time.sleep(0.3)
+            self._physics()
             return True
 
         else:
-            #self.__inWaiting__ = True
+            self._inWaiting = True
             return False
         
-       
-
 class SimDaqConnection(object):
 
     def __init__(self, inqueue, outqueue, logger):
@@ -125,38 +106,19 @@ class SimDaqConnection(object):
 
     def read(self):
         """
-        This is where we handle the asynchronous I/O. For example, it may be
-        a 'select()'.
-        One important thing to remember is that the thread has to yield
-        control.
+        Simulate DAQ I/O
         """
-        min_sleeptime = 0.01 # seconds
-        max_sleeptime = 0.2 # seconds
-        sleeptime = min_sleeptime #seconds
         while self.running:
             
             self.logger.debug("inqueue size is %d" %self.inqueue.qsize())
             while self.inqueue.qsize():
                 try:
                     self.port.write(str(self.inqueue.get(0))+"\r")
-                    #self.inqueue.task_done()
                 except Queue.Empty:
                     self.logger.debug("Queue empty!")
-                    pass
             
-            if self.port.inWaiting():
-                while self.port.inWaiting():
-                    self.outqueue.put(self.port.readline().strip())
-                    if self.port.__return_info__:
-                        self.logger.debug("returning info")
-                        self.outqueue.put(self.port.push_info())
-                        self.port.__inWaiting__ = False
-                    #self.outqueue.task_done()
-                sleeptime = max(sleeptime/2, min_sleeptime)
-                self.port.__inWaiting__ = True
-            else:
-                sleeptime = min(1.5 * sleeptime, max_sleeptime)
-
-            time.sleep(sleeptime)
+            while self.port.inWaiting():
+                self.outqueue.put(self.port.readline().strip())
+            time.sleep(0.2)
 
 

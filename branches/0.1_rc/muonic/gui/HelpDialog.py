@@ -2,8 +2,6 @@
 
 
 from PyQt4 import QtGui, QtCore
-#from helptext import helper
-
 
 class HelpDialog(QtGui.QDialog): 
 
@@ -25,10 +23,12 @@ class HelpDialog(QtGui.QDialog):
                                self.accept
                               )
 
-
         self.show()
 
     def helptext(self):
+        """
+        Show this text in the help window
+        """
     
         return """QNET2_Vx Help Page
     ------------------------------------------------------------

@@ -3,7 +3,6 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
-tr = QtCore.QCoreApplication.translate
 
 class ThresholdDialog(QtGui.QDialog):
 
@@ -23,14 +22,10 @@ class ThresholdDialog(QtGui.QDialog):
         self.ch1_input = QtGui.QLineEdit()
         self.ch2_input = QtGui.QLineEdit()
         self.ch3_input = QtGui.QLineEdit()
-        self.label0 = QtGui.QLabel()
-        self.label0.setText(tr("Dialog", "Chan0: %s" %thr0))
-        self.label1 = QtGui.QLabel()
-        self.label1.setText(tr("Dialog", "Chan1: %s" %thr1))
-        self.label2 = QtGui.QLabel()
-        self.label2.setText(tr("Dialog", "Chan2: %s" %thr2))
-        self.label3 = QtGui.QLabel()
-        self.label3.setText(tr("Dialog", "Chan3: %s" %thr3))
+        self.label0 = QtGui.QLabel("Chan0: %s" %thr0)
+        self.label1 = QtGui.QLabel("Chan1: %s" %thr1)
+        self.label2 = QtGui.QLabel("Chan2: %s" %thr2)
+        self.label3 = QtGui.QLabel("Chan3: %s" %thr3)
 
         self.button_box = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
         self.v_box.addWidget(self.label0)
@@ -48,6 +43,7 @@ class ThresholdDialog(QtGui.QDialog):
                               QtCore.SIGNAL('accepted()'),
                                self.accept
                               )
+
         QtCore.QObject.connect(self.button_box,
                               QtCore.SIGNAL('rejected()'),
                               self.reject)
