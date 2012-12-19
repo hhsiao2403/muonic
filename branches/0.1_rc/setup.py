@@ -9,7 +9,7 @@ import subprocess as sub
 datapath = (os.getenv('HOME') + os.sep + 'muonic_data')
 
 setup(name='muonic',
-      version='0.1',
+      version='1.0',
       description='Software to work with QNet DAQ cards',
       long_description='Software is able to manage DAQ comunications and shows e.g. a rate plot...',
       author='Robert Franke',
