@@ -13,7 +13,7 @@
 
 
 \title{muonic Documentation}
-\date{December 15, 2012}
+\date{December 19, 2012}
 \release{0.1}
 \author{robert.franke,achim.stoessl}
 \newcommand{\sphinxlogo}{}
@@ -117,24 +117,81 @@
 \phantomsection\label{index::doc}
 
 
+
+\chapter{Documentation for release 0.1, documentation built on December 19, 2012}
+\label{index:welcome-to-muonic-documentation}\label{index:documentation-for-release-release-documentation-built-on-today}
 Contents:
 
 
-\chapter{muonic - a python gui for QNET experiments}
-\label{intro:welcome-to-muonic-s-documentation}\label{intro::doc}\label{intro:muonic-a-python-gui-for-qnet-experiments}
+\section{muonic - a python gui for QNET experiments}
+\label{intro::doc}\label{intro:muonic-a-python-gui-for-qnet-experiments}
 The muonic project provides an interface to communicate with QNet DAQ cards and to perform simple analysis of QNet data.
 Its goal is to ensure easy and stable access to the QNet cards and visualize some of the features of the cards. It is meant to be used in school projects, so it should be easy to use even by people who do not have lots of programming or LINUX backround. Automated data taking can be used to ensure no valuable data is lost.
 
 
-\section{Licence and terms of agreement}
+\subsection{Licence and terms of agreement}
 \label{intro:licence-and-terms-of-agreement}
 Muonic is ditributet under the terms of GPL (Gnu Public License). With the use of the software you accept the condidions of the GPL. This means also that the authors can not be made responsible for any damage of any kind to hard- or software.
 
 
-\chapter{How to use muonic}
+\section{muonic setup and installation}
+\label{setup::doc}\label{setup:muonic-setup-and-installation}
+Muonic consists of two main parts:
+1. the python package \emph{muonic}
+2. a python executable
+
+
+\subsection{prerequesitories}
+\label{setup:prerequesitories}
+muonic needs the following packages to be installed (list may not be complete!)
+\begin{itemize}
+\item {} 
+python-scipy
+
+\item {} 
+python-matplotlib
+
+\item {} 
+python-numpy
+
+\item {} 
+python-qt4
+
+\item {} 
+python-serial
+
+\end{itemize}
+
+
+\subsection{installation with the setup.py script}
+\label{setup:installation-with-the-setup-py-script}
+Run the following command in the muonic main directory
+
+\emph{python setup.py install}
+
+This will put the muonic package into your python site-packages directory and alsot the exectuables \emph{muonic} and \emph{which\_tty\_daq} to your user/bin directory.
+
+The use of python-virtualenv is recommended.
+
+
+\subsection{installing muonic without the setup script}
+\label{setup:installing-muonic-without-the-setup-script}
+You just need the script \emph{./bin/muonic} to the upper directory and rename it to \emph{muonic.py}.
+You can do this by typing
+
+\emph{mv bin/muonic muonic.py}
+
+while being in the muonic main directory.
+
+Afterwards you have to create the folder \emph{muonic\_data} in your home directory.
+
+\emph{mkdir \textasciitilde{}/muonic\_data}
+
+
+\section{How to use muonic}
 \label{tutorial::doc}\label{tutorial:how-to-use-muonic}
 
-\section{start muonic}
+\subsection{start muonic}
 \label{tutorial:start-muonic}
 If you have setup muonic via the provided setup.py script or if you hav put the package somewhere in your PYTHONPATH, simple call from the terminal
 
@@ -179,18 +236,7 @@ For help you can call
 
 
 
-\subsection{using muonic without the setup script}
-\label{tutorial:using-muonic-without-the-setup-script}
-You just need the script \emph{./bin/muonic} to the upper directory and rename it to \emph{muonic.py}.
-You can do this by typing
-\emph{mv bin/muonic muonic.py}
-while being in the muonic main directory.
-
-Afterwards you have to create the folder \emph{muonic\_data} in your home directory.
-\emph{mkdir \textasciitilde{}/muonic\_data}
-
-
-\section{Saving files with muonic}
+\subsection{Saving files with muonic}
 \label{tutorial:saving-files-with-muonic}
 All files which are saved by muonic are ASCII files. The filenames are as follows:
 
@@ -244,10 +290,10 @@ Please keep this limited precision in mind when adding CPLD and TMC times.
 \end{notice}
 
 
-\section{Performing measurements with muonic}
+\subsection{Performing measurements with muonic}
 \label{tutorial:performing-measurements-with-muonic}
 
-\subsection{Setting up the DAQ}
+\subsubsection{Setting up the DAQ}
 \label{tutorial:setting-up-the-daq}
 For DAQ setup it is recommended to use the `settings' menu, allthough everything can also be setup via the command line in the DAQ output window (see below.)
 Muonic translates the chosen settings to the corresponding DAQ commands and sends them to the DAQ. So if you want to change things like the coincidence time window, you have to issue the corresponding DAQ command in the DAQ output window.
@@ -278,7 +324,7 @@ A proper calibration of the individual channels is the key to a succesfull measu
 \end{notice}
 
 
-\subsection{Looking at raw DAQ data}
+\subsubsection{Looking at raw DAQ data}
 \label{tutorial:looking-at-raw-daq-data}
 The first tab of muonic displays the raw ASCII DAQ data.
 This can be saved to a file. If the DAQ status messages should be supressed in that file, the option \emph{-n} should be given at the start of muonic.
@@ -290,7 +336,7 @@ The two most importand DAQ commands are `CD' (`counter disable') and `CE' (`coun
 \end{notice}
 
 
-\subsection{Muon Rates}
+\subsubsection{Muon Rates}
 \label{tutorial:muon-rates}
 In this tab a plot of the measured muonrates is displayed. A triggerrate is only shown if a coincidence condition is set.
 In the block on the left side of the tab the average rates are displayed since the measurement start. Below you can find the number of counts for the individual channels. The measurement can be reset by clicking on `Restart'. The `Stop' button can be used to temporarily hold the plot to have a better look at it.
@@ -304,7 +350,7 @@ Currently the plot shows only the last 200 seconds. If you want to have a longer
 \end{notice}
 
 
-\subsection{Muon Lifetime}
+\subsubsection{Muon Lifetime}
 \label{tutorial:muon-lifetime}
 A lifetime measurement of muons can be performed here. A histogram of time differences between succeding pulses in the same channel is shown. It can be fit with an exponential by clicking on `Fit!'. The fit lifetime is then shown in the above right of the plot, for an estimate on the errors you have to look at the console.
 
@@ -313,25 +359,328 @@ This feature might not work properly, especially when used with the standard sci
 \end{notice}
 
 
-\subsection{Pulse Analyzer}
+\subsubsection{Pulse Analyzer}
 \label{tutorial:pulse-analyzer}
 You can have a look at the pulsewidhts in this plot. The height of the pulses is lost during the digitization prozess, so all pulses have the same height here.
 
 
-\chapter{muonic software and packages}
-\label{muonic::doc}\label{muonic:muonic-software-and-packages}
+\section{Fermilab DAQ - hardware documentation}
+\label{hardware:fermilab-daq-hardware-documentation}\label{hardware::doc}
 
-\section{main package: muonic}
+\subsection{ASCII DAQ output format}
+\label{hardware:ascii-daq-output-format}
+sample line of DAQ output - example for the daq data format
+
+\begin{tabulary}{\linewidth}{|L|L|L|L|L|L|L|L|L|L|L|L|L|L|L|L|}
+\hline
+\textbf{
+triggers
+} & \textbf{
+r0
+} & \textbf{
+f0
+} & \textbf{
+r1
+} & \textbf{
+f1
+} & \textbf{
+r2
+} & \textbf{
+f2
+} & \textbf{
+r3
+} & \textbf{
+f3
+} & \textbf{
+onepps
+} & \textbf{
+gpstime
+} & \textbf{
+gpsdte
+} & \textbf{
+gps-valid
+} & \textbf{
+gps-satelites
+} & \textbf{
+xx
+} & \textbf{
+correction
+}\\\hline
+
+92328FE2
+ & 
+00
+ & 
+3D
+ & 
+00
+ & 
+3E
+ & 
+00
+ & 
+00
+ & 
+00
+ & 
+00
+ & 
+915E10CF
+ & 
+034016.021
+ & 
+060180
+ & 
+V
+ & 
+00
+ & 
+0
+ & 
++0055
+\\\hline
+\end{tabulary}
+
+
+
+\subsection{DAQ onboard documentation}
+\label{hardware:daq-onboard-documentation}
+Online help on the DAQ cards is available by sending the following commands to the DAQ
+\begin{itemize}
+\item {} 
+V1, V2, V3
+
+\item {} 
+H1,H2
+
+\end{itemize}
+
+
+\subsubsection{V1}
+\label{hardware:v1}
+\begin{tabulary}{\linewidth}{|L|L|L|}
+\hline
+\textbf{
+Setting
+} & \textbf{
+example value
+} & \textbf{
+description
+}\\\hline
+
+Run Mode
+ & 
+Off
+ & 
+CE (cnt enable), CD (cnt disable )
+\\\hline
+
+Ch(s) Enabled
+ & 
+3,2,1,0
+ & 
+Cmd DC  Reg C0 using (bits 3-0)
+\\\hline
+
+Veto Enable
+ & 
+Off
+ & 
+VE 0 (Off),  VE 1 (On)
+\\\hline
+
+Veto Select
+ & 
+Ch0
+ & 
+Cmd DC  Reg C0 using (bits 7,6)
+\\\hline
+
+Coincidence 1-4
+ & 
+1-Fold
+ & 
+Cmd DC  Reg C0 using (bits 5,4)
+\\\hline
+
+Pipe Line Delay
+ & 
+40 nS
+ & 
+Cmd DT  Reg T1=rDelay  Reg T2=wDelay  10nS/cnt
+\\\hline
+
+Gate Width
+ & 
+100 nS
+ & 
+Cmd DC  Reg C2=LowByte Reg C3=HighByte 10nS/cnt
+\\\hline
+
+Veto Width
+ & 
+0 nS
+ & 
+Cmd VG  (10nS/cnt)
+\\\hline
+
+Ch0 Threshold
+Ch1 Threshold
+Ch2 Threshold
+Ch3 Threshold
+ & 
+0.200 vlts
+0.200 vlts
+0.200 vlts
+0.200 vlts
+ & \\\hline
+
+Test Pulser Vlt
+Test Pulse Ena
+ & 
+3.000 vlts
+Off
+ & \\\hline
+\end{tabulary}
+
+
+Example line for 1 of 4 channels. (Line Drawing, Not to Scale)
+Input Pulse edges (begin/end) set rising/falling tags bits.
+\_\_\_\_\textasciitilde{}\textasciitilde{}\textasciitilde{}\textasciitilde{}\textasciitilde{}\textasciitilde{}\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ Input Pulse, Gate cycle begins
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\textasciitilde{}\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ Delayed Rise Edge `RE' Tag Bit
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\textasciitilde{}\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ Delayed Fall Edge `FE' Tag Bit
+\_\_\_\_\_\_\_\_\_\_\_\_\_                           Tag Bits delayed by PipeLnDly
+\_\_\_\textbar{}        {\color{red}\bfseries{}\textbar{}\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ PipeLineDelay :   40nS
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\textbar{}}                     {\color{red}\bfseries{}\textbar{}\_\_\_ Capture Window:   60nS
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+\_\_\_\textbar{}}                                   {\color{red}\bfseries{}\textbar{}}\_\_\_ Gate Width    :  100nS
+
+If `RE','FE' are outside Capture Window, data tag bit(s) will be missing.
+CaptureWindow = GateWidth - PipeLineDelay
+The default Pipe Line Delay is 40nS, default Gate Width is 100nS.
+Setup CMD sequence for Pipeline Delay.  CD,  WT 1 0, WT 2 nn (10nS/cnt)
+Setup CMD sequence for Gate Width.  CD, WC 2 nn(10nS/cnt), WC 3 nn (2.56uS/cnt)
+
+H2
+
+Barometer      Qnet Help Page 2
+BA      - Display Barometer trim setting in mVolts and pressure as mBar.
+BA d    - Calibrate Barometer by adj. trim DAC ch in mVlts (0-4095mV).
+Flash
+FL p    - Load Flash with Altera binary file({\color{red}\bfseries{}*}.rbf), p=password.
+FR      - Read FPGA setup flash, display sumcheck.
+FMR p   - Read page 0-3FF(h), (264 bytes/page)
+Page 100h= start fpga {\color{red}\bfseries{}*}.rbf file, page 0=saved setup.
+GPS
+NA 0    - Append NMEA GPS data Off,(include 1pps data).
+NA 1    - Append NMEA GPS data On, (Adds GPS to output).
+NA 2    - Append NMEA GPS data Off,(no 1pps data).
+NM 0    - NMEA GPS display, Off, (default), GPS port speed 38400, locked.
+NM 1    - NMEA GPS display (RMC + GGA + GSV) data.
+NM 2    - NMEA GPS display (ALL) data, use with GPS display applications.
+Test Pulser
+TE m    - Enable run mode,  0=Off, 1=One cycle, 2=Continuous.
+TD m    - Load sample trigger data list, 0=Reset, 1=Singles, 2=Majority.
+TV m    - Voltage level at pulse DAC, 0-4095mV, TV=read.
+Serial \#
+SN p n  - Store serial \# to flash, p=password, n=(0-65535 BCD).
+SN      - Display serial number (BCD).
+Status
+ST      - Send status line now.  This resets the minute timer.
+ST 0    - Status line, disabled.
+ST 1 m  - Send status line every (m) minutes.(m=1-30, def=5).
+ST 2 m  - Include scalar data line, chs S0-S4 after each status line.
+ST 3 m  - Include scalar data line, plus reset counters on each timeout.
+TI n     - Timer (day hr:min:sec.msec), TI=display time, (TI n=0 clear).
+U1 n     - Display Uart error counter, (U1 n=0 to zero counters).
+VM 1     - View mode, 0x80=Event\_Demarcation\_Bit outputs a blank line.
+- View mode returns to normal after `CD','CE','ST' or `RE'.
+
+H1
+Quarknet Scintillator Card,  Qnet2.5  Vers 1.11  Compiled Jul 15 2009  HE=Help
+Serial\#=6531     uC\_Volts=3.33      GPS\_TempC=0.0     mBar=1023.8
+
+CE     - TMC Counter Enable.
+CD     - TMC Counter Disable.
+DC     - Display Control Registers, (C0-C3).
+WC a d - Write   Control Registers, addr(0-6) data byte(H).
+DT     - Display TMC Reg, 0-3, (1=PipeLineDelayRd, 2=PipeLineDelayWr).
+WT a d - Write   TMC Reg, addr(1,2) data byte(H), if a=4 write delay word.
+DG     - Display GPS Info, Date, Time, Position and Status.
+DS     - Display Scalar, channel(S0-S3), trigger(S4), time(S5).
+RE     - Reset complete board to power up defaults.
+RB     - Reset only the TMC and Counters.
+SB p d - Set Baud,password, 1=19K, 2=38K, 3=57K ,4=115K, 5=230K, 6=460K, 7=920K
+SA n   - Save setup, 0=(TMC disable), 1=(TMC enable), 2=(Restore Defaults).
+TH     - Thermometer data display (@ GPS), -40 to 99 degrees C.
+TL c d - Threshold Level, signal ch(0-3)(4=setAll), data(0-4095mV), TL=read.
+Veto   - Veto select, Off='VE 0', On='VE 1', Gate='VG c', 0-255(D) 10ns/cnt.
+View   - View setup registers. Setup=V1, Voltages(V2), GPS LOCK(V3).
+HELP   - HE,H1=Page1, H2=Page2, HB=Barometer, HS=Status, HT=Trigger.
+
+VE2
+V2
+Barometer Pressure Sensor
+Calibration Voltage  = 1495 mVolts   Use Cmd `BA' to calibrate.
+Sensor Output Voltage= 1655 mVolts   (2.93mV *  565 Cnts)
+Pressure mBar        = 1023.6        (1655.5 - 1500)/15 + 1013.25
+Pressure inch        = 30.63         (mBar / 33.42)
+
+Timer Capture/Compare Channel
+TempC  = 0.0     Error?  Check sensor cable connection at GPS unit.
+TempF  = 32.0    (TempC * 1.8) + 32
+
+Analog to Digital Converter Channels(ADC)
+Vcc 1.80V = 1.82 vlts     (2.93mV *  621 Cnts)
+Vcc 1.20V = 1.19 vlts     (2.93mV *  407 Cnts)
+Pos 2.50V = 2.45 vlts     (2.93mV *  837 Cnts)
+Neg 5.00V = 5.03 vlts     (7.38mV *  682 Cnts)
+Vcc 3.30V = 3.33 vlts     (4.84mV *  689 Cnts)
+Pos 5.00V = 4.84 vlts     (7.38mV *  656 Cnts)
+5V Test    Max=4.86v    Min=4.84v    Noise=0.015v
+
+V3
+10 Second Accumulation of 1PPS Latched 25MHz Counter. (20 line buffer)
+Buffer     Now (hex)     Prev-Now (dec) (25e6*10)
+1              0               0
+2              0               0
+3              0               0
+4              0               0
+5              0               0
+6              0               0
+7              0               0
+8              0               0
+9              0               0
+10              0               0
+11              0               0
+12              0               0
+13              0               0
+14              0               0
+15              0               0
+16              0               0
+17              0               0
+18              0               0
+19              0               0
+20              0               0
+
+
+\section{muonic package software reference}
+\label{muonic::doc}\label{muonic:muonic-package-software-reference}
+
+\subsection{main package: muonic}
 \label{muonic:module-muonic}\label{muonic:main-package-muonic}\index{muonic (module)}
-\code{muonic.daq}
+{\hyperref[muonic:module-muonic.daq]{\code{muonic.daq}}}
 {\hyperref[muonic:module-muonic.gui]{\code{muonic.gui}}}
 {\hyperref[muonic:module-muonic.analysis]{\code{muonic.analysis}}}
 
 
-\section{daq i/o with muonic.daq}
-\label{muonic:daq-i-o-with-muonic-daq}
+\subsection{daq i/o with muonic.daq}
+\label{muonic:module-muonic.daq}\label{muonic:daq-i-o-with-muonic-daq}\index{muonic.daq (module)}
+Provide a connection to the QNet DAQ cards via python-serial. For software testing and development, (very) dumb DAQ card simulator is available
 
-\subsection{\emph{muonic.daq.DAQProvider}}
+
+\subsubsection{\emph{muonic.daq.DAQProvider}}
 \label{muonic:muonic-daq-daqprovider}
 Control the two I/O threads which communicate with the DAQ. If the simulated DAQ is used, there is only one thread.
 \phantomsection\label{muonic:module-muonic.daq.DAQProvider}\index{muonic.daq.DAQProvider (module)}\index{DAQProvider (class in muonic.daq.DAQProvider)}
@@ -346,7 +695,7 @@ means that you have all the thread controls in a single place.
 
 
 
-\subsection{\emph{muonic.daq.DAQConnection}}
+\subsubsection{\emph{muonic.daq.DAQConnection}}
 \label{muonic:muonic-daq-daqconnection}
 The module provides a class which uses python-serial to open a connection over the usb ports to the daq card. Since on LINUX systems the used usb device ( which is usually /dev/tty0 ) might change during runtime, this is catched automatically by DaqConnection. Therefore a shell script is invoked.
 \phantomsection\label{muonic:module-muonic.daq.DaqConnection}\index{muonic.daq.DaqConnection (module)}\index{DaqConnection (class in muonic.daq.DaqConnection)}
@@ -381,7 +730,7 @@ Put messages from the inqueue which is filled by the DAQ
 
 
 
-\subsection{\emph{muonic.daq.SimDaqConnection}}
+\subsubsection{\emph{muonic.daq.SimDaqConnection}}
 \label{muonic:muonic-daq-simdaqconnection}
 This module provides a dummy class which simulates DAQ I/O which is read from the file ``simdaq.txt''.
 The simulation is only useful if the software-gui should be tested, but no DAQ card is available
@@ -443,14 +792,14 @@ Simulate DAQ I/O
 
 
 
-\section{pyqt4 gui with muonic.gui}
+\subsection{pyqt4 gui with muonic.gui}
 \label{muonic:pyqt4-gui-with-muonic-gui}
 This package contains all gui relevant classes like dialogboxes and tabwidgets. Every item in the global menu is utilizes a ``Dialog'' class. The ``Canvas'' classes contain plot routines for displaying measurements in the TabWidget.
 \phantomsection\label{muonic:module-muonic.gui}\index{muonic.gui (module)}
 The gui of the programm, written with PyQt4
 
 
-\subsection{\emph{muonic.gui.MainWindow}}
+\subsubsection{\emph{muonic.gui.MainWindow}}
 \label{muonic:muonic-gui-mainwindow}
 Contains the  ``main'' gui application. It Provides the MainWindow, which initializes the different tabs and draws a menu.
 \phantomsection\label{muonic:module-muonic.gui.MainWindow}\index{muonic.gui.MainWindow (module)}
@@ -464,6 +813,8 @@ The main application
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.clear_function}\pysiglinewithargsret{\bfcode{clear\_function}}{}{}
+Reset the rate plot by clicking the restart button
+
 \end{fulllineitems}
 
 \index{closeEvent() (muonic.gui.MainWindow.MainWindow method)}
@@ -479,12 +830,16 @@ to provide our special needs for the case the program is ended.
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.config_menu}\pysiglinewithargsret{\bfcode{config\_menu}}{}{}
+Show the config dialog
+
 \end{fulllineitems}
 
 \index{create\_widgets() (muonic.gui.MainWindow.MainWindow method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.create_widgets}\pysiglinewithargsret{\bfcode{create\_widgets}}{}{}
+Initialize the tab widget
+
 \end{fulllineitems}
 
 \index{exit\_program() (muonic.gui.MainWindow.MainWindow method)}
@@ -502,19 +857,16 @@ will be passed.
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.help_menu}\pysiglinewithargsret{\bfcode{help\_menu}}{}{}
-\end{fulllineitems}
+Show a simple help menu
 
-\index{options\_menu() (muonic.gui.MainWindow.MainWindow method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.options_menu}\pysiglinewithargsret{\bfcode{options\_menu}}{}{}
 \end{fulllineitems}
 
 \index{processIncoming() (muonic.gui.MainWindow.MainWindow method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.processIncoming}\pysiglinewithargsret{\bfcode{processIncoming}}{}{}
-Handle all the messages currently in the queue (if any).
+Handle all the messages currently in the inqueue 
+and parse the result to the corresponding widgets
 
 \end{fulllineitems}
 
@@ -522,6 +874,8 @@ Handle all the messages currently in the queue (if any).
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.MainWindow.MainWindow.threshold_menu}\pysiglinewithargsret{\bfcode{threshold\_menu}}{}{}
+Shows the threshold dialogue
+
 \end{fulllineitems}
 
 
@@ -547,10 +901,12 @@ QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\text
 
 
 
-\subsection{\emph{muonic.gui.TabWidget}}
+\subsubsection{\emph{muonic.gui.TabWidget}}
 \label{muonic:muonic-gui-tabwidget}
 This provides the interface to the different ``physics'' features of muonic, like a rate plot or a pulse display.
-\phantomsection\label{muonic:module-muonic.gui.TabWidget}\index{muonic.gui.TabWidget (module)}\index{TabWidget (class in muonic.gui.TabWidget)}
+\phantomsection\label{muonic:module-muonic.gui.TabWidget}\index{muonic.gui.TabWidget (module)}
+Manage the different (physics) widgets
+\index{TabWidget (class in muonic.gui.TabWidget)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget}\pysiglinewithargsret{\strong{class }\code{muonic.gui.TabWidget.}\bfcode{TabWidget}}{\emph{mainwindow}, \emph{timewindow}, \emph{logger}}{}
@@ -568,6 +924,8 @@ What should be done if we are looking for mu-decays?
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.activatePulseanalyzerClicked}\pysiglinewithargsret{\bfcode{activatePulseanalyzerClicked}}{}{}
+set-up the pulseanalyzer widget
+
 \end{fulllineitems}
 
 \index{center() (muonic.gui.TabWidget.TabWidget method)}
@@ -580,43 +938,55 @@ What should be done if we are looking for mu-decays?
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.mufitClicked}\pysiglinewithargsret{\bfcode{mufitClicked}}{}{}
+fit the muon decay histogram
+
 \end{fulllineitems}
 
 \index{on\_file\_clicked() (muonic.gui.TabWidget.TabWidget method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.on_file_clicked}\pysiglinewithargsret{\bfcode{on\_file\_clicked}}{}{}
+save the raw daq data to a automatically named file
+
 \end{fulllineitems}
 
 \index{on\_hello\_clicked() (muonic.gui.TabWidget.TabWidget method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.on_hello_clicked}\pysiglinewithargsret{\bfcode{on\_hello\_clicked}}{}{}
+send a message to the daq
+
 \end{fulllineitems}
 
 \index{on\_periodic\_clicked() (muonic.gui.TabWidget.TabWidget method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.on_periodic_clicked}\pysiglinewithargsret{\bfcode{on\_periodic\_clicked}}{}{}
+issue a command periodically
+
 \end{fulllineitems}
 
 \index{startClicked() (muonic.gui.TabWidget.TabWidget method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.startClicked}\pysiglinewithargsret{\bfcode{startClicked}}{}{}
+restart the rate measurement
+
 \end{fulllineitems}
 
 \index{stopClicked() (muonic.gui.TabWidget.TabWidget method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.stopClicked}\pysiglinewithargsret{\bfcode{stopClicked}}{}{}
+hold the rate measurement plot till buttion is pushed again
+
 \end{fulllineitems}
 
 \index{timerEvent() (muonic.gui.TabWidget.TabWidget method)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.TabWidget.TabWidget.timerEvent}\pysiglinewithargsret{\bfcode{timerEvent}}{\emph{ev}}{}
-Custom timerEvent code, called at timer event receive
+Update the widgets
 
 \end{fulllineitems}
 
@@ -634,75 +1004,25 @@ QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\text
 
 
 
-\subsection{\emph{muonic.gui.ChooseDecayTriggerDialog}}
-\label{muonic:muonic-gui-choosedecaytriggerdialog}\phantomsection\label{muonic:module-muonic.gui.ChooseDecayTriggerDialog}\index{muonic.gui.ChooseDecayTriggerDialog (module)}\index{ChooseDecayTriggerDialog (class in muonic.gui.ChooseDecayTriggerDialog)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ChooseDecayTriggerDialog.ChooseDecayTriggerDialog}\pysiglinewithargsret{\strong{class }\code{muonic.gui.ChooseDecayTriggerDialog.}\bfcode{ChooseDecayTriggerDialog}}{\emph{*args}}{}
-\end{fulllineitems}
-
-\index{tr() (in module muonic.gui.ChooseDecayTriggerDialog)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ChooseDecayTriggerDialog.tr}\pysiglinewithargsret{\code{muonic.gui.ChooseDecayTriggerDialog.}\bfcode{tr}}{}{}
-QCoreApplication.translate(str, str, str disambiguation=None, QCoreApplication.Encoding encoding=QCoreApplication.CodecForTr) -\textgreater{} QString
-QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\textgreater{} QString
-
-\end{fulllineitems}
-
-
-
-\subsection{\emph{muonic.gui.ConfigDialog}}
+\subsubsection{\emph{muonic.gui.ConfigDialog}}
 \label{muonic:muonic-gui-configdialog}\label{muonic:module-muonic.gui.ConfigDialog}\index{muonic.gui.ConfigDialog (module)}\index{ConfigDialog (class in muonic.gui.ConfigDialog)}
 
 \begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ConfigDialog.ConfigDialog}\pysiglinewithargsret{\strong{class }\code{muonic.gui.ConfigDialog.}\bfcode{ConfigDialog}}{\emph{*args}}{}~\index{retranslateUi() (muonic.gui.ConfigDialog.ConfigDialog method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ConfigDialog.ConfigDialog.retranslateUi}\pysiglinewithargsret{\bfcode{retranslateUi}}{\emph{Dialog}}{}
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{\_fromUtf8() (in module muonic.gui.ConfigDialog)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ConfigDialog._fromUtf8}\pysiglinewithargsret{\code{muonic.gui.ConfigDialog.}\bfcode{\_fromUtf8}}{}{}
-QString.fromUtf8(str, int size=-1) -\textgreater{} QString
-
-\end{fulllineitems}
-
-\index{tr() (in module muonic.gui.ConfigDialog)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ConfigDialog.tr}\pysiglinewithargsret{\code{muonic.gui.ConfigDialog.}\bfcode{tr}}{}{}
-QCoreApplication.translate(str, str, str disambiguation=None, QCoreApplication.Encoding encoding=QCoreApplication.CodecForTr) -\textgreater{} QString
-QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\textgreater{} QString
-
+\phantomsection\label{muonic:muonic.gui.ConfigDialog.ConfigDialog}\pysiglinewithargsret{\strong{class }\code{muonic.gui.ConfigDialog.}\bfcode{ConfigDialog}}{\emph{*args}}{}
 \end{fulllineitems}
 
 
 
-\subsection{\emph{muonic.gui.ThresholdDialog}}
+\subsubsection{\emph{muonic.gui.ThresholdDialog}}
 \label{muonic:module-muonic.gui.ThresholdDialog}\label{muonic:muonic-gui-thresholddialog}\index{muonic.gui.ThresholdDialog (module)}\index{ThresholdDialog (class in muonic.gui.ThresholdDialog)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.ThresholdDialog.ThresholdDialog}\pysiglinewithargsret{\strong{class }\code{muonic.gui.ThresholdDialog.}\bfcode{ThresholdDialog}}{\emph{thr0}, \emph{thr1}, \emph{thr2}, \emph{thr3}, \emph{*args}}{}
 \end{fulllineitems}
 
-\index{tr() (in module muonic.gui.ThresholdDialog)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.ThresholdDialog.tr}\pysiglinewithargsret{\code{muonic.gui.ThresholdDialog.}\bfcode{tr}}{}{}
-QCoreApplication.translate(str, str, str disambiguation=None, QCoreApplication.Encoding encoding=QCoreApplication.CodecForTr) -\textgreater{} QString
-QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\textgreater{} QString
-
-\end{fulllineitems}
 
 
-
-\subsection{\emph{muonic.gui.HelpDialog}}
+\subsubsection{\emph{muonic.gui.HelpDialog}}
 \label{muonic:muonic-gui-helpdialog}\label{muonic:module-muonic.gui.HelpDialog}\index{muonic.gui.HelpDialog (module)}\index{HelpDialog (class in muonic.gui.HelpDialog)}
 
 \begin{fulllineitems}
@@ -710,6 +1030,8 @@ QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\text
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.HelpDialog.HelpDialog.helptext}\pysiglinewithargsret{\bfcode{helptext}}{}{}
+Show this text in the help window
+
 \end{fulllineitems}
 
 
@@ -717,25 +1039,16 @@ QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\text
 
 
 
-\subsection{\emph{muonic.gui.PeriodicCallDialog}}
+\subsubsection{\emph{muonic.gui.PeriodicCallDialog}}
 \label{muonic:module-muonic.gui.PeriodicCallDialog}\label{muonic:muonic-gui-periodiccalldialog}\index{muonic.gui.PeriodicCallDialog (module)}\index{PeriodicCallDialog (class in muonic.gui.PeriodicCallDialog)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.PeriodicCallDialog.PeriodicCallDialog}\pysiglinewithargsret{\strong{class }\code{muonic.gui.PeriodicCallDialog.}\bfcode{PeriodicCallDialog}}{\emph{*args}}{}
 \end{fulllineitems}
 
-\index{tr() (in module muonic.gui.PeriodicCallDialog)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.gui.PeriodicCallDialog.tr}\pysiglinewithargsret{\code{muonic.gui.PeriodicCallDialog.}\bfcode{tr}}{}{}
-QCoreApplication.translate(str, str, str disambiguation=None, QCoreApplication.Encoding encoding=QCoreApplication.CodecForTr) -\textgreater{} QString
-QCoreApplication.translate(str, str, str, QCoreApplication.Encoding, int) -\textgreater{} QString
-
-\end{fulllineitems}
 
 
-
-\subsection{\emph{muonic.gui.PulseCanvas}}
+\subsubsection{\emph{muonic.gui.PulseCanvas}}
 \label{muonic:muonic-gui-pulsecanvas}\label{muonic:module-muonic.gui.PulseCanvas}\index{muonic.gui.PulseCanvas (module)}\index{PulseCanvas (class in muonic.gui.PulseCanvas)}
 
 \begin{fulllineitems}
@@ -760,8 +1073,10 @@ output colored strings on the terminal
 
 
 
-\subsection{\emph{muonic.gui.ScalarsCanvas}}
-\label{muonic:muonic-gui-scalarscanvas}\label{muonic:module-muonic.gui.ScalarsCanvas}\index{muonic.gui.ScalarsCanvas (module)}\index{ScalarsCanvas (class in muonic.gui.ScalarsCanvas)}
+\subsubsection{\emph{muonic.gui.ScalarsCanvas}}
+\label{muonic:muonic-gui-scalarscanvas}\label{muonic:module-muonic.gui.ScalarsCanvas}\index{muonic.gui.ScalarsCanvas (module)}
+Provide a canvas for a matplotlib rate plot
+\index{ScalarsCanvas (class in muonic.gui.ScalarsCanvas)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.ScalarsCanvas.ScalarsCanvas}\pysiglinewithargsret{\strong{class }\code{muonic.gui.ScalarsCanvas.}\bfcode{ScalarsCanvas}}{\emph{parent}, \emph{logger}}{}
@@ -785,8 +1100,8 @@ reseting all data
 
 
 
-\subsection{\emph{muonic.gui.LifetimeCanvas}}
-\label{muonic:muonic-gui-lifetimecanvas}\phantomsection\label{muonic:module-muonic.gui.LifetimeCanvas}\index{muonic.gui.LifetimeCanvas (module)}\index{LifetimeCanvas (class in muonic.gui.LifetimeCanvas)}
+\subsubsection{\emph{muonic.gui.LifetimeCanvas}}
+\label{muonic:muonic-gui-lifetimecanvas}\label{muonic:module-muonic.gui.LifetimeCanvas}\index{muonic.gui.LifetimeCanvas (module)}\index{LifetimeCanvas (class in muonic.gui.LifetimeCanvas)}
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.gui.LifetimeCanvas.LifetimeCanvas}\pysiglinewithargsret{\strong{class }\code{muonic.gui.LifetimeCanvas.}\bfcode{LifetimeCanvas}}{\emph{parent}, \emph{logger}}{}
@@ -811,103 +1126,27 @@ decaytimes must be a list of the last decays
 
 
 
-\section{analyis package muonic.analysis}
+\subsection{analyis package muonic.analysis}
 \label{muonic:module-muonic.analysis}\label{muonic:analyis-package-muonic-analysis}\index{muonic.analysis (module)}
 
-\subsection{\emph{muonic.analysis.PulseAnalyzer}}
+\subsubsection{\emph{muonic.analysis.PulseAnalyzer}}
 \label{muonic:muonic-analysis-pulseanalyzer}
 Transformation of ASCII DAQ data. Combination of Pulses to events, and looking for decaying muons with different trigger condi
-\phantomsection\label{muonic:module-muonic.analysis.PulseAnalyzer}\index{muonic.analysis.PulseAnalyzer (module)}\index{DecayTriggerBase (class in muonic.analysis.PulseAnalyzer)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerBase}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerBase}}{\emph{triggerpulses}, \emph{chan3softveto}}{}
-Feel free to write your own muon decay trigger! It just needs to inherit from this 
-Base class
-\index{trigger() (muonic.analysis.PulseAnalyzer.DecayTriggerBase method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerBase.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{thistriggerpulses}}{}
-Implement this method with your own trigger logic!
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{DecayTriggerSimple (class in muonic.analysis.PulseAnalyzer)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerSimple}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerSimple}}{\emph{triggerpulses}, \emph{chan3softveto}}{}
-This trigger is designed to decide wether to adjacent triggers
-occur within 20microseconds
-\index{trigger() (muonic.analysis.PulseAnalyzer.DecayTriggerSimple method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerSimple.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{thistriggerpulses}}{}
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{DecayTriggerSingle (class in muonic.analysis.PulseAnalyzer)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerSingle}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerSingle}}{\emph{triggerpulses}, \emph{chan3softveto}}{}
-No coincidence settings are chosen,
-just looking for two pulses in 20 microsecs
-The implementation is the same like DecayTriggerSimple,
-but the coincidence settings must be chosen differently
-\index{trigger() (muonic.analysis.PulseAnalyzer.DecayTriggerSingle method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerSingle.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{thistriggerpulses}}{}
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
+\phantomsection\label{muonic:module-muonic.analysis.PulseAnalyzer}\index{muonic.analysis.PulseAnalyzer (module)}
+Get the absolute timing of the pulses
+by use of the gps time
+Calculate also a non hex representation of
+leading and falling edges of the pulses
 \index{DecayTriggerThorough (class in muonic.analysis.PulseAnalyzer)}
 
 \begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThorough}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerThorough}}{\emph{triggerpulses}, \emph{chan3softveto}}{}
+\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThorough}\pysigline{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerThorough}}
 We demand a second pulse in the same channel where the muon got stuck
 Should operate for a 10mu sec triggerwindow
 \index{trigger() (muonic.analysis.PulseAnalyzer.DecayTriggerThorough method)}
 
 \begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThorough.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{thistriggerpulses}}{}
-Hardcoded use of chan 1,2,3!!
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{DecayTriggerThoroughDeprecated (class in muonic.analysis.PulseAnalyzer)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThoroughDeprecated}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerThoroughDeprecated}}{\emph{triggerpulses}, \emph{chan3softveto}}{}
-We demand a second pulse in the same channel where the muon got stuck
-Pulses must not be farther away than the triggerwindow
-\index{trigger() (muonic.analysis.PulseAnalyzer.DecayTriggerThoroughDeprecated method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThoroughDeprecated.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{thistriggerpulses}}{}
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{DecayTriggerThoroughDeprecated2 (class in muonic.analysis.PulseAnalyzer)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThoroughDeprecated2}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{DecayTriggerThoroughDeprecated2}}{\emph{triggerpulses}, \emph{chan3softveto}}{}
-We demand a second pulse in the same channel where the muon got stuck
-Pulses must not be farther away than the triggerwindow
-\index{trigger() (muonic.analysis.PulseAnalyzer.DecayTriggerThoroughDeprecated2 method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThoroughDeprecated2.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{thistriggerpulses}}{}
+\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.DecayTriggerThorough.trigger}\pysiglinewithargsret{\bfcode{trigger}}{\emph{triggerpulses}}{}
 Hardcoded use of chan 1,2,3!!
 
 \end{fulllineitems}
@@ -920,11 +1159,37 @@ Hardcoded use of chan 1,2,3!!
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor}\pysiglinewithargsret{\strong{class }\code{muonic.analysis.PulseAnalyzer.}\bfcode{PulseExtractor}}{\emph{pulsefile='`}}{}
 get the pulses out of a daq line
-we have to be as fast as possible!
-\index{calculate\_edges() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
+speed is important here
+\index{\_calculate\_edges() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
 
 \begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.calculate_edges}\pysiglinewithargsret{\bfcode{calculate\_edges}}{\emph{line}, \emph{counter\_diff=0}}{}
+\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor._calculate_edges}\pysiglinewithargsret{\bfcode{\_calculate\_edges}}{\emph{line}, \emph{counter\_diff=0}}{}
+get the leading and falling edges of the pulses
+Use counter diff for getting pulse times in subsequent 
+lines of the triggerflag
+
+\end{fulllineitems}
+
+\index{\_get\_evt\_time() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
+
+\begin{fulllineitems}
+\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor._get_evt_time}\pysiglinewithargsret{\bfcode{\_get\_evt\_time}}{\emph{time}, \emph{correction}, \emph{trigger\_count}, \emph{onepps}}{}
+Get the absolute event time in seconds since day start
+If gps is not available, only relative eventtime based on counts
+is returned
+
+\end{fulllineitems}
+
+\index{\_order\_and\_cleanpulses() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
+
+\begin{fulllineitems}
+\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor._order_and_cleanpulses}\pysiglinewithargsret{\bfcode{\_order\_and\_cleanpulses}}{}{}
+Remove pulses which have a 
+leading edge later in time than a 
+falling edge and do a bit of sorting
+Remove also single leading or falling edges
+NEW: We add virtual falling edges!
+
 \end{fulllineitems}
 
 \index{close\_file() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
@@ -937,51 +1202,11 @@ we have to be as fast as possible!
 
 \begin{fulllineitems}
 \phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.extract}\pysiglinewithargsret{\bfcode{extract}}{\emph{line}}{}
-Search for triggers in a set of lines
-
-\end{fulllineitems}
-
-\index{get\_daq\_frequency() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.get_daq_frequency}\pysiglinewithargsret{\bfcode{get\_daq\_frequency}}{\emph{onepps}}{}
-time: in seconds
-triggers: in counts
-
-\end{fulllineitems}
-
-\index{get\_gps\_time() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.get_gps_time}\pysiglinewithargsret{\bfcode{get\_gps\_time}}{\emph{time}, \emph{correction}}{}
-Convert hhmmss,xxx string int seconds since day start
-
-\end{fulllineitems}
-
-\index{get\_rel\_time() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.get_rel_time}\pysiglinewithargsret{\bfcode{get\_rel\_time}}{\emph{trigger\_count}, \emph{thisonepps}}{}
-\end{fulllineitems}
-
-\index{get\_time() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.get_time}\pysiglinewithargsret{\bfcode{get\_time}}{\emph{trigger\_count}, \emph{prevlast=False}}{}
-Get the actual absolute time 
-of the event in seconds
-
-\end{fulllineitems}
-
-\index{order\_and\_cleanpulses() (muonic.analysis.PulseAnalyzer.PulseExtractor method)}
-
-\begin{fulllineitems}
-\phantomsection\label{muonic:muonic.analysis.PulseAnalyzer.PulseExtractor.order_and_cleanpulses}\pysiglinewithargsret{\bfcode{order\_and\_cleanpulses}}{}{}
-Remove pulses which have a 
-leading edge later in time than a 
-falling edge and do a bit of sorting
-Remove also single leading or falling edges
-NEW: We add virtual falling edges!
+Analyze subsequent lines (one per call)
+and check if pulses are related to triggers
+For each new trigger,
+return the set of pulses which belong to that trigger,
+otherwise return None
 
 \end{fulllineitems}
 
@@ -990,7 +1215,7 @@ NEW: We add virtual falling edges!
 
 
 
-\subsection{\emph{muonic.analysis.fit}}
+\subsubsection{\emph{muonic.analysis.fit}}
 \label{muonic:muonic-analysis-fit}
 Provide a fitting routine
 \phantomsection\label{muonic:module-muonic.analysis.fit}\index{muonic.analysis.fit (module)}
@@ -1026,11 +1251,11 @@ time differences for the use with QNet
 \item {\texttt{muonic.analysis}}, \pageref{muonic:module-muonic.analysis}
 \item {\texttt{muonic.analysis.fit}}, \pageref{muonic:module-muonic.analysis.fit}
 \item {\texttt{muonic.analysis.PulseAnalyzer}}, \pageref{muonic:module-muonic.analysis.PulseAnalyzer}
+\item {\texttt{muonic.daq}}, \pageref{muonic:module-muonic.daq}
 \item {\texttt{muonic.daq.DaqConnection}}, \pageref{muonic:module-muonic.daq.DaqConnection}
 \item {\texttt{muonic.daq.DAQProvider}}, \pageref{muonic:module-muonic.daq.DAQProvider}
 \item {\texttt{muonic.daq.SimDaqConnection}}, \pageref{muonic:module-muonic.daq.SimDaqConnection}
 \item {\texttt{muonic.gui}}, \pageref{muonic:module-muonic.gui}
-\item {\texttt{muonic.gui.ChooseDecayTriggerDialog}}, \pageref{muonic:module-muonic.gui.ChooseDecayTriggerDialog}
 \item {\texttt{muonic.gui.ConfigDialog}}, \pageref{muonic:module-muonic.gui.ConfigDialog}
 \item {\texttt{muonic.gui.HelpDialog}}, \pageref{muonic:module-muonic.gui.HelpDialog}
 \item {\texttt{muonic.gui.LifetimeCanvas}}, \pageref{muonic:module-muonic.gui.LifetimeCanvas}
