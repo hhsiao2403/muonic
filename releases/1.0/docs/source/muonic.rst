@@ -8,7 +8,7 @@ main package: muonic
 .. automodule:: muonic
    :members:
    :undoc-members:
-   :private-members:
+.. :private-members:
 
    :mod:`muonic.daq`
    :mod:`muonic.gui`
@@ -20,7 +20,7 @@ daq i/o with muonic.daq
 .. automodule:: muonic.daq
    :members:
    :undoc-members:
-   :private-members:
+.. :private-members:
 
 .. currentmodule:: muonic.daq
    .. automethod:: __Init__ 
@@ -32,7 +32,7 @@ Control the two I/O threads which communicate with the DAQ. If the simulated DAQ
 .. automodule:: muonic.daq.DAQProvider
    :members:
    :undoc-members:
-   :private-members:
+.. :private-members:
 
    .. automethod:: __init__
 
@@ -44,7 +44,7 @@ The module provides a class which uses python-serial to open a connection over t
 .. automodule:: muonic.daq.DaqConnection
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 
 `muonic.daq.SimDaqConnection`
@@ -55,7 +55,7 @@ The simulation is only useful if the software-gui should be tested, but no DAQ c
 .. automodule:: muonic.daq.SimDaqConnection
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 pyqt4 gui with muonic.gui
 -------------------------
@@ -75,7 +75,7 @@ Contains the  "main" gui application. It Provides the MainWindow, which initiali
 .. automodule:: muonic.gui.MainWindow
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.TabWidget`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +85,7 @@ This provides the interface to the different "physics" features of muonic, like 
 .. automodule:: muonic.gui.TabWidget
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 
 `muonic.gui.ConfigDialog`
@@ -93,49 +93,49 @@ This provides the interface to the different "physics" features of muonic, like 
 .. automodule:: muonic.gui.ConfigDialog
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.ThresholdDialog`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: muonic.gui.ThresholdDialog
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.HelpDialog`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: muonic.gui.HelpDialog
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.PeriodicCallDialog`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: muonic.gui.PeriodicCallDialog
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.PulseCanvas`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: muonic.gui.PulseCanvas
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.ScalarsCanvas`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: muonic.gui.ScalarsCanvas
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.gui.LifetimeCanvas`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: muonic.gui.LifetimeCanvas
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 
 analyis package muonic.analysis
@@ -153,7 +153,7 @@ Transformation of ASCII DAQ data. Combination of Pulses to events, and looking f
 .. automodule:: muonic.analysis.PulseAnalyzer
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 `muonic.analysis.fit`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -163,6 +163,6 @@ Provide a fitting routine
 .. automodule:: muonic.analysis.fit
    :members:
    :undoc-members:
-   :private-members:
+..   :private-members:
 
 
