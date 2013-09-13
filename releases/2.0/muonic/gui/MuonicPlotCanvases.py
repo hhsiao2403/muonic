@@ -83,7 +83,7 @@ class PulseCanvas(MuonicPlotCanvas):
     """
 
     def __init__(self,parent,logger):
-        super(PulseCanvas,self).__init__(parent,logger,ymin=0,ymax=1.2,xmin=0,xmax=40,xlabel="time in ns",ylabel="ylabel",grid=True)
+        super(PulseCanvas,self).__init__(parent,logger,ymin=0,ymax=1.2,xmin=0,xmax=40,xlabel="Time (ns)",ylabel="ylabel",grid=True)
         self.ax.yaxis.set_visible(False)   
         self.ax.set_title("Oscilloscope") 
   
@@ -96,7 +96,7 @@ class PulseCanvas(MuonicPlotCanvas):
         self.ax.set_xlim(0, 100)
         self.ax.set_ylim(ymax=1.5)
         self.ax.grid()
-        self.ax.set_xlabel('time in ns')
+        self.ax.set_xlabel('Time (ns)')
         self.ax.yaxis.set_visible(False)
         self.ax.set_title("Oscilloscope")
         # and disable figure-wide autoscale
@@ -358,7 +358,7 @@ class LifetimeCanvas(MuonicHistCanvas):
     """
     
     def __init__(self,parent,logger,binning = (0,10,21)): 
-        MuonicHistCanvas.__init__(self,parent,logger,n.linspace(binning[0],binning[1],binning[2]),xlabel="Time between Pulses ($\mu$seconds)",ylabel="Events")
+        MuonicHistCanvas.__init__(self,parent,logger,n.linspace(binning[0],binning[1],binning[2]),xlabel="Time between Pulses ($\mu$s)",ylabel="Events")
 
      
 class VelocityCanvas(MuonicHistCanvas):  

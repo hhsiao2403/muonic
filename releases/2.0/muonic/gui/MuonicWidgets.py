@@ -617,8 +617,10 @@ class StatusWidget(QtGui.QWidget): # not used yet
             self.veto.setEnabled(True)
             
             self.muonic_stats['open_files'] = str(self.mainwindow.filename)
-            self.muonic_stats['open_files'] += ', ' + self.mainwindow.rawfilename
-            self.muonic_stats['open_files'] += ', ' + self.mainwindow.decayfilename
+            if self.mainwindow.tabwidget.daqwidget.write_file:
+                self.muonic_stats['open_files'] += ', ' + self.mainwindow.rawfilename
+            if self.mainwindow.tabwidget.decaywidget.is_active():
+                self.muonic_stats['open_files'] += ', ' + self.mainwindow.decayfilename
             if self.mainwindow.writepulses:
                 self.muonic_stats['open_files'] += ', ' + self.mainwindow.pulsefilename
             self.start_params.setPlainText(self.muonic_stats['start_params'])
