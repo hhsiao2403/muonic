@@ -26,11 +26,13 @@ from MuonicDialogs import ThresholdDialog,ConfigDialog,HelpDialog,DecayConfigDia
 from MuonicPlotCanvases import ScalarsCanvas,LifetimeCanvas,PulseCanvas
 from MuonicWidgets import VelocityWidget,PulseanalyzerWidget,DecayWidget,DAQWidget,RateWidget, GPSWidget, StatusWidget
 
-DOCPATH  = (os.getenv('HOME') + os.sep + 'muonic_data' + os.sep + 'docs' + os.sep + 'html')
+DOCPATH  = (os.path.dirname(os.path.abspath(__file__)) + os.sep + '..' + os.sep + 'docs' + os.sep + 'html')
 # this is hard-coded! There must be a better solution...
 # if you change here, you have to change in setup.py!
 DATAPATH = os.getenv('HOME') + os.sep + 'muonic_data'
 
+if not os.path.isdir(DATAPATH):
+    os.mkdir(DATAPATH, 761)
 
 #from TabWidget import TabWidget
 
