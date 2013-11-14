@@ -6,6 +6,10 @@ try:
 except ImportError:
     from distutils.core import setup
 
+with open('README.rst') as f:
+    long_description = f.read()
+
+
 
 import os
 import shlex
@@ -23,10 +27,10 @@ datapath = (os.getenv('HOME') + os.sep + 'muonic_data')
 
 setup(name='muonic',
       version='2.0.0',
-      description='Software to work with QNet DAQ cards',
-      long_description='Software is able to manage DAQ comunications and shows e.g. a rate plot...',
+      description='Software to work with QNet DAQ cards designed for students experiments',
+      long_description=long_description,
       author='Robert Franke,Achim Stoessl,Basho Kaminsky',
-      author_email="achim.stoessl@desy.de, basho.kaminsky@desy.de",
+      author_email="achim.stoessl@gmail.com, basho.kaminsky@desy.de",
       url='http://code.google.com/p/muonic/',
       download_url="http://muonic.googlecode.com/files/muonic_2.0.tar.gz",
       # can only be used with setuptools
@@ -34,11 +38,13 @@ setup(name='muonic',
       license="GPL",
       platforms=["Ubuntu 12.04"],
       classifiers=[
-          "License :: GNU General Public License (GPL)",
-          "Programming Language :: Python",
-          "Development Status :: Beta",
-          "Intended Audience :: Developers :: Students :: Physicists :: Teachers ",
-          "Topic :: Cosmic Ray Physics",
+"License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+"Development Status :: 4 - Beta",
+"Intended Audience :: Science/Research",
+"Intended Audience :: Education",
+"Intended Audience :: Developers",
+"Programming Language :: Python :: 2.7",
+"Topic :: Scientific/Engineering :: Physics"
       ],
       keywords=["QNET","QuarkNET","Fermilab","DESY","DAQ"],
       packages=['muonic','muonic.analysis','muonic.gui','muonic.daq'],
