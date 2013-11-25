@@ -58,6 +58,7 @@ class MainWindow(QtGui.QMainWindow):
         self.statusbar = QtGui.QMainWindow.statusBar(self)
         self.logger  = logger
 
+        self.date = time.gmtime()
         # put the file in the data directory
         # we chose a global format for naming the files -> decided on 18/01/2012
         # we use GMT times
@@ -178,7 +179,7 @@ class MainWindow(QtGui.QMainWindow):
         self.tabwidget.addTab(DecayWidget(logger,parent = self),"Muon Decay")
         self.tabwidget.decaywidget = self.tabwidget.widget(2)
       
-        self.tabwidget.addTab(VelocityWidget(logger),"Muon Velocity")
+        self.tabwidget.addTab(VelocityWidget(logger, parent = self),"Muon Velocity")
         self.tabwidget.velocitywidget = self.tabwidget.widget(3)
 
         self.tabwidget.addTab(StatusWidget(logger,parent=self),"Status")

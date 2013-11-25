@@ -306,7 +306,7 @@ class RateWidget(QtGui.QWidget):
 class PulseanalyzerWidget(QtGui.QWidget):
     """
     Provide a widget which is able to show a plot of triggered pulses
-    """        
+    """
     def __init__(self,logger,parent=None):
         QtGui.QWidget.__init__(self,parent=parent)
         self.logger = logger
@@ -650,6 +650,13 @@ class StatusWidget(QtGui.QWidget): # not used yet
             self.logger.debug("Status informations widget not active - ignoring update call.")
         self.refresh_button.setDisabled(False)
         self.active = False
+        if not self.pulsefile:
+            self.mainwindow.pulsefilename = ''
+            self.mainwindow.pulse_mes_start = False
+            if self.mainwindow.pulseextractor.pulsefile:
+                self.mainwindow.pulseextractor.pulsefile.close()
+            self.mainwindow.pulseextractor.pulsefile = False
+
 
 
 class VelocityWidget(QtGui.QWidget):
@@ -657,6 +664,7 @@ class VelocityWidget(QtGui.QWidget):
     def __init__(self,logger,parent=None):
         QtGui.QWidget.__init__(self,parent=parent)
         self.logger = logger
+        self.mainwindow = self.parentWidget()
         self.upper_channel = 0
         self.lower_channel = 1
         self.trigger = VelocityTrigger(logger)
@@ -695,6 +703,7 @@ class VelocityWidget(QtGui.QWidget):
                               QtCore.SIGNAL("clicked()"),
                               self.velocityFitRangeClicked
                               )
+        self.pulsefile = self.parentWidget().pulseextractor.pulsefile
         
     def calculate(self,pulses):
         flighttime = self.trigger.trigger(pulses,upperchannel=self.upper_channel,lowerchannel=self.lower_channel)
@@ -760,13 +769,27 @@ class VelocityWidget(QtGui.QWidget):
                 self.active = True
                 self.parentWidget().parentWidget().parentWidget().daq.put("CE")
                 self.parentWidget().parentWidget().ratewidget.startClicked()
+                self.pulsefile = self.parentWidget().parentWidget().pulseextractor.pulsefile
+                if not self.pulsefile:
+                    self.parentWidget().parentWidget().pulsefilename = os.path.join(self.parentWidget().parentWidget().DATAPATH,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(self.parentWidget().parentWidget().date.tm_year,self.parentWidget().parentWidget().date.tm_mon,self.parentWidget().parentWidget().date.tm_mday,self.parentWidget().parentWidget().date.tm_hour,self.parentWidget().parentWidget().date.tm_min,self.parentWidget().parentWidget().date.tm_sec,"P",self.parentWidget().parentWidget().opts.user[0],self.parentWidget().parentWidget().opts.user[1]))
+                    self.parentWidget().parentWidget().pulse_mes_start = self.parentWidget().parentWidget().now
+                    self.parentWidget().parentWidget().pulseextractor.pulsefile = open(self.parentWidget().parentWidget().pulsefilename,'w')
+
+
             else:
                 self.activateVelocity.setChecked(False)
                 self.active = False
         else:
             self.activateVelocity.setChecked(False)            
             self.active = False
-            self.parentWidget().parentWidget().ratewidget.stopClicked()            
+            if not self.pulsefile:
+                self.parentWidget().parentWidget().pulsefilename = ''
+                self.parentWidget().parentWidget().pulse_mes_start = False
+                if self.parentWidget().parentWidget().pulseextractor.pulsefile:
+                    self.parentWidget().parentWidget().pulseextractor.pulsefile.close()
+                self.parentWidget().parentWidget().pulseextractor.pulsefile = False
+
+            self.parentWidget().parentWidget().ratewidget.stopClicked()  
 
 class DecayWidget(QtGui.QWidget):
     
@@ -774,6 +797,7 @@ class DecayWidget(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent=parent) 
         self.logger = logger 
         self.mufit_button = QtGui.QPushButton(tr('MainWindow', 'Fit!'))
+        self.mainwindow = self.parentWidget()        
         self.mufit_button.setEnabled(False)
         self.decayfitrange_button = QtGui.QPushButton(tr('MainWindow', 'Fit Range')) 
         self.decayfitrange_button.setEnabled(False)
@@ -784,6 +808,7 @@ class DecayWidget(QtGui.QWidget):
         self.maxdoublepulsewidth = 100000 #inf
         self.muondecaycounter    = 0
         self.lastdecaytime       = 'None'
+        self.pulsefile = self.parentWidget().pulseextractor.pulsefile
             
         self.singlepulsechannel  = 0
         self.doublepulsechannel  = 1
@@ -959,6 +984,11 @@ class DecayWidget(QtGui.QWidget):
                     #self.decaywidget.findChild("activate_mudecay").setChecked(True)
                     self.active = True
                     self.parentWidget().parentWidget().ratewidget.startClicked()            
+                    self.pulsefile = self.mainwindow.pulseextractor.pulsefile
+                    if not self.pulsefile:
+                        self.mainwindow.pulsefilename = os.path.join(self.mainwindow.DATAPATH,"%i-%i-%i_%i-%i-%i_%s_HOURS_%s%s" %(self.mainwindow.date.tm_year,self.mainwindow.date.tm_mon,self.mainwindow.date.tm_mday,self.mainwindow.date.tm_hour,self.mainwindow.date.tm_min,self.mainwindow.date.tm_sec,"P",self.mainwindow.opts.user[0],self.mainwindow.opts.user[1]))
+                        self.mainwindow.pulse_mes_start = self.mainwindow.now
+                        self.mainwindow.pulseextractor.pulsefile = open(self.mainwindow.pulsefilename,'w')
 
                 else:
                     self.activateMuondecay.setChecked(False)
