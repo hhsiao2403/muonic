@@ -26,7 +26,7 @@ from glob import glob
 datapath = (os.getenv('HOME') + os.sep + 'muonic_data')
 
 setup(name='muonic',
-      version='2.0.1',
+      version='2.0.2',
       description='Software to work with QNet DAQ cards designed for students experiments',
       long_description=long_description,
       author='Robert Franke,Achim Stoessl,Basho Kaminsky',
