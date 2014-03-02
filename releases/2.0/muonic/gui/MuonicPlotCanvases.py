@@ -363,7 +363,7 @@ class LifetimeCanvas(MuonicHistCanvas):
      
 class VelocityCanvas(MuonicHistCanvas):  
     
-    def __init__(self,parent,logger,binning = (0.,30,15)): 
+    def __init__(self,parent,logger,binning = (0.,30,25)): 
         MuonicHistCanvas.__init__(self,parent,logger,n.linspace(binning[0],binning[1],binning[2]),xmin=0.,xmax=30,ymin=0,ymax=2,ylabel="Events",xlabel="Flight Time (ns)") 
         self.dimension = r"$ns$"
         
